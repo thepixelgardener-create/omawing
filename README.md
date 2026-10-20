@@ -107,7 +107,29 @@ picking a new theme flies straight into that scene so you see it at once.
   languages mirror the toolbar. The scene names and the scroller are the
   demo's artwork, like its title, and stay in English.
 
-## Build and install
+## Install
+
+From the AUR, which downloads this source and builds it on your machine:
+
+```sh
+yay -S omawing
+```
+
+`yay` shows the build recipe ([aur/PKGBUILD](aur/PKGBUILD)) before building;
+it fetches the tagged release from this repository, checks its SHA-256, and
+builds with Arch's compiler flags. The package installs only files, with no
+install scripts: the program, the soundtrack, a launcher entry, an icon, and
+the licence. Omawing runs as your user, makes no network connections, and runs
+no programs other than `hyprctl` (to read the window rounding).
+
+To try it without installing anything, build and run it from a clone:
+
+```sh
+git clone https://github.com/thepixelgardener-create/omawing
+cd omawing && bin/build && build/omawing
+```
+
+## Build and install from a clone
 
 ```sh
 bin/build      # build/omawing

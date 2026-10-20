@@ -1,0 +1,19 @@
+#!/bin/sh
+# Publishes aur/PKGBUILD and aur/.SRCINFO to the AUR package omawing.
+# Needs an AUR account with your SSH public key added to it.
+set -eu
+
+HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+cd "$HERE"
+makepkg --printsrcinfo > .SRCINFO
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+git clone ssh://aur@aur.archlinux.org/omawing.git "$WORK/omawing"
+cp PKGBUILD .SRCINFO "$WORK/omawing/"
+cd "$WORK/omawing"
+git add PKGBUILD .SRCINFO
+VERSION="$(sed -n 's/^\tpkgver = //p' .SRCINFO)-$(sed -n 's/^\tpkgrel = //p' .SRCINFO)"
+git commit -m "Update to $VERSION" || { echo "Nothing to publish."; exit 0; }
+git push origin HEAD:master
+echo "Published omawing $VERSION: https://aur.archlinux.org/packages/omawing"

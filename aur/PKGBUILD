@@ -1,0 +1,33 @@
+# Maintainer: thepixelgardener-create <309403284+thepixelgardener-create@users.noreply.github.com>
+pkgname=omawing
+pkgver=0.3.0
+pkgrel=1
+pkgdesc='Amiga-style vector flight demo and arcade game for Omarchy'
+arch=('x86_64' 'aarch64')
+url='https://github.com/thepixelgardener-create/omawing'
+# The code is MIT; the bundled Gemini soundtrack is not (see LICENSE).
+license=('MIT' 'LicenseRef-omawing-soundtrack')
+depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-multimedia' 'gcc-libs' 'glibc')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('87799d15692c4e5b2bb7073082a9af1d3ced9a3df00db655735a102293b2fcc7')
+
+build() {
+  cd "$pkgname-$pkgver"
+  mkdir -p build
+  cd build
+  # Build with Arch's compiler and linker flags (hardening included).
+  qmake6 ../omawing.pro \
+    QMAKE_CFLAGS_RELEASE="$CFLAGS" \
+    QMAKE_CXXFLAGS_RELEASE="$CXXFLAGS" \
+    QMAKE_LFLAGS_RELEASE="$LDFLAGS"
+  make
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 build/omawing "$pkgdir/usr/bin/omawing"
+  install -Dm644 -t "$pkgdir/usr/share/omawing/music" src/audio/*.mp3
+  install -Dm644 pkgbuild/omawing.desktop "$pkgdir/usr/share/applications/omawing.desktop"
+  install -Dm644 pkgbuild/omawing.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/omawing.svg"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

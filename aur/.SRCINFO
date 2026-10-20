@@ -1,0 +1,19 @@
+pkgbase = omawing
+	pkgdesc = Amiga-style vector flight demo and arcade game for Omarchy
+	pkgver = 0.3.0
+	pkgrel = 1
+	url = https://github.com/thepixelgardener-create/omawing
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	license = LicenseRef-omawing-soundtrack
+	depends = qt6-base
+	depends = qt6-declarative
+	depends = qt6-wayland
+	depends = qt6-multimedia
+	depends = gcc-libs
+	depends = glibc
+	source = omawing-0.3.0.tar.gz::https://github.com/thepixelgardener-create/omawing/archive/refs/tags/v0.3.0.tar.gz
+	sha256sums = 87799d15692c4e5b2bb7073082a9af1d3ced9a3df00db655735a102293b2fcc7
+
+pkgname = omawing
