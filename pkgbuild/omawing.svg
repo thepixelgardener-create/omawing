@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="14" fill="#FFD60A"/>
+  <!-- A striped sunset over the horizon, and the delta-wing ship in front of it. -->
+  <path d="M17 31a15 15 0 0 1 30 0z" fill="#1d1640"/>
+  <rect x="17" y="24" width="30" height="1.6" fill="#FFD60A"/>
+  <rect x="17" y="27.6" width="30" height="1.4" fill="#FFD60A"/>
+  <path d="M32 34L54 50L32 44.5L10 50Z" fill="#1d1640"/>
+</svg>
