@@ -28,7 +28,7 @@ jobs:
       - name: Install build dependencies
         run: pacman -Syu --noconfirm --needed git github-cli qt6-base qt6-declarative qt6-wayland qt6-multimedia
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check the recipe builds this tag
         run: |
@@ -45,9 +45,9 @@ jobs:
           su builder -c 'cd ~/aur && PKGDEST=$HOME/out makepkg --noconfirm'
           # The release carries the package, not its separate debug symbols.
           mkdir out && cp /home/builder/out/omawing-[0-9]*.pkg.tar.zst out/
-          sha256sum out/*.pkg.tar.zst | tee out/SHA256SUMS
+          (cd out && sha256sum *.pkg.tar.zst | tee SHA256SUMS)
 
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v3
         with:
           subject-path: out/*.pkg.tar.zst
 
