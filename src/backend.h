@@ -50,6 +50,7 @@ public:
     int fps() const { return m_fps; }
     // The simulated time of the last frame, in seconds.
     double lastStep() const { return m_lastStep; }
+    const Audio &audio() const { return m_audio; }
     ScoreBoard &scoreBoard() { return m_board; }
     const ScoreBoard &scoreBoard() const { return m_board; }
 

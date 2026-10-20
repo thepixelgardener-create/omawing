@@ -208,9 +208,15 @@ private slots:
             backend.toggleEffects();
             QVERIFY(backend.effects() || !backend.soundError().isEmpty());
             QVERIFY(!backend.music());
+            // Effects alone never open the soundtrack.
+            QVERIFY(!backend.audio().findChild<QMediaPlayer *>());
             backend.toggleEffects();
             backend.toggleMusic();
             QVERIFY(!backend.effects());
+            // Let the track finish opening: closing the player halfway makes
+            // FFmpeg report the file as broken.
+            if (const auto player = backend.audio().findChild<QMediaPlayer *>())
+                QTRY_VERIFY_WITH_TIMEOUT(player->mediaStatus() != QMediaPlayer::LoadingMedia, 10000);
         }
         // The choice is remembered for next time.
         QSettings settings(file, QSettings::IniFormat);

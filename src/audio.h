@@ -11,7 +11,8 @@ class QMediaPlayer;
 class QSoundEffect;
 
 // Streams the bundled MP3 playlist and mixes short, preloaded gameplay cues.
-// Audio objects are opened only when the user enables sound.
+// The player opens when music is first switched on, and the effects when
+// they are; neither opens before.
 class Audio : public QObject {
     Q_OBJECT
 public:
@@ -42,7 +43,8 @@ signals:
 
 private:
     void fail(const QString &message);
-    void openAudio();
+    void openPlayer();
+    void openEffects();
     void selectTrack();
     std::unique_ptr<QMediaPlayer> m_player;
     std::unique_ptr<QAudioOutput> m_output;

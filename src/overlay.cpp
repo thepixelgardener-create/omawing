@@ -188,16 +188,20 @@ void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
     const double b = m_view->height - View::BaseHeight;
     const QLocale locale;
 
-    // Speed lines streak outwards while boosting.
-    for (int i = 0; i < 18; ++i) {
-        const double a = i / 18.0 * M_PI * 2 + 0.05 * time;
-        const double length = 24 + hash(i, 4) * 70, r = 200 + std::fmod(time * 170 + i * 39, 340);
-        const QPointF from(W / 2 + std::cos(a) * r, m_view->height / 2 + 10 + std::sin(a) * r * 0.6);
-        p.setOpacity(boost * 0.35 + (m_view->style().dimSun ? 0.16 : 0));
+    // Speed lines streak outwards while boosting, and always in the dim
+    // acts; the rest of the time they are invisible and not drawn.
+    const double streaks = boost * 0.35 + (m_view->style().dimSun ? 0.16 : 0);
+    if (streaks > 0.005) {
+        p.setOpacity(streaks);
         p.setPen(QPen(QColor("#a3e5f4"), 1.2));
-        p.drawLine(from, from + QPointF(std::cos(a) * length, std::sin(a) * length * 0.6));
+        for (int i = 0; i < 18; ++i) {
+            const double a = i / 18.0 * M_PI * 2 + 0.05 * time;
+            const double length = 24 + hash(i, 4) * 70, r = 200 + std::fmod(time * 170 + i * 39, 340);
+            const QPointF from(W / 2 + std::cos(a) * r, m_view->height / 2 + 10 + std::sin(a) * r * 0.6);
+            p.drawLine(from, from + QPointF(std::cos(a) * length, std::sin(a) * length * 0.6));
+        }
+        p.setOpacity(1);
     }
-    p.setOpacity(1);
 
     // Points float up from the rings they were won at.
     for (const Popup &popup : m_view->flight->game.popups) {

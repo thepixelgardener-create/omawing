@@ -55,7 +55,9 @@ void Audio::fail(const QString &message) {
     emit changed();
 }
 
-void Audio::openAudio() {
+// The soundtrack and the effects open the first time each is switched on:
+// effects alone never load the 4 MB soundtrack.
+void Audio::openPlayer() {
     m_output = std::make_unique<QAudioOutput>(this);
     m_output->setVolume(m_musicVolume);
     m_player = std::make_unique<QMediaPlayer>(this);
@@ -67,6 +69,12 @@ void Audio::openAudio() {
         if (status == QMediaPlayer::EndOfMedia && m_running && m_music)
             nextTrack();
     });
+    selectTrack();
+}
+
+void Audio::openEffects() {
+    if (m_effects[0])
+        return;
     for (int i = 0; i < EffectCount; ++i) {
         m_effects[i] = std::make_unique<QSoundEffect>(this);
         auto *effect = m_effects[i].get();
@@ -77,7 +85,6 @@ void Audio::openAudio() {
         });
         effect->setSource(effectSource(Effect(i)));
     }
-    selectTrack();
 }
 
 void Audio::selectTrack() {
@@ -90,43 +97,39 @@ void Audio::selectTrack() {
 }
 
 void Audio::setRunning(bool music, bool effects) {
-    const bool running = music || effects;
-    if (running == m_running && music == m_music && effects == m_effectsOn && m_error.isEmpty()) return;
+    if (music == m_music && effects == m_effectsOn && m_running == (music || effects) && m_error.isEmpty())
+        return;
     m_music = music;
     m_effectsOn = effects;
     if (!effects)
         for (auto &effect : m_effects) if (effect) effect->stop();
-    if (running && m_running && m_error.isEmpty()) {
-        // Already open: only the music needs starting or pausing.
-        if (!m_player) {
-        } else if (!music) m_player->pause();
-        else if (m_player->mediaStatus() == QMediaPlayer::EndOfMedia) nextTrack();
-        else m_player->play();
-        emit changed();
-        return;
-    }
-    if (!running) {
+    // Pausing keeps the track's position for later.
+    if (!music && m_player)
+        m_player->pause();
+    if (!music && !effects) {
         m_running = false;
-        if (m_player) m_player->pause();
-        for (auto &effect : m_effects) if (effect) effect->stop();
         emit changed();
         return;
     }
+    // After a failure, start again from scratch: the device or a file may
+    // have been repaired since.
     if (!m_error.isEmpty()) {
         m_player.reset();
         for (auto &effect : m_effects) effect.reset();
         m_output.reset();
+        m_error.clear();
     }
-    m_error.clear();
     if (QMediaDevices::defaultAudioOutput().isNull())
         return fail(tr("No audio output device was found."));
     m_running = true;
-    if (!m_player) openAudio();
-    // A failed source can be retried after the device or file is repaired.
-    else if (m_player->error() != QMediaPlayer::NoError) selectTrack();
-    else if (!m_music) m_player->pause();
-    else if (m_player->mediaStatus() == QMediaPlayer::EndOfMedia) nextTrack();
-    else m_player->play();
+    if (effects)
+        openEffects();
+    if (music) {
+        if (!m_player) openPlayer();
+        else if (m_player->error() != QMediaPlayer::NoError) selectTrack();
+        else if (m_player->mediaStatus() == QMediaPlayer::EndOfMedia) nextTrack();
+        else m_player->play();
+    }
     emit changed();
 }
 
