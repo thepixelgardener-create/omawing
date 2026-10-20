@@ -8,6 +8,10 @@
 
 using Vec = std::array<double, 3>;
 
+// In a namespace of their own: names like mix and hash are too common to
+// leave global. Source files that use them say `using namespace geo;`.
+namespace geo {
+
 inline double mix(double a, double b, double t) { return a + (b - a) * t; }
 inline double clampTo(double x, double a, double b) { return std::max(a, std::min(b, x)); }
 inline double smooth(double t) { return t * t * (3 - 2 * t); }
@@ -36,3 +40,4 @@ inline double hash(double x, double z) {
     const double n = std::sin(x * 127.1 + z * 311.7) * 43758.5453;
     return n - std::floor(n);
 }
+} // namespace geo

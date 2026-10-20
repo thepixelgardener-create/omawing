@@ -12,13 +12,13 @@ class QSoundEffect;
 
 // Streams the bundled MP3 playlist and mixes short, preloaded gameplay cues.
 // Audio objects are opened only when the user enables sound.
-class Synth : public QObject {
+class Audio : public QObject {
     Q_OBJECT
 public:
     enum Effect { Boost, Ring, Impact, Wreck, EffectCount };
     static constexpr int TrackCount = 3;
-    explicit Synth(QObject *parent = nullptr);
-    ~Synth() override;
+    explicit Audio(QObject *parent = nullptr);
+    ~Audio() override;
 
     bool running() const { return m_running; }
     QString error() const { return m_error; }

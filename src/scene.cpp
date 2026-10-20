@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace geo;
+
 namespace {
 Vec hex(const char *code) {
     const QColor c(code);
@@ -645,7 +647,7 @@ void Scene::buildScenery() {
     const int last = int(std::ceil((m_camera.z + Far - 24) / World::RingSpacing));
     for (int i = first; i <= last; ++i) {
         const Ring r = World::ring(i);
-        if (!m_flight->collected.count(i) && std::hypot(r.x - m_camera.x, r.z - m_camera.z) < Far)
+        if (!m_flight->game.collected.count(i) && std::hypot(r.x - m_camera.x, r.z - m_camera.z) < Far)
             ring(r, act.spinRings ? time * 0.15 : 0);
     }
     const Obstacle ball = World::ball(m_flight->ship.z, time);
@@ -665,7 +667,7 @@ void Scene::buildShip() {
     const auto &ship = m_flight->ship;
     const Vec at{ship.x, ship.y, ship.z}, rotation{ship.yaw, ship.pitch, ship.bank};
     // After a hit the ship flickers until it can be hurt again.
-    const double opacity = m_flight->hurt > 0 && std::fmod(m_flight->hurt, 0.2) < 0.1 ? 0.35 : 1;
+    const double opacity = m_flight->game.hurt > 0 && std::fmod(m_flight->game.hurt, 0.2) < 0.1 ? 0.35 : 1;
     mesh(hull, at, rotation, {hex("#e8e8dc"), hex("#92a9b7"), hex("#59638d")},
          {.ship = true, .stroke = QColor("#dfd6cd"), .radius = 5, .opacity = opacity});
 
@@ -691,7 +693,7 @@ void Scene::buildShip() {
 
     // The flames are see-through light: a long cone, and a short white-hot
     // core inside it. The particles do the rest.
-    if (m_flight->wrecked >= 0)
+    if (m_flight->game.wrecked >= 0)
         return;
     const double thrust = 1 + (ship.speed - 13) / 18, flicker = std::sin(m_flight->time * 28);
     Mesh outer = flame, core = flame;
@@ -949,7 +951,7 @@ void Scene::paintOverlay(QPainter &p, const Hud &hud) {
     p.setOpacity(1);
 
     // Points float up from the rings they were won at.
-    for (const Popup &popup : m_flight->popups) {
+    for (const Popup &popup : m_flight->game.popups) {
         const Vec c = toCamera(popup.position);
         if (c[2] < 2)
             continue;
@@ -992,11 +994,11 @@ void Scene::paintOverlay(QPainter &p, const Hud &hud) {
         p.setPen(QColor("#ffe2b3"));
         p.setFont(monoFont(24, 3, QFont::Black));
         drawCentred(p, W / 2, 52, hud.points);
-        if (m_flight->multiplier > 1) {
+        if (m_flight->game.multiplier > 1) {
             p.setPen(rgb(m_palette.accent));
             p.setFont(monoFont(14, 1, QFont::Bold));
             p.drawText(QPointF(W / 2 + QFontMetricsF(monoFont(24, 3, QFont::Black)).horizontalAdvance(hud.points) / 2 + 8, 50),
-                       QString::fromUtf8("×") + locale.toString(m_flight->multiplier));
+                       QString::fromUtf8("×") + locale.toString(m_flight->game.multiplier));
         }
     }
     if (!hud.best.isEmpty()) {
@@ -1007,13 +1009,13 @@ void Scene::paintOverlay(QPainter &p, const Hud &hud) {
 
     // The hull, while you fly: green, then amber, then red, blinking after a hit.
     if (!hud.hull.isEmpty()) {
-        const double hull = m_flight->hull / Flight::FullHull;
+        const double hull = m_flight->game.hull / Game::FullHull;
         const QColor color = hull > 0.5 ? QColor("#9be8a5") : hull > 0.25 ? QColor("#ffd166") : QColor("#ff6b6b");
         p.setPen(QColor("#e2c5cf"));
         p.setFont(hudFont(9, 2, hud.hull));
         p.drawText(QPointF(30, b + 389), hud.hull);
         p.fillRect(QRectF(30, b + 398, 94, 4), QColor("#2e2544"));
-        if (m_flight->hurt <= 0 || std::fmod(m_flight->hurt, 0.2) >= 0.1)
+        if (m_flight->game.hurt <= 0 || std::fmod(m_flight->game.hurt, 0.2) >= 0.1)
             p.fillRect(QRectF(30, b + 398, 94 * hull, 4), color);
     }
 

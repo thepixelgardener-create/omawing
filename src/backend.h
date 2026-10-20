@@ -8,7 +8,7 @@
 
 #include "flight.h"
 #include "scene.h"
-#include "synth.h"
+#include "audio.h"
 
 // The app's state for QML: the flight, pause, the demo autopilot, sound, the
 // banner, and the high scores.
@@ -48,8 +48,8 @@ public:
     void setMusicVolume(double volume);
     void setEffectsVolume(double volume);
     bool banner() const { return m_banner; }
-    QString trackTitle() const { return m_synth.trackTitle(); }
-    QString soundError() const { return m_synth.error(); }
+    QString trackTitle() const { return m_audio.trackTitle(); }
+    QString soundError() const { return m_audio.error(); }
     QString settingsError() const { return m_settingsError; }
     int fps() const { return m_fps; }
     // The simulated time of the last frame, in seconds.
@@ -81,7 +81,7 @@ public:
     Q_INVOKABLE void restart();
     Q_INVOKABLE void toggleMusic();
     Q_INVOKABLE void toggleEffects();
-    Q_INVOKABLE void nextTrack() { m_synth.nextTrack(); }
+    Q_INVOKABLE void nextTrack() { m_audio.nextTrack(); }
     Q_INVOKABLE void toggleBanner();
     // Puts the waiting score on the board; an empty name uses the last one.
     Q_INVOKABLE void saveScore(const QString &name);
@@ -121,7 +121,7 @@ private:
     static int flightKey(int key);
 
     Flight m_flight;
-    Synth m_synth;
+    Audio m_audio;
     QString m_settingsFile, m_settingsError;
     Scene::Look m_look;
     QVariantList m_scores;

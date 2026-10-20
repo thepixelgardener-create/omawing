@@ -19,9 +19,9 @@ Backend::Backend(QObject *parent, const QString &settingsFile)
     : QObject(parent),
       m_settingsFile(!settingsFile.isEmpty() ? settingsFile
                      : QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/omawing.conf") {
-    connect(&m_synth, &Synth::changed, this, [this] {
+    connect(&m_audio, &Audio::changed, this, [this] {
         // A failed device turns the sound off, so the button tells the truth.
-        if (!m_synth.error().isEmpty())
+        if (!m_audio.error().isEmpty())
             m_musicWanted = m_effectsWanted = false;
         emit changed();
     });
@@ -126,9 +126,9 @@ bool Backend::store(std::initializer_list<std::pair<const char *, QVariant>> val
 }
 
 void Backend::endRun() {
-    if (m_flight.demo && m_flight.score == 0)
+    if (m_flight.demo && m_flight.game.score == 0)
         return;
-    const Run run{m_flight.score, m_flight.ringsFlown};
+    const Run run{m_flight.game.score, m_flight.game.ringsFlown};
     m_flight.newRun();
     if (!qualifies(run.score))
         return;
@@ -167,15 +167,15 @@ Scene::Hud Backend::hud() const {
 
     Scene::Hud hud{status, mode, tr("THRUST"), tr("ALT %1").arg(altitude), tr("A LOVE LETTER TO THE DEMOSCENE")};
     const bool playing = !m_flight.demo;
-    const int top = std::max(best(), playing ? m_flight.score : 0);
+    const int top = std::max(best(), playing ? m_flight.game.score : 0);
     if (playing) {
         hud.hull = tr("HULL");
         hud.score = tr("SCORE");
-        hud.points = digits(locale, m_flight.score);
+        hud.points = digits(locale, m_flight.game.score);
     }
     if (top > 0)
         hud.best = tr("BEST %1").arg(digits(locale, top));
-    if (m_flight.wrecked >= 0)
+    if (m_flight.game.wrecked >= 0)
         hud.alert = tr("HULL BREACHED");
     return hud;
 }
@@ -215,13 +215,13 @@ void Backend::tick(double seconds) {
     if (!m_paused) {
         m_flight.step(dt);
         const unsigned cues = m_flight.events;
-        if (cues & Flight::Wreck) m_synth.play(Synth::Wreck);
-        else if (cues & Flight::Impact) m_synth.play(Synth::Impact);
-        if (cues & Flight::RingPassed) m_synth.play(Synth::Ring);
-        if (cues & Flight::BoostStarted) m_synth.play(Synth::Boost);
+        if (cues & Flight::Wreck) m_audio.play(Audio::Wreck);
+        else if (cues & Flight::Impact) m_audio.play(Audio::Impact);
+        if (cues & Flight::RingPassed) m_audio.play(Audio::Ring);
+        if (cues & Flight::BoostStarted) m_audio.play(Audio::Boost);
         // A wreck that has finished falling ends the run, and the autopilot
         // takes over again.
-        if (m_flight.over())
+        if (m_flight.game.over())
             setDemo(true);
         emit frameChanged();
     }
@@ -303,7 +303,7 @@ void Backend::applyVolume() {
     auto gain = [](double v) {
         return QtAudio::convertVolume(float(v), QtAudio::LogarithmicVolumeScale, QtAudio::LinearVolumeScale);
     };
-    m_synth.setVolume(gain(m_musicVolume) * 0.6f, gain(m_effectsVolume));
+    m_audio.setVolume(gain(m_musicVolume) * 0.6f, gain(m_effectsVolume));
 }
 
 void Backend::toggleEffects() {
@@ -323,7 +323,7 @@ void Backend::toggleBanner() {
 
 void Backend::syncSound() {
     const bool audible = !m_paused && !m_hidden;
-    m_synth.setRunning(m_musicWanted && audible, m_effectsWanted && audible);
+    m_audio.setRunning(m_musicWanted && audible, m_effectsWanted && audible);
 }
 
 void Backend::setHidden(bool hidden) {

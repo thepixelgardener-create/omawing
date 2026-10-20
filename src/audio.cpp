@@ -1,4 +1,4 @@
-#include "synth.h"
+#include "audio.h"
 
 #include <QAudioDevice>
 #include <QAudioOutput>
@@ -11,20 +11,20 @@
 #include <algorithm>
 
 namespace {
-const std::array<const char *, Synth::TrackCount> tracks = {
+const std::array<const char *, Audio::TrackCount> tracks = {
     "Pyramids_Of_Glass", "Across_the_Vector_Plane", "Velvet_Horizon"
 };
-const std::array<const char *, Synth::EffectCount> effects = {"boost", "ring", "impact", "wreck"};
+const std::array<const char *, Audio::EffectCount> effects = {"boost", "ring", "impact", "wreck"};
 }
 
-Synth::Synth(QObject *parent) : QObject(parent) {}
-Synth::~Synth() = default;
+Audio::Audio(QObject *parent) : QObject(parent) {}
+Audio::~Audio() = default;
 
 // The soundtrack is read from files rather than compiled in: Qt's FFmpeg
 // backend copies a compiled-in track to a temporary file to play it, and
 // leaves the 4 MB copy behind. Installed, the tracks are in
 // /usr/share/omawing/music; in a build tree, in src/audio.
-QUrl Synth::trackSource(int track) {
+QUrl Audio::trackSource(int track) {
     const QString file = QString::fromLatin1(tracks.at(track)) + ".mp3";
     const QString app = QCoreApplication::applicationDirPath();
     for (const QString &directory : {qEnvironmentVariable("OMAWING_MUSIC_DIR"), app + "/../share/omawing/music",
@@ -38,16 +38,16 @@ QUrl Synth::trackSource(int track) {
     return {};
 }
 
-QUrl Synth::effectSource(Effect effect) {
+QUrl Audio::effectSource(Effect effect) {
     return QUrl("qrc:/audio/" + QString::fromLatin1(effects.at(effect)) + ".wav");
 }
 
-QString Synth::trackTitle() const {
+QString Audio::trackTitle() const {
     static const std::array<const char *, TrackCount> titles = {"Pyramids Of Glass", "Across the Vector Plane", "Velvet Horizon"};
     return QString::fromLatin1(titles[m_track]);
 }
 
-void Synth::fail(const QString &message) {
+void Audio::fail(const QString &message) {
     m_running = false;
     m_error = message;
     if (m_player) m_player->pause();
@@ -55,7 +55,7 @@ void Synth::fail(const QString &message) {
     emit changed();
 }
 
-void Synth::openAudio() {
+void Audio::openAudio() {
     m_output = std::make_unique<QAudioOutput>(this);
     m_output->setVolume(m_musicVolume);
     m_player = std::make_unique<QMediaPlayer>(this);
@@ -80,7 +80,7 @@ void Synth::openAudio() {
     selectTrack();
 }
 
-void Synth::selectTrack() {
+void Audio::selectTrack() {
     if (!m_player) return;
     const QUrl source = trackSource(m_track);
     if (source.isEmpty())
@@ -89,7 +89,7 @@ void Synth::selectTrack() {
     if (m_running && m_music) m_player->play();
 }
 
-void Synth::setRunning(bool music, bool effects) {
+void Audio::setRunning(bool music, bool effects) {
     const bool running = music || effects;
     if (running == m_running && music == m_music && effects == m_effectsOn && m_error.isEmpty()) return;
     m_music = music;
@@ -130,20 +130,20 @@ void Synth::setRunning(bool music, bool effects) {
     emit changed();
 }
 
-void Synth::nextTrack() {
+void Audio::nextTrack() {
     m_track = (m_track + 1) % TrackCount;
     selectTrack();
     emit changed();
 }
 
-void Synth::play(Effect effect) {
+void Audio::play(Effect effect) {
     if (!m_running || !m_effectsOn || !m_effects[effect] || m_effects[effect]->status() != QSoundEffect::Ready) return;
     // Retrigger rather than stacking copies of the same impact without limit.
     m_effects[effect]->stop();
     m_effects[effect]->play();
 }
 
-void Synth::setVolume(float music, float effects) {
+void Audio::setVolume(float music, float effects) {
     m_musicVolume = std::clamp(music, 0.0f, 1.0f);
     m_effectVolume = std::clamp(effects, 0.0f, 1.0f);
     if (m_output) m_output->setVolume(m_musicVolume);

@@ -8,10 +8,11 @@ TEMPLATE = app
 HEADERS += \
     src/backend.h \
     src/flight.h \
+    src/game.h \
     src/geometry.h \
     src/flightview.h \
     src/scene.h \
-    src/synth.h \
+    src/audio.h \
     src/theme.h \
     src/translator.h
 
@@ -19,9 +20,10 @@ SOURCES += \
     src/main.cpp \
     src/backend.cpp \
     src/flight.cpp \
+    src/game.cpp \
     src/flightview.cpp \
     src/scene.cpp \
-    src/synth.cpp \
+    src/audio.cpp \
     src/theme.cpp \
     src/translator.cpp
 

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace geo;
+
 namespace {
 // The shortest signed angle from a to b, so turning never goes the long way round.
 double turn(double from, double to) { return std::atan2(std::sin(to - from), std::cos(to - from)); }
@@ -57,8 +59,8 @@ void Flight::step(double dt) {
     const double px = ship.x, py = ship.y, pz = ship.z;
     double steering = 0, climb = 0;
     bool boost = false;
-    if (wrecked >= 0) {
-        wrecked += dt;
+    if (game.wrecking()) {
+        // A wreck has no say over where it goes.
     } else if (demo) {
         const double wantedYaw = std::sin(time * 0.24) * 0.28 + std::sin(time * 0.51) * 0.07;
         steering = clampTo(turn(ship.yaw, wantedYaw) * 2.2, -0.7, 0.7);
@@ -81,7 +83,7 @@ void Flight::step(double dt) {
 
     // Exhaust, spread along the path the nozzles took this step so the
     // trail stays smooth at any speed.
-    if (wrecked < 0) {
+    if (!game.wrecking()) {
         const Vec velocity{(ship.x - px) / dt, (ship.y - py) / dt, (ship.z - pz) / dt};
         const Vec back = rotate({0, 0, -1}, {ship.yaw, ship.pitch, ship.bank});
         const auto from = nozzles();
@@ -94,7 +96,8 @@ void Flight::step(double dt) {
         }
     }
     if (!demo)
-        play(dt, px, py, pz);
+        game.play(*this, dt, {px, py, pz});
+    game.age(dt);
     animateParticles(dt);
 }
 
@@ -102,7 +105,7 @@ void Flight::steer(double dt, double steering, double climb, bool boost) {
     // Exponential smoothing makes the motion independent of the frame rate.
     const double ease = 1 - std::exp(-dt * 5);
     ship.yaw += steering * dt * 0.85;
-    if (wrecked >= 0) {
+    if (game.wrecking()) {
         // A wreck rolls over and sinks.
         ship.bank += dt * 6.5;
         ship.vertical = mix(ship.vertical, -5, ease);
@@ -112,7 +115,7 @@ void Flight::steer(double dt, double steering, double climb, bool boost) {
         ship.vertical = mix(ship.vertical, climb * 4.2, ease);
         ship.pitch = mix(ship.pitch, -climb * 0.16, ease);
     }
-    ship.speed = mix(ship.speed, wrecked >= 0 ? 8 : boost ? BoostSpeed : CruiseSpeed, 1 - std::exp(-dt * 2.4));
+    ship.speed = mix(ship.speed, game.wrecking() ? 8 : boost ? BoostSpeed : CruiseSpeed, 1 - std::exp(-dt * 2.4));
     ship.x += std::sin(ship.yaw) * ship.speed * dt;
     ship.z += std::cos(ship.yaw) * ship.speed * dt;
     ship.y = clampTo(ship.y + ship.vertical * dt, MinAltitude, MaxAltitude);
@@ -143,89 +146,6 @@ void Flight::follow(double dt) {
     camera.pitch = mix(camera.pitch, std::atan2(ty - camera.y, std::hypot(tx - camera.x, tz - camera.z)), yawEase);
     camera.drift += (camera.x - ox) * std::cos(camera.yaw) - (camera.z - oz) * std::sin(camera.yaw);
     camera.shake = std::max(0.0, camera.shake - dt * 1.8);
-}
-
-void Flight::play(double dt, double px, double py, double pz) {
-    hurt = std::max(0.0, hurt - dt);
-    if (wrecked >= 0) {
-        if (random() < dt * 40)
-            emitParticles(Particle::Smoke, {ship.x, ship.y + 0.3, ship.z}, {0, 1.5, 0}, 0.8, 1);
-        return;
-    }
-
-    // Rings whose plane the ship crossed this step, in either direction.
-    const double lo = std::min(pz, ship.z), hi = std::max(pz, ship.z);
-    for (int i = int(std::floor((lo - 24) / World::RingSpacing)); i <= int(std::ceil((hi - 24) / World::RingSpacing)); ++i) {
-        const Ring r = World::ring(i);
-        if ((pz < r.z) == (ship.z < r.z) || collected.count(i))
-            continue;
-        const double t = (r.z - pz) / (ship.z - pz);
-        const double off = std::hypot(mix(px, ship.x, t) - r.x, mix(py, ship.y, t) - r.y);
-        if (off < World::RingRadius - 0.75) {
-            const int points = 100 * multiplier * (boostAmount() > 0.6 ? 2 : 1);
-            score += points;
-            events |= RingPassed;
-            popups.push_back({{r.x, r.y + 1.5, r.z}, points, multiplier, 0});
-            multiplier = std::min(MaxMultiplier, multiplier + 1);
-            ++ringsFlown;
-            collected.insert(i);
-            hull = std::min(FullHull, hull + 3);
-            for (int k = 0; k < 40; ++k) {
-                const double a = k * 2 * M_PI / 40;
-                emitParticles(Particle::Glitter, {r.x + std::cos(a) * World::RingRadius, r.y + std::sin(a) * World::RingRadius, r.z},
-                     {std::cos(a) * 2.5, std::sin(a) * 2.5, (ship.z - pz) / dt * 0.25}, 0.8, 1);
-            }
-        } else if (off < World::RingRadius + 0.75) {
-            if (hurt <= 0)
-                damage(12, {ship.x, ship.y, ship.z});
-            multiplier = 1;
-        } else {
-            // Passing a ring by breaks the chain.
-            multiplier = 1;
-        }
-    }
-
-    if (hurt > 0)
-        return;
-    auto hits = [&](const Obstacle &o) {
-        const double dx = ship.x - o.x, dy = ship.y - o.y, dz = ship.z - o.z;
-        switch (o.kind) {
-        case Obstacle::Pyramid: {
-            const double edge = std::max(0.0, std::max(std::abs(dx), std::abs(dz)) - 0.7);
-            return edge < World::PyramidHalf && dy < World::PyramidHeight * (1 - edge / World::PyramidHalf) + 0.3;
-        }
-        case Obstacle::Crystal:
-            return std::hypot(dx, dz) < 2.1 && dy > -1.6 && dy < 4.6;
-        default:
-            return std::hypot(dx, dy, dz) < World::BallRadius + 0.9;
-        }
-    };
-    auto obstacles = World::scenery(ship.x, ship.z, 1, time);
-    obstacles.push_back(World::ball(ship.z, time));
-    for (const Obstacle &o : obstacles)
-        if (hits(o)) {
-            damage(o.kind == Obstacle::Pyramid ? 34 : o.kind == Obstacle::Ball ? 25 : 20, {ship.x, ship.y, ship.z});
-            break;
-        }
-}
-
-void Flight::damage(double amount, const Vec &at) {
-    events |= Impact;
-    hull = std::max(0.0, hull - amount);
-    hurt = 1.4;
-    multiplier = 1;
-    camera.shake = 1;
-    ship.speed *= 0.55;
-    // Knocked upwards, with the wings ringing.
-    ship.vertical = 6;
-    ship.flexLeftRate += 4;
-    ship.flexRightRate -= 4;
-    emitParticles(Particle::Spark, at, {0, 3, 0}, 9, 36);
-    if (hull <= 0) {
-        wrecked = 0;
-        events |= Wreck;
-        emitParticles(Particle::Spark, at, {0, 4, 0}, 13, 60);
-    }
 }
 
 void Flight::emitParticles(Particle::Kind kind, const Vec &at, const Vec &velocity, double spread, int count) {
@@ -265,14 +185,9 @@ void Flight::animateParticles(double dt) {
         }
     }
     std::erase_if(particles, [](const Particle &p) { return p.age >= p.life; });
-    for (Popup &popup : popups) {
-        popup.age += dt;
-        popup.position[1] += dt * 2;
-    }
-    std::erase_if(popups, [](const Popup &popup) { return popup.age >= 1.4; });
 }
 
-// A small linear congruential generator, so a flight replays exactly.
+// A small linear congruential generator.
 double Flight::random() {
     m_seed = m_seed * 1664525u + 1013904223u;
     return (m_seed >> 8) / double(1u << 24);
@@ -312,14 +227,7 @@ void Flight::newRun() {
     fresh.z = ship.z;
     fresh.yaw = ship.yaw;
     ship = fresh;
-    hull = FullHull;
-    score = 0;
-    multiplier = 1;
-    ringsFlown = 0;
-    hurt = 0;
-    wrecked = -1;
-    collected.clear();
-    popups.clear();
+    game.reset();
 }
 
 // Lands two seconds into the next act, after its colours have blended in.

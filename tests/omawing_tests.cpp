@@ -24,7 +24,7 @@
 #include "backend.h"
 #include "flight.h"
 #include "scene.h"
-#include "synth.h"
+#include "audio.h"
 #include "theme.h"
 #include "translator.h"
 
@@ -116,7 +116,7 @@ private slots:
         QTemporaryDir settings;
         Backend backend(nullptr, settings.filePath("game.ini"));
         // Test the altitude limiter independently of ring impacts.
-        backend.flight().hurt = 1000;
+        backend.flight().game.hurt = 1000;
         backend.keyDown(Qt::Key_W);
         backend.flight().advance(15);
         QCOMPARE(backend.flight().ship.y, Flight::MaxAltitude);
@@ -276,35 +276,35 @@ private slots:
         const Ring r = World::ring(0);
         f.ship.x = r.x; f.ship.y = r.y; f.ship.z = r.z - 0.1;
         f.step(1.0 / 60);
-        QCOMPARE(f.score, 100);
-        QCOMPARE(f.ringsFlown, 1);
-        QCOMPARE(f.multiplier, 2);
+        QCOMPARE(f.game.score, 100);
+        QCOMPARE(f.game.ringsFlown, 1);
+        QCOMPARE(f.game.multiplier, 2);
         f.ship.yaw = M_PI;
         f.advance(0.1);
-        QCOMPARE(f.score, 100);
+        QCOMPARE(f.game.score, 100);
         const Ring next = World::ring(1);
         f.ship.x = next.x; f.ship.y = next.y; f.ship.z = next.z - 0.5;
         f.ship.yaw = 0; f.ship.speed = Flight::BoostSpeed;
         f.press(Flight::Boost);
         f.step(0.05);
-        QCOMPARE(f.score, 500);
-        QCOMPARE(f.multiplier, 3);
-        QVERIFY(f.popups.size() == 2);
+        QCOMPARE(f.game.score, 500);
+        QCOMPARE(f.game.multiplier, 3);
+        QVERIFY(f.game.popups.size() == 2);
     }
 
     void missedRingAndRimBreakTheChain() {
         Flight f;
         f.demo = false;
         const Ring r = World::ring(0);
-        f.multiplier = 4;
+        f.game.multiplier = 4;
         f.ship.x = r.x + 7; f.ship.y = r.y; f.ship.z = r.z - 0.1;
         f.step(1.0 / 60);
-        QCOMPARE(f.score, 0);
-        QCOMPARE(f.multiplier, 1);
-        QCOMPARE(f.hull, Flight::FullHull);
+        QCOMPARE(f.game.score, 0);
+        QCOMPARE(f.game.multiplier, 1);
+        QCOMPARE(f.game.hull, Game::FullHull);
         f.ship.x = r.x + World::RingRadius; f.ship.z = r.z - 0.1;
         f.step(1.0 / 60);
-        QCOMPARE(f.hull, Flight::FullHull - 12);
+        QCOMPARE(f.game.hull, Game::FullHull - 12);
     }
 
     void collisionsDamageWithInvulnerabilityAndEndTheRun() {
@@ -316,20 +316,20 @@ private slots:
         const auto o = *std::find_if(obstacles.begin(), obstacles.end(), [](const Obstacle &o) { return o.kind == Obstacle::Pyramid; });
         auto collide = [&] { f.ship.x = o.x; f.ship.y = 2; f.ship.z = o.z; backend.tick(0.016); };
         collide();
-        QCOMPARE(f.hull, 66.0);
+        QCOMPARE(f.game.hull, 66.0);
         QVERIFY(f.camera.shake > 0);
         collide();
-        QCOMPARE(f.hull, 66.0);
-        f.hurt = 0; collide();
-        QCOMPARE(f.hull, 32.0);
-        f.score = 700; f.ringsFlown = 3;
-        f.hurt = 0; collide();
-        QCOMPARE(f.hull, 0.0);
-        QVERIFY(f.wrecked >= 0);
+        QCOMPARE(f.game.hull, 66.0);
+        f.game.hurt = 0; collide();
+        QCOMPARE(f.game.hull, 32.0);
+        f.game.score = 700; f.game.ringsFlown = 3;
+        f.game.hurt = 0; collide();
+        QCOMPARE(f.game.hull, 0.0);
+        QVERIFY(f.game.wrecked >= 0);
         for (int i = 0; i < 55; ++i) backend.tick(0.05);
         QVERIFY(backend.demo());
         QCOMPARE(backend.pendingScore(), 700);
-        QCOMPARE(f.hull, Flight::FullHull);
+        QCOMPARE(f.game.hull, Game::FullHull);
     }
 
     void wingsAndParticlesRespondWithoutInvalidNumbers() {
@@ -360,13 +360,13 @@ private slots:
             Backend b(nullptr, path);
             b.toggleBanner();
             for (int i = 1; i <= 12; ++i) {
-                b.setDemo(false); b.flight().score = i * 100; b.flight().ringsFlown = i;
+                b.setDemo(false); b.flight().game.score = i * 100; b.flight().game.ringsFlown = i;
                 b.setDemo(true); b.saveScore("  Pilot  ");
             }
             QCOMPARE(b.scores().size(), Backend::BoardSize);
             QCOMPARE(b.best(), 1200);
             QCOMPARE(b.scores().last().toMap().value("score").toInt(), 300);
-            b.setDemo(false); b.flight().score = 2000; // Quitting mid-run saves too.
+            b.setDemo(false); b.flight().game.score = 2000; // Quitting mid-run saves too.
         }
         Backend loaded(nullptr, path);
         QCOMPARE(loaded.best(), 2000);
@@ -380,7 +380,7 @@ private slots:
         const QString blocked = settings.filePath("blocked");
         write(blocked, "file, not a directory");
         Backend b(nullptr, blocked + "/game.ini");
-        b.setDemo(false); b.flight().score = 100; b.setDemo(true);
+        b.setDemo(false); b.flight().game.score = 100; b.setDemo(true);
         b.saveScore("Pilot");
         QVERIFY(!b.settingsError().isEmpty());
         QCOMPARE(b.pendingScore(), 100);
@@ -437,8 +437,8 @@ private slots:
         QTest::keyClick(window, Qt::Key_P);
         QCOMPARE(backend.trackTitle(), QString("Across the Vector Plane"));
         backend.setDemo(false);
-        backend.flight().score = 1200;
-        backend.flight().ringsFlown = 6;
+        backend.flight().game.score = 1200;
+        backend.flight().game.ringsFlown = 6;
         backend.setDemo(true);
         auto board = window->findChild<QObject *>("scoreBoard");
         QVERIFY(board);
@@ -482,9 +482,9 @@ private slots:
         backend.flight().ship.x = 0;
         backend.flight().ship.y = 4;
         backend.flight().ship.yaw = 0;
-        backend.flight().score = 1350;
-        backend.flight().hull = 76;
-        backend.flight().multiplier = 3;
+        backend.flight().game.score = 1350;
+        backend.flight().game.hull = 76;
+        backend.flight().game.multiplier = 3;
         backend.toggleBanner();
         backend.setPaused(false);
         window->setProperty("pointerAwake", false);
@@ -525,11 +525,11 @@ private slots:
         QList<QUrl> sources;
         // Tracks play from files: a compiled-in track would be copied to a
         // temporary file that is never removed.
-        for (int i = 0; i < Synth::TrackCount; ++i) {
-            QVERIFY(Synth::trackSource(i).isLocalFile());
-            sources << Synth::trackSource(i);
+        for (int i = 0; i < Audio::TrackCount; ++i) {
+            QVERIFY(Audio::trackSource(i).isLocalFile());
+            sources << Audio::trackSource(i);
         }
-        for (int i = 0; i < Synth::EffectCount; ++i) sources << Synth::effectSource(Synth::Effect(i));
+        for (int i = 0; i < Audio::EffectCount; ++i) sources << Audio::effectSource(Audio::Effect(i));
         for (const auto &source : sources) {
             QAudioDecoder decoder;
             decoder.setSource(source);
@@ -546,7 +546,7 @@ private slots:
 
     void soundtrackPausesSkipsAndLoopsWithoutPlayingOldCues() {
         if (QMediaDevices::defaultAudioOutput().isNull()) QSKIP("No audio device; decoding is tested independently.");
-        Synth sound;
+        Audio sound;
         sound.setVolume(0, 0); // Exercise the real player without making test noise.
         sound.setRunning(true);
         auto player = sound.findChild<QMediaPlayer *>();
@@ -571,14 +571,14 @@ private slots:
         player->setPosition(player->duration() - 200);
         QTRY_COMPARE_WITH_TIMEOUT(sound.track(), 0, 10000);
         const auto effects = sound.findChildren<QSoundEffect *>();
-        QCOMPARE(effects.size(), Synth::EffectCount);
+        QCOMPARE(effects.size(), Audio::EffectCount);
         for (auto effect : effects) QTRY_COMPARE(effect->status(), QSoundEffect::Ready);
-        sound.play(Synth::Ring);
-        auto ring = *std::find_if(effects.begin(), effects.end(), [](QSoundEffect *e) { return e->source() == Synth::effectSource(Synth::Ring); });
+        sound.play(Audio::Ring);
+        auto ring = *std::find_if(effects.begin(), effects.end(), [](QSoundEffect *e) { return e->source() == Audio::effectSource(Audio::Ring); });
         QTRY_VERIFY(ring->isPlaying());
         sound.setRunning(false);
         QVERIFY(!ring->isPlaying());
-        sound.play(Synth::Ring);
+        sound.play(Audio::Ring);
         QVERIFY(!ring->isPlaying());
     }
 
@@ -618,7 +618,7 @@ private slots:
         QVERIFY(!(f.events & Flight::RingPassed));
         const Ring ring = World::ring(1);
         f.ship.x = ring.x + World::RingRadius; f.ship.y = ring.y; f.ship.z = ring.z - 0.1;
-        f.hull = 10;
+        f.game.hull = 10;
         f.step(0.016);
         QVERIFY(f.events & Flight::Impact);
         QVERIFY(f.events & Flight::Wreck);

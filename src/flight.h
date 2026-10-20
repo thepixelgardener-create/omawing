@@ -1,11 +1,12 @@
 #pragma once
 
-// The ship, its chase camera, the world's scenery, and the timed demo
-// sequence. Pure simulation: no Qt types, so tests can fly it without a window.
+// The ship, its chase camera, the world's scenery, particles, and the timed
+// demo sequence; the arcade rules are in Game. Pure simulation: no Qt types,
+// so tests can fly it without a window.
 
-#include <set>
 #include <vector>
 
+#include "game.h"
 #include "geometry.h"
 
 struct Ship {
@@ -27,13 +28,6 @@ struct Particle {
     Vec position, velocity;
     double age = 0, life = 1, size = 0.3;
     Kind kind = Exhaust;
-};
-
-// Points scored at a ring, floating up where they were won.
-struct Popup {
-    Vec position;
-    int points = 0, multiplier = 1;
-    double age = 0;
 };
 
 struct Obstacle {
@@ -67,13 +61,12 @@ public:
     static constexpr double ActLength = 24;
     static constexpr double MinAltitude = 1.4, MaxAltitude = 16;
     static constexpr double CruiseSpeed = 13, BoostSpeed = 27;
-    static constexpr double FullHull = 100, WreckTime = 2.5;
-    static constexpr int MaxMultiplier = 8, MaxParticles = 700;
+    static constexpr int MaxParticles = 700;
 
     enum Key { Left = 1, Right = 2, Climb = 4, Descend = 8, Boost = 16 };
 
     enum Event { RingPassed = 1, Impact = 2, Wreck = 4, BoostStarted = 8 };
-    // One-step cues, consumed by the audio layer after simulation.
+    // The cues of the last step (or advance), for the sound effects.
     unsigned events = 0;
 
     Ship ship;
@@ -81,21 +74,12 @@ public:
     double time = 0;
     bool demo = true;
 
-    // The game, played while you have the controls. Rings score, scenery
-    // hurts, and the run ends when the hull gives out.
-    double hull = FullHull;
-    int score = 0, multiplier = 1, ringsFlown = 0;
-    double hurt = 0;     // Seconds left of the flicker after a hit, when nothing else can hurt.
-    double wrecked = -1; // Seconds since the hull gave out, or -1.
-    std::set<int> collected;
+    // The run in progress, played while you have the controls.
+    Game game;
     std::vector<Particle> particles;
-    std::vector<Popup> popups;
 
     int act() const;
     double boostAmount() const;
-    // The run is over once the wreck has had time to fall; the app then
-    // records the score and starts a new one.
-    bool over() const { return wrecked >= WreckTime; }
 
     void step(double dt);
     // Simulates any length of time in 1/60-second steps, so a jump forward
@@ -118,14 +102,16 @@ public:
     // Where the two engines' nozzles are, in the world.
     std::array<Vec, 2> nozzles() const;
 
+    // Effects: `count` particles from `at`, moving at `velocity` plus up to
+    // `spread` in a random direction.
+    void emitParticles(Particle::Kind kind, const Vec &at, const Vec &velocity, double spread, int count);
+    // A number in [0, 1) from a fixed seed, so a flight replays exactly.
+    double random();
+
 private:
     void steer(double dt, double steer, double climb, bool boost);
     void follow(double dt);
-    void play(double dt, double previousX, double previousY, double previousZ);
-    void damage(double amount, const Vec &at);
-    void emitParticles(Particle::Kind kind, const Vec &at, const Vec &velocity, double spread, int count);
     void animateParticles(double dt);
-    double random();
 
     int m_held = 0;
     bool m_stick = false, m_boosting = false;
