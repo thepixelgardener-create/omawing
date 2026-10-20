@@ -109,20 +109,37 @@ picking a new theme flies straight into that scene so you see it at once.
 
 ## Install
 
-From the AUR, which downloads this source and builds it on your machine:
-
-```sh
-yay -S omawing
-```
-
-`yay` shows the build recipe ([aur/PKGBUILD](aur/PKGBUILD)) before building;
-it fetches the tagged release from this repository, checks its SHA-256, and
-builds with Arch's compiler flags. The package installs only files, with no
+Pick whichever you're comfortable trusting. Each installs only files, with no
 install scripts: the program, the soundtrack, a launcher entry, an icon, and
 the licence. Omawing runs as your user, makes no network connections, and runs
-no programs other than `hyprctl` (to read the window rounding).
+no program other than `hyprctl` (to read the window rounding).
 
-To try it without installing anything, build and run it from a clone:
+**Build it yourself from the recipe.** This is exactly what the AUR does. Read
+[aur/PKGBUILD](aur/PKGBUILD) first if you like; it downloads the tagged source
+from this repository, checks its SHA-256, and builds it with Arch's compiler
+flags:
+
+```sh
+git clone https://github.com/thepixelgardener-create/omawing
+cd omawing/aur && makepkg -si
+```
+
+**Or download the package GitHub built.** Release packages are built by
+[a public workflow](.github/workflows/release.yml) in a clean Arch Linux
+container, never on anyone's computer, and carry a signed record of the
+workflow and commit that built them. Download `omawing-*.pkg.tar.zst` from the
+[latest release](https://github.com/thepixelgardener-create/omawing/releases/latest),
+then check it and install it:
+
+```sh
+gh attestation verify omawing-0.3.0-1-x86_64.pkg.tar.zst -R thepixelgardener-create/omawing
+sudo pacman -U omawing-0.3.0-1-x86_64.pkg.tar.zst
+```
+
+`yay -S omawing` will work once the package is on the AUR; new AUR accounts
+are paused at the moment.
+
+To try it without installing anything:
 
 ```sh
 git clone https://github.com/thepixelgardener-create/omawing
