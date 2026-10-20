@@ -1,4 +1,4 @@
-QT += core gui qml quick quickcontrols2 multimedia
+QT += core gui network qml quick quickcontrols2 multimedia
 
 CONFIG += c++20 release
 QMAKE_CXXFLAGS += -Wno-missing-field-initializers

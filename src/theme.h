@@ -2,6 +2,7 @@
 
 #include <QFileSystemWatcher>
 #include <QHash>
+#include <QLocalSocket>
 #include <QObject>
 #include <QProcess>
 #include <QTimer>
@@ -31,6 +32,7 @@ signals:
 private:
     void reload();
     void refreshRounding();
+    void listenToHyprland();
 
     QHash<QString, QString> m_colors;
     QString m_name;
@@ -42,4 +44,8 @@ private:
     int m_radius = 0;
     QProcess m_roundingProcess;
     QTimer m_roundingPoll, m_roundingTimeout;
+    // Hyprland's event socket: rounding is asked for again only when its
+    // config reloads, instead of starting hyprctl every second.
+    QLocalSocket m_events;
+    QByteArray m_eventBuffer;
 };

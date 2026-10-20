@@ -1,4 +1,4 @@
-QT += core gui quick quickcontrols2 multimedia testlib
+QT += core gui network quick quickcontrols2 multimedia testlib
 CONFIG += c++20 testcase
 QMAKE_CXXFLAGS += -Wno-missing-field-initializers
 TARGET = omawing_tests

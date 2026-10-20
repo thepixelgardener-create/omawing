@@ -42,12 +42,38 @@ Theme::Theme(const QString &directory, QObject *parent, const QString &hyprctl)
     });
     m_roundingPoll.setInterval(1000);
     connect(&m_roundingPoll, &QTimer::timeout, this, &Theme::refreshRounding);
-    if (!m_hyprctl.isEmpty())
+    if (!m_hyprctl.isEmpty()) {
+        // Polling is the fallback, for when the event socket isn't there.
         m_roundingPoll.start();
+        if (directory.isEmpty())
+            listenToHyprland();
+    }
     reload();
 }
 
+void Theme::listenToHyprland() {
+    const QString path = qEnvironmentVariable("XDG_RUNTIME_DIR") + "/hypr/" +
+                         qEnvironmentVariable("HYPRLAND_INSTANCE_SIGNATURE") + "/.socket2.sock";
+    connect(&m_events, &QLocalSocket::connected, this, [this] { m_roundingPoll.stop(); });
+    connect(&m_events, &QLocalSocket::disconnected, this, [this] { m_roundingPoll.start(); });
+    connect(&m_events, &QLocalSocket::errorOccurred, this, [this] { m_roundingPoll.start(); });
+    connect(&m_events, &QLocalSocket::readyRead, this, [this] {
+        m_eventBuffer += m_events.readAll();
+        bool reloaded = false;
+        for (qsizetype end; (end = m_eventBuffer.indexOf('\n')) >= 0; m_eventBuffer.remove(0, end + 1))
+            reloaded |= m_eventBuffer.startsWith("configreloaded>>");
+        // A line never ends only if something is wrong; don't let it grow.
+        if (m_eventBuffer.size() > 64 * 1024)
+            m_eventBuffer.clear();
+        if (reloaded)
+            refreshRounding();
+    });
+    m_events.connectToServer(path);
+}
+
 Theme::~Theme() {
+    // Closing the socket on the way out mustn't restart the poll.
+    disconnect(&m_events, nullptr, this, nullptr);
     if (m_roundingProcess.state() != QProcess::NotRunning) {
         m_roundingProcess.kill();
         m_roundingProcess.waitForFinished(1000);
