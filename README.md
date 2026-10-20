@@ -1,13 +1,18 @@
 # Omawing
 
-![Omawing flying over the Copper Coast](screenshot.png)
+![Omawing flying over the Vector Garden](screenshot.png)
 
 An Amiga-style vector flight demo for Omarchy. A low-poly ship flies over an
 endless checkerboard under copper-bar skies, with a chase camera, a sine-wave
-scroller, and an optional chip-style soundtrack. It plays a 72-second loop of
-three scenes on autopilot; press any flight key to take the controls.
+scroller, and a three-track MP3 soundtrack with arcade sound effects. Nine
+scenes form a 216-second autopilot loop; press any flight key to take the controls and chase a high score.
 
-It is a native Qt Quick app: the flight, the 3D projection, and the synth are
+Three mountain layers and two cloud layers move at different speeds as you turn.
+The camera follows farther behind the ship and looks ahead toward the horizon.
+The wings flex on springs, sweep back under boost, and shake after impacts. Twin
+exhaust trails glow and fade with soft, transparent particles.
+
+It is a native Qt Quick app: the flight, the 3D projection, and the audio controls are
 C++, and the picture is painted straight into a GPU framebuffer. It began as
 an SVG-in-the-browser demo; the renderer is a port of that code.
 
@@ -22,7 +27,13 @@ an SVG-in-the-browser demo; the renderer is a port of that code.
 | Space | Pause or play |
 | T | Take control or watch the demo |
 | N | Next scene |
-| M | Turn sound on or off |
+| M | Turn music on or off |
+| E | Turn sound effects on or off |
+| V | Music and effects volume |
+| P | Next music track |
+| B | Show or hide the Omarchy slogan banner |
+| H | Open the local high-score board |
+| Esc | Close a panel or leave full screen |
 | R | Restart from the beginning |
 | F or F11 | Full screen on or off |
 | ? | Show or hide shortcuts |
@@ -30,7 +41,54 @@ an SVG-in-the-browser demo; the renderer is a port of that code.
 
 The toolbar appears when the mouse moves and fades out after a few seconds.
 Sound stays off until you turn it on; if there is no audio output, the window
-says so.
+says so. Minimizing pauses simulation and sound until the window is restored.
+
+## Soundtrack and effects
+
+The bundled playlist loops in this order:
+
+1. **Pyramids Of Glass** — 3:01
+2. **Across the Vector Plane** — 2:56
+3. **Velvet Horizon** — 2:55
+
+Press **M** for music and **E** for sound effects; each is remembered separately.
+**V** opens the volume panel: the arrow keys move a slider, Tab switches
+between music and effects, and Esc closes it. Levels are saved too. Press **P**, or click the current track
+name above the toolbar, to skip. Pausing, muting, opening the score board, and
+minimizing preserve the music position; resuming continues where you left off.
+Boosts, rings, impacts, and wrecks have separate short effects. Stopping sound
+clears effects so old collision noises do not replay when you resume.
+
+The MP3s ship as files in `/usr/share/omawing/music` (in a build tree they are
+read from `src/audio`); the short effects are compiled into the executable.
+Qt's FFmpeg backend copies a compiled-in track to a temporary file to stream
+it and never removes the copy, so the music stays on disk. `bin/generate-effects`
+rebuilds the four original WAV cues without touching the soundtrack.
+
+## Flying for points
+
+Fly through a ring for **100 points × your combo**. Consecutive rings increase
+that combo up to **8×**; boosting doubles the award. A clean pass repairs three
+hull points. Each ring can be collected only once per run, in either direction.
+Missing a ring or hitting scenery resets the combo.
+
+You start with 100 hull points. Pyramids cost 34, crystals 20, the bouncing ball
+25, and a ring rim 12. An impact flashes the hull gauge, shakes the camera,
+throws sparks, and gives 1.4 seconds of protection. At zero hull, the ship wrecks
+and the autopilot resumes. The demo itself is invulnerable.
+
+A completed run can enter the local top ten. Switching to the demo or restarting
+also ends the run; quitting preserves a qualifying score under your last name.
+The board pauses the flight while you enter a name. Scores and the banner
+preference are stored in `~/.config/omawing/omawing.conf` (or the platform's
+`XDG_CONFIG_HOME` equivalent).
+
+## Scenes
+
+Copper Coast · Vector Garden · Star Run · Omarchy · Neon Mirage · Amber Terminal ·
+Ice Palace · Lava Fields · C64 Dreams. Each lasts 24 seconds; **N** skips ahead.
+The Omarchy scene takes the current desktop theme's colours and name live, and
+picking a new theme flies straight into that scene so you see it at once.
 
 ## What it follows
 
@@ -39,7 +97,8 @@ says so.
   one more sky and ground. Nothing is letterboxed.
 - **The Omarchy theme.** The toolbar and shortcut overlay use the theme's
   accent and Hyprland's window rounding, and follow theme switches live. The
-  demo's own palettes are part of its artwork and stay as they are.
+  fourth scene also uses the current theme's palette; the other eight have
+  their own colours.
 - **The Omarchy language.** Every control and HUD line is translated into
   Omarchy's 50 languages and follows Setup > Language live. Right-to-left
   languages mirror the toolbar. The scene names and the scroller are the
@@ -49,28 +108,36 @@ says so.
 
 ```sh
 bin/build      # build/omawing
-bin/test       # Qt Test, offscreen
+bin/test       # Qt Test, offscreen; audio checks run silently
+bin/benchmark  # GPU rendering benchmark at 1080p and 4K
 bin/install    # makepkg -fsi: installs the binary, launcher entry, and icon
 ```
 
-After `bin/install`, Omawing is in the app launcher (Super + Space).
+After `bin/install`, Omawing is in the app launcher (Super + Alt + Space).
 
-`OMAWING_STATS=1 omawing` prints the frame rate and paint time once a second,
-and whether painting runs on the GPU or the CPU.
+`OMAWING_STATS=1 omawing` prints the frame rate, paint time, longest gap between
+frames, and the range of simulation steps once a second, logs every hitch (a gap
+over 25 ms), and says whether painting runs on the GPU or the CPU.
+
+The renderer rejects invisible polygons early and uses the GPU's convex-polygon
+path for the checkerboard and meshes. It retains native resolution and the full
+nine-scene sequence. `bin/benchmark` measures complete GPU frames (including a
+GPU finish), so its timings differ from the CPU paint timings in `OMAWING_STATS`.
 
 ## Source
 
 | File | Job |
 | --- | --- |
-| `src/flight.{h,cpp}` | The ship, chase camera, autopilot, and act timing. No Qt types. |
+| `src/flight.{h,cpp}` | Flight, collisions, rings, particles, chase camera, and act timing. No Qt types. |
 | `src/scene.{h,cpp}` | Projection, clipping, painter's-algorithm sorting, and every layer of the picture. |
-| `src/synth.{h,cpp}` | The chip loop as samples, played through Qt Multimedia. |
-| `src/backend.{h,cpp}` | State and actions for QML: pause, autopilot, sound, input. |
+| `src/synth.{h,cpp}` | Streaming MP3 playlist and preloaded gameplay effects through Qt Multimedia. |
+| `src/backend.{h,cpp}` | State and actions for QML: pause, autopilot, sound, input, preferences, and high scores. |
 | `src/flightview.{h,cpp}` | The Qt Quick item that paints the scene. |
-| `src/Main.qml` | The window, shortcuts, toolbar, and shortcut overlay. |
+| `src/Main.qml` | The window, toolbar, shortcut overlay, and high-score board. |
 | `src/theme.*`, `src/translator.*` | Omarchy accent, rounding, and language. |
 
 ## Limits
 
-The ship flies through scenery; there is no collision. Faces are sorted by
-average depth, so intersecting geometry can occasionally overlap wrongly.
+Collisions use simple ship-centred bounds rather than exact wing geometry.
+Faces are sorted by average depth, so intersecting geometry can occasionally
+overlap wrongly. The high-score board is local to this computer.

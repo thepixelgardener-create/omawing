@@ -1,10 +1,25 @@
 #include <QDir>
+#include <QAudioDecoder>
+#include <QAudioBuffer>
+#include <QAudioDevice>
+#include <QAudioOutput>
+#include <QMediaDevices>
+#include <QMediaPlayer>
+#include <QSoundEffect>
 #include <QFile>
 #include <QImage>
 #include <QPainter>
 #include <QTemporaryDir>
+#include <QSettings>
 #include <QtTest>
 #include <cmath>
+#include <limits>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQuickStyle>
+#include <QQuickWindow>
+#include <QQuickItem>
+#include "flightview.h"
 
 #include "backend.h"
 #include "flight.h"
@@ -17,18 +32,27 @@ class OmawingTests : public QObject {
     Q_OBJECT
 
 private slots:
-    void demoPlaysAllThreeActsAndLoops()
+    void initTestCase() {
+        qputenv("OMAWING_MUSIC_DIR", OMAWING_TEST_MUSIC);
+        QQuickStyle::setStyle("Material");
+        qmlRegisterType<FlightView>("Omawing", 1, 0, "FlightView");
+    }
+    void cleanup() {
+        QLocale::setDefault(QLocale::c());
+        QGuiApplication::setLayoutDirection(Qt::LeftToRight);
+    }
+    void demoPlaysAllNineActsAndLoops()
     {
         Flight flight;
         QSet<int> acts;
-        // 73 seconds: one second past the 72-second loop, clear of the boundary.
-        for (int i = 0; i < 146; ++i) {
+        // One second beyond the complete nine-act sequence.
+        for (int i = 0; i < int((Flight::Acts * Flight::ActLength + 1) * 2); ++i) {
             flight.advance(0.5);
             acts.insert(flight.act());
             QVERIFY(std::isfinite(flight.ship.x) && std::isfinite(flight.camera.yaw));
             QVERIFY(flight.ship.y >= Flight::MinAltitude && flight.ship.y <= Flight::MaxAltitude);
         }
-        QCOMPARE(acts.size(), 3);
+        QCOMPARE(acts.size(), Flight::Acts);
         QCOMPARE(flight.act(), 0);
     }
 
@@ -40,7 +64,7 @@ private slots:
             Flight flight;
             Scene scene;
             QImage image(size, QImage::Format_ARGB32_Premultiplied);
-            for (int i = 0; i < 146; ++i) {
+            for (int i = 0; i < int((Flight::Acts * Flight::ActLength + 1) * 2); ++i) {
                 flight.advance(0.5);
                 QPainter painter(&image);
                 scene.paint(painter, flight, size, {});
@@ -48,6 +72,16 @@ private slots:
                 int shipFaces = 0;
                 for (const auto &face : scene.faces()) {
                     shipFaces += face.ship;
+                    // The renderer's fast path requires convex projected faces.
+                    double winding = 0;
+                    for (int v = 0; v < face.polygon.size(); ++v) {
+                        const QPointF a = face.polygon[(v+1)%face.polygon.size()] - face.polygon[v];
+                        const QPointF b = face.polygon[(v+2)%face.polygon.size()] - face.polygon[(v+1)%face.polygon.size()];
+                        const double cross = a.x()*b.y() - a.y()*b.x();
+                        if (std::abs(cross) < 1e-5) continue;
+                        QVERIFY(winding == 0 || winding * cross >= 0);
+                        winding = cross;
+                    }
                     for (const QPointF &p : face.polygon) {
                         QVERIFY(std::isfinite(p.x()) && std::isfinite(p.y()));
                         QVERIFY(p.x() >= -0.01 && p.x() <= scene.width() + 0.01);
@@ -62,8 +96,10 @@ private slots:
 
     void steeringTakesOverAndBanks()
     {
-        Backend backend;
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
         QVERIFY(backend.demo());
+        backend.flight().ship.y = 14;
         QVERIFY(backend.keyDown(Qt::Key_D));
         QVERIFY(!backend.demo());
         backend.flight().advance(3);
@@ -77,7 +113,10 @@ private slots:
 
     void altitudeStaysBetweenGroundAndCeiling()
     {
-        Backend backend;
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
+        // Test the altitude limiter independently of ring impacts.
+        backend.flight().hurt = 1000;
         backend.keyDown(Qt::Key_W);
         backend.flight().advance(15);
         QCOMPARE(backend.flight().ship.y, Flight::MaxAltitude);
@@ -89,7 +128,8 @@ private slots:
 
     void shiftBoosts()
     {
-        Backend backend;
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
         backend.keyDown(Qt::Key_Shift);
         backend.flight().advance(2);
         QVERIFY(backend.flight().ship.speed > 25);
@@ -97,7 +137,8 @@ private slots:
 
     void dragSteersLikeAStick()
     {
-        Backend backend;
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
         backend.stickStart();
         QVERIFY(!backend.demo());
         backend.stickMove(1, -1);
@@ -112,7 +153,8 @@ private slots:
 
     void losingFocusReleasesKeys()
     {
-        Backend backend;
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
         backend.keyDown(Qt::Key_A);
         backend.flight().advance(0.1);
         backend.clearInput();
@@ -123,7 +165,8 @@ private slots:
 
     void pauseFreezesTheFlight()
     {
-        Backend backend;
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
         backend.tick(0.02);
         backend.setPaused(true);
         const double time = backend.flight().time;
@@ -141,7 +184,8 @@ private slots:
 
     void nextSceneAndRestart()
     {
-        Backend backend;
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
         backend.nextScene();
         QCOMPARE(backend.flight().act(), 1);
         QCOMPARE(backend.flight().time, Flight::ActLength + 2);
@@ -154,9 +198,68 @@ private slots:
         QVERIFY(backend.demo());
     }
 
+    void musicAndEffectsToggleSeparately()
+    {
+        QTemporaryDir dir;
+        const QString file = dir.filePath("omawing.conf");
+        {
+            Backend backend(nullptr, file);
+            QVERIFY(!backend.music() && !backend.effects());
+            backend.toggleEffects();
+            QVERIFY(backend.effects() || !backend.soundError().isEmpty());
+            QVERIFY(!backend.music());
+            backend.toggleEffects();
+            backend.toggleMusic();
+            QVERIFY(!backend.effects());
+        }
+        // The choice is remembered for next time.
+        QSettings settings(file, QSettings::IniFormat);
+        QCOMPARE(settings.value("effects").toBool(), false);
+    }
+
+    void volumeIsClampedAndRemembered()
+    {
+        QTemporaryDir dir;
+        const QString file = dir.filePath("omawing.conf");
+        {
+            Backend backend(nullptr, file);
+            QCOMPARE(backend.musicVolume(), 0.8);
+            backend.setMusicVolume(0.3);
+            backend.setEffectsVolume(4);
+            QCOMPARE(backend.effectsVolume(), 1.0);
+        }
+        Backend again(nullptr, file);
+        QCOMPARE(again.musicVolume(), 0.3);
+        QCOMPARE(again.effectsVolume(), 1.0);
+    }
+
+    void longStepsKeepEveryEvent()
+    {
+        Flight flight;
+        flight.demo = false;
+        flight.press(Flight::Boost);
+        flight.step(0.2);   // Split into small steps; boosting starts in the first.
+        QVERIFY(flight.events & Flight::BoostStarted);
+    }
+
+    void switchingThemeShowsItsScene()
+    {
+        QTemporaryDir dir;
+        Backend backend(nullptr, dir.filePath("omawing.conf"));
+        backend.setTheme({{"background", "#1a1b26"}, {"accent", "#7aa2f7"}}, "Tokyo Night");
+        // The first reading at startup leaves the sequence where it is.
+        QCOMPARE(backend.flight().act(), 0);
+        backend.setTheme({{"background", "#1a1b26"}, {"accent", "#7aa2f7"}}, "Tokyo Night");
+        QCOMPARE(backend.flight().act(), 0);
+        backend.setTheme({{"background", "#05182e"}, {"accent", "#faa968"}}, "Retro 82");
+        QCOMPARE(backend.flight().act(), Scene::ThemeAct);
+        QCOMPARE(backend.look().theme[6], QColor("#faa968"));
+    }
+
     void hudReportsTheMode()
     {
-        Backend backend;
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
         QCOMPARE(backend.hud().status, QString("AUTOPILOT / ENJOY THE RIDE"));
         backend.setPaused(true);
         QCOMPARE(backend.hud().status, QString("PAUSED"));
@@ -167,22 +270,360 @@ private slots:
         QVERIFY(backend.hud().altitude.contains("03"));
     }
 
-    void tunePlaysOnTheBeat()
-    {
-        Tune tune;
-        std::vector<float> samples(Tune::SampleRate);
-        tune.render(samples.data(), int(samples.size()));
-        // Eight sixteenth notes in the first second, starting 30 ms in.
-        QCOMPARE(tune.notesPlayed(), 8);
-        double before = 0, after = 0;
-        for (int i = 0; i < 1200; ++i) before = std::max(before, double(std::abs(samples[i])));
-        for (int i = 1500; i < 6000; ++i) after = std::max(after, double(std::abs(samples[i])));
-        QVERIFY(before < 1e-6);
-        QVERIFY(after > 0.05);
-        for (float s : samples)
-            QVERIFY(s >= -1 && s <= 1);
-        tune.restart();
-        QCOMPARE(tune.notesPlayed(), 0);
+    void ringCrossingScoresOnceAndBoostDoubles() {
+        Flight f;
+        f.demo = false;
+        const Ring r = World::ring(0);
+        f.ship.x = r.x; f.ship.y = r.y; f.ship.z = r.z - 0.1;
+        f.step(1.0 / 60);
+        QCOMPARE(f.score, 100);
+        QCOMPARE(f.ringsFlown, 1);
+        QCOMPARE(f.multiplier, 2);
+        f.ship.yaw = M_PI;
+        f.advance(0.1);
+        QCOMPARE(f.score, 100);
+        const Ring next = World::ring(1);
+        f.ship.x = next.x; f.ship.y = next.y; f.ship.z = next.z - 0.5;
+        f.ship.yaw = 0; f.ship.speed = Flight::BoostSpeed;
+        f.press(Flight::Boost);
+        f.step(0.05);
+        QCOMPARE(f.score, 500);
+        QCOMPARE(f.multiplier, 3);
+        QVERIFY(f.popups.size() == 2);
+    }
+
+    void missedRingAndRimBreakTheChain() {
+        Flight f;
+        f.demo = false;
+        const Ring r = World::ring(0);
+        f.multiplier = 4;
+        f.ship.x = r.x + 7; f.ship.y = r.y; f.ship.z = r.z - 0.1;
+        f.step(1.0 / 60);
+        QCOMPARE(f.score, 0);
+        QCOMPARE(f.multiplier, 1);
+        QCOMPARE(f.hull, Flight::FullHull);
+        f.ship.x = r.x + World::RingRadius; f.ship.z = r.z - 0.1;
+        f.step(1.0 / 60);
+        QCOMPARE(f.hull, Flight::FullHull - 12);
+    }
+
+    void collisionsDamageWithInvulnerabilityAndEndTheRun() {
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
+        backend.setDemo(false);
+        auto &f = backend.flight();
+        const auto obstacles = World::scenery(0, 0, 1, 0);
+        const auto o = *std::find_if(obstacles.begin(), obstacles.end(), [](const Obstacle &o) { return o.kind == Obstacle::Pyramid; });
+        auto collide = [&] { f.ship.x = o.x; f.ship.y = 2; f.ship.z = o.z; backend.tick(0.016); };
+        collide();
+        QCOMPARE(f.hull, 66.0);
+        QVERIFY(f.camera.shake > 0);
+        collide();
+        QCOMPARE(f.hull, 66.0);
+        f.hurt = 0; collide();
+        QCOMPARE(f.hull, 32.0);
+        f.score = 700; f.ringsFlown = 3;
+        f.hurt = 0; collide();
+        QCOMPARE(f.hull, 0.0);
+        QVERIFY(f.wrecked >= 0);
+        for (int i = 0; i < 55; ++i) backend.tick(0.05);
+        QVERIFY(backend.demo());
+        QCOMPARE(backend.pendingScore(), 700);
+        QCOMPARE(f.hull, Flight::FullHull);
+    }
+
+    void wingsAndParticlesRespondWithoutInvalidNumbers() {
+        Flight f;
+        f.demo = false; f.ship.y = 14;
+        f.press(Flight::Right); f.press(Flight::Boost);
+        f.advance(1);
+        QVERIFY(f.ship.flexLeft > 0.1 && f.ship.flexRight < -0.1);
+        QVERIFY(f.ship.sweep > 0.4);
+        QVERIFY(f.particles.size() > 30 && f.particles.size() <= Flight::MaxParticles);
+        f.step(0); f.step(-1); f.step(std::numeric_limits<double>::quiet_NaN());
+        for (const auto &p : f.particles)
+            for (double v : p.position) QVERIFY(std::isfinite(v));
+        Scene scene;
+        QImage image(960, 540, QImage::Format_ARGB32_Premultiplied);
+        QPainter painter(&image);
+        scene.paint(painter, f, image.size(), {});
+        int soft = 0;
+        for (const auto &face : scene.faces())
+            if (face.sprite >= 0) { ++soft; QVERIFY(face.opacity > 0 && face.opacity < 1); }
+        QVERIFY(soft > 0);
+    }
+
+    void scoresRankPersistAndBannerStaysOff() {
+        QTemporaryDir settings;
+        const QString path = settings.filePath("game.ini");
+        {
+            Backend b(nullptr, path);
+            b.toggleBanner();
+            for (int i = 1; i <= 12; ++i) {
+                b.setDemo(false); b.flight().score = i * 100; b.flight().ringsFlown = i;
+                b.setDemo(true); b.saveScore("  Pilot  ");
+            }
+            QCOMPARE(b.scores().size(), Backend::BoardSize);
+            QCOMPARE(b.best(), 1200);
+            QCOMPARE(b.scores().last().toMap().value("score").toInt(), 300);
+            b.setDemo(false); b.flight().score = 2000; // Quitting mid-run saves too.
+        }
+        Backend loaded(nullptr, path);
+        QCOMPARE(loaded.best(), 2000);
+        QCOMPARE(loaded.playerName(), QString("Pilot"));
+        QVERIFY(!loaded.banner() && !loaded.look().banner);
+        QCOMPARE(loaded.scores().size(), Backend::BoardSize);
+    }
+
+    void failedScoreSaveRetainsPendingRun() {
+        QTemporaryDir settings;
+        const QString blocked = settings.filePath("blocked");
+        write(blocked, "file, not a directory");
+        Backend b(nullptr, blocked + "/game.ini");
+        b.setDemo(false); b.flight().score = 100; b.setDemo(true);
+        b.saveScore("Pilot");
+        QVERIFY(!b.settingsError().isEmpty());
+        QCOMPARE(b.pendingScore(), 100);
+        QVERIFY(b.scores().isEmpty());
+    }
+
+    void hiddenWindowAndInvalidTicksDoNotAdvance() {
+        QTemporaryDir settings;
+        Backend b(nullptr, settings.filePath("game.ini"));
+        b.tick(0); b.tick(-1); b.tick(std::numeric_limits<double>::quiet_NaN());
+        QCOMPARE(b.flight().time, 0.0);
+        b.setHidden(true); b.tick(1);
+        QCOMPARE(b.flight().time, 0.0);
+        b.setHidden(false); b.tick(0.02);
+        QCOMPARE(b.flight().time, 0.02);
+    }
+
+    void themePaletteChangesEvenIfAccentDoesNot() {
+        QTemporaryDir dir;
+        QDir(dir.path()).mkpath("theme");
+        const QString path = dir.filePath("theme/colors.toml");
+        write(path, "accent = \"#112233\"\nbackground = \"#000011\"\n");
+        Theme theme(dir.path());
+        QSignalSpy changed(&theme, &Theme::changed);
+        write(path, "accent = \"#112233\"\nbackground = \"#221100\"\n");
+        QTRY_VERIFY(changed.count() > 0);
+        QCOMPARE(theme.colors().value("background"), QString("#221100"));
+    }
+
+    void realWindowShortcutsScoreEntryAndResponsiveLayout() {
+        QTemporaryDir dir;
+        Backend backend(nullptr, dir.filePath("game.ini"));
+        Theme theme(dir.path());
+        Translator translator(dir.filePath("language"));
+        qApp->installTranslator(&translator);
+        QQmlApplicationEngine engine;
+        QStringList warnings;
+        connect(&engine, &QQmlEngine::warnings, this, [&](const QList<QQmlError> &errors) {
+            for (const auto &error : errors) warnings << error.toString();
+        });
+        connect(&translator, &Translator::changed, &engine, &QQmlEngine::retranslate);
+        engine.rootContext()->setContextProperty("backend", &backend);
+        engine.rootContext()->setContextProperty("theme", &theme);
+        engine.rootContext()->setContextProperty("translator", &translator);
+        engine.load(QUrl("qrc:/Main.qml"));
+        QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join('\n')));
+        auto window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+        QVERIFY(window);
+        QVERIFY(QTest::qWaitForWindowExposed(window));
+        window->requestActivate();
+        QTest::qWait(100);
+        QTest::keyClick(window, Qt::Key_B);
+        QVERIFY(!backend.banner());
+        QTest::keyClick(window, Qt::Key_P);
+        QCOMPARE(backend.trackTitle(), QString("Across the Vector Plane"));
+        backend.setDemo(false);
+        backend.flight().score = 1200;
+        backend.flight().ringsFlown = 6;
+        backend.setDemo(true);
+        auto board = window->findChild<QObject *>("scoreBoard");
+        QVERIFY(board);
+        QTRY_VERIFY(board->property("opened").toBool());
+        QVERIFY(backend.paused());
+        auto player = window->findChild<QQuickItem *>("playerName");
+        QVERIFY(player);
+        player->setProperty("text", "");
+        player->forceActiveFocus();
+        // These would quit, change acts, reset or steer outside a text field.
+        for (auto key : {Qt::Key_Q, Qt::Key_N, Qt::Key_R, Qt::Key_W}) QTest::keyClick(window, key);
+        QCOMPARE(player->property("text").toString(), QString("qnrw"));
+        QVERIFY(backend.demo());
+        QTest::keyClick(window, Qt::Key_Return);
+        QCOMPARE(backend.pendingScore(), 0);
+        QCOMPARE(backend.best(), 1200);
+        auto capture = [&](const QString &name) {
+            QTest::qWait(250);
+            const QImage shot = window->grabWindow();
+            QVERIFY(!shot.isNull());
+            const QString out = qEnvironmentVariable("OMAWING_SCREENSHOT_DIR");
+            if (!out.isEmpty()) { QDir().mkpath(out); QVERIFY(shot.save(out + "/" + name + ".png")); }
+        };
+        std::function<QQuickItem *(QQuickItem *)> findRow = [&](QQuickItem *item) -> QQuickItem * {
+            if (item->objectName() == "scoreRow") return item;
+            for (auto child : item->childItems()) if (auto row = findRow(child)) return row;
+            return nullptr;
+        };
+        QTRY_VERIFY(findRow(window->contentItem()));
+        QTRY_VERIFY(findRow(window->contentItem())->width() > 400);
+        QTRY_VERIFY(findRow(window->contentItem())->height() >= 44);
+        capture("scores");
+        QTest::keyClick(window, Qt::Key_Escape);
+        QTRY_VERIFY(!board->property("visible").toBool());
+        QVERIFY(!backend.paused());
+        backend.setPaused(true);
+        backend.flight().advance(5);
+        backend.nextScene();
+        capture("flight");
+        backend.setDemo(false);
+        backend.flight().ship.x = 0;
+        backend.flight().ship.y = 4;
+        backend.flight().ship.yaw = 0;
+        backend.flight().score = 1350;
+        backend.flight().hull = 76;
+        backend.flight().multiplier = 3;
+        backend.toggleBanner();
+        backend.setPaused(false);
+        window->setProperty("pointerAwake", false);
+        capture("gameplay");
+        backend.setPaused(true);
+        // V opens the volume panel with the music slider focused; the arrow
+        // keys move it and Esc closes the panel.
+        auto panel = window->findChild<QObject *>("volumePanel");
+        QVERIFY(panel);
+        const double music = backend.musicVolume();
+        QTest::keyClick(window, Qt::Key_V);
+        QTRY_VERIFY(panel->property("opened").toBool());
+        QTest::keyClick(window, Qt::Key_Left);
+        QVERIFY(backend.musicVolume() < music);
+        capture("volume");
+        QTest::keyClick(window, Qt::Key_Escape);
+        QTRY_VERIFY(!panel->property("visible").toBool());
+        window->resize(640, 400);
+        for (const QString &language : {QString("de"), QString("ar")}) {
+            write(dir.filePath("language"), language.toUtf8());
+            QTRY_COMPARE(translator.language(), language);
+            QMetaObject::invokeMethod(window, "showScores");
+            QTRY_VERIFY(board->property("opened").toBool());
+            capture("scores-" + language);
+            QVERIFY(board->property("width").toDouble() <= window->width());
+            QVERIFY(board->property("height").toDouble() <= window->height());
+            QTest::keyClick(window, Qt::Key_Escape);
+            QTRY_VERIFY(!board->property("visible").toBool());
+            window->setProperty("helpVisible", true);
+            capture("help-" + language);
+            window->setProperty("helpVisible", false);
+        }
+        QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join('\n')));
+        qApp->removeTranslator(&translator);
+    }
+
+    void bundledMusicAndEffectsDecode() {
+        QList<QUrl> sources;
+        // Tracks play from files: a compiled-in track would be copied to a
+        // temporary file that is never removed.
+        for (int i = 0; i < Synth::TrackCount; ++i) {
+            QVERIFY(Synth::trackSource(i).isLocalFile());
+            sources << Synth::trackSource(i);
+        }
+        for (int i = 0; i < Synth::EffectCount; ++i) sources << Synth::effectSource(Synth::Effect(i));
+        for (const auto &source : sources) {
+            QAudioDecoder decoder;
+            decoder.setSource(source);
+            decoder.start();
+            QTRY_VERIFY_WITH_TIMEOUT(decoder.bufferAvailable() || decoder.error() != QAudioDecoder::NoError, 10000);
+            QVERIFY2(decoder.error() == QAudioDecoder::NoError, qPrintable(source.toString() + ": " + decoder.errorString()));
+            const QAudioBuffer buffer = decoder.read();
+            QVERIFY(buffer.isValid());
+            QVERIFY(buffer.frameCount() > 0);
+            QCOMPARE(buffer.format().sampleRate(), 44100);
+            decoder.stop();
+        }
+    }
+
+    void soundtrackPausesSkipsAndLoopsWithoutPlayingOldCues() {
+        if (QMediaDevices::defaultAudioOutput().isNull()) QSKIP("No audio device; decoding is tested independently.");
+        Synth sound;
+        sound.setVolume(0, 0); // Exercise the real player without making test noise.
+        sound.setRunning(true);
+        auto player = sound.findChild<QMediaPlayer *>();
+        QVERIFY(player);
+        QTRY_VERIFY_WITH_TIMEOUT(player->duration() > 180000 || !sound.error().isEmpty(), 10000);
+        QVERIFY2(sound.error().isEmpty(), qPrintable(sound.error()));
+        QCOMPARE(sound.trackTitle(), QString("Pyramids Of Glass"));
+        QTRY_VERIFY(player->position() > 100);
+        sound.setRunning(false);
+        QCOMPARE(player->playbackState(), QMediaPlayer::PausedState);
+        const auto pausedAt = player->position();
+        QTest::qWait(100);
+        QCOMPARE(player->position(), pausedAt);
+        sound.setRunning(true);
+        QTRY_VERIFY(player->position() > pausedAt);
+        sound.nextTrack();
+        QCOMPARE(sound.track(), 1);
+        QTRY_VERIFY_WITH_TIMEOUT(player->isSeekable() && player->duration() > 170000 && player->duration() < 180000, 10000);
+        player->setPosition(player->duration() - 200);
+        QTRY_COMPARE_WITH_TIMEOUT(sound.track(), 2, 10000);
+        QTRY_VERIFY_WITH_TIMEOUT(player->isSeekable() && player->duration() > 174000 && player->duration() < 175500, 10000);
+        player->setPosition(player->duration() - 200);
+        QTRY_COMPARE_WITH_TIMEOUT(sound.track(), 0, 10000);
+        const auto effects = sound.findChildren<QSoundEffect *>();
+        QCOMPARE(effects.size(), Synth::EffectCount);
+        for (auto effect : effects) QTRY_COMPARE(effect->status(), QSoundEffect::Ready);
+        sound.play(Synth::Ring);
+        auto ring = *std::find_if(effects.begin(), effects.end(), [](QSoundEffect *e) { return e->source() == Synth::effectSource(Synth::Ring); });
+        QTRY_VERIFY(ring->isPlaying());
+        sound.setRunning(false);
+        QVERIFY(!ring->isPlaying());
+        sound.play(Synth::Ring);
+        QVERIFY(!ring->isPlaying());
+    }
+
+    void cameraFramesTheShipBelowAnOpenHorizon() {
+        Flight flight;
+        flight.demo = false;
+        flight.ship.speed = 0;
+        flight.advance(3);
+        const double distance = std::hypot(flight.ship.x - flight.camera.x, flight.ship.z - flight.camera.z);
+        QVERIFY(distance > 17 && distance < 22);
+        QVERIFY(flight.camera.pitch > -0.08 && flight.camera.pitch < 0);
+        Scene scene;
+        QImage image(960,540,QImage::Format_ARGB32_Premultiplied);
+        QPainter painter(&image);
+        scene.paint(painter,flight,image.size(),{});
+        QRectF ship;
+        for (const auto &f : scene.faces()) if (f.ship) ship |= f.polygon.boundingRect();
+        QVERIFY(ship.center().y() > 340 && ship.center().y() < 440);
+        QVERIFY(ship.width() < 230);
+    }
+
+    void gameplayCuesOccurOncePerAction() {
+        Flight f;
+        f.demo = false;
+        f.press(Flight::Boost);
+        f.step(0.016);
+        QVERIFY(f.events & Flight::BoostStarted);
+        f.step(0.016);
+        QVERIFY(!(f.events & Flight::BoostStarted));
+        f.release(Flight::Boost); f.step(0.016);
+        f.press(Flight::Boost); f.step(0.016);
+        QVERIFY(f.events & Flight::BoostStarted);
+        f.ship.x = 0; f.ship.y = World::RingHeight; f.ship.z = 23.9;
+        f.step(0.016);
+        QVERIFY(f.events & Flight::RingPassed);
+        f.step(0.016);
+        QVERIFY(!(f.events & Flight::RingPassed));
+        const Ring ring = World::ring(1);
+        f.ship.x = ring.x + World::RingRadius; f.ship.y = ring.y; f.ship.z = ring.z - 0.1;
+        f.hull = 10;
+        f.step(0.016);
+        QVERIFY(f.events & Flight::Impact);
+        QVERIFY(f.events & Flight::Wreck);
+        f.step(0.016);
+        QCOMPARE(f.events, 0u);
     }
 
     void themeFallsBack()

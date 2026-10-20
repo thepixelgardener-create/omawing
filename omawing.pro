@@ -8,6 +8,7 @@ TEMPLATE = app
 HEADERS += \
     src/backend.h \
     src/flight.h \
+    src/geometry.h \
     src/flightview.h \
     src/scene.h \
     src/synth.h \

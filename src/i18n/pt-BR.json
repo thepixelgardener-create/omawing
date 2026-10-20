@@ -11,5 +11,22 @@
   "Full screen": "Tela cheia",
   "Full screen on or off": "Tela cheia sim ou não",
   "Steer with the mouse": "Pilotar com o mouse",
-  "Pause or play": "Pausar ou reproduzir"
+  "Pause or play": "Pausar ou reproduzir",
+  "HULL": "CASCO",
+  "SCORE": "PONTOS",
+  "BEST %1": "RECORDE %1",
+  "HULL BREACHED": "CASCO DESTRUÍDO",
+  "Banner": "Faixa",
+  "High scores": "Melhores pontuações",
+  "New high score: %1": "Novo recorde: %1",
+  "Your name": "Seu nome",
+  "Save score": "Salvar pontos",
+  "Rings: %1": "Anéis: %1",
+  "No scores yet. Take control and fly!": "Ainda sem pontuações. Assuma o controle e voe!",
+  "Fly through rings. Boost doubles points. Chain rings for up to 8×.": "Atravesse os anéis. O impulso dobra os pontos. Encadeie anéis até 8×.",
+  "Could not save settings. Check folder permissions.": "Não foi possível salvar as configurações. Verifique as permissões da pasta.",
+  "Close": "Fechar",
+  "Next track": "Próxima faixa",
+  "Could not play the soundtrack.": "Não foi possível reproduzir a trilha sonora.",
+  "The music files are missing.": "Os arquivos de música estão faltando."
 }

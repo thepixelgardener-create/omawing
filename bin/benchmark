@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+mkdir -p "$ROOT/build/benchmark"
+cd "$ROOT/build/benchmark"
+qmake6 "$ROOT/tests/render_benchmark.pro"
+make -s -j"$(nproc)"
+exec ./render_benchmark "$@"

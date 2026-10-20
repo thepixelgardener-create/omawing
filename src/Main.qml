@@ -15,6 +15,9 @@ ApplicationWindow {
     title: "Omawing"
     color: "#0e1020"
 
+    LayoutMirroring.enabled: Qt.application.layoutDirection === Qt.RightToLeft
+    LayoutMirroring.childrenInherit: true
+
     Material.theme: Material.Dark
     Material.accent: theme.accent
     Material.roundedScale: theme.radius
@@ -23,31 +26,62 @@ ApplicationWindow {
     // The toolbar shows while the pointer moves, then gets out of the way.
     property bool pointerAwake: true
 
+    function showScores() {
+        if (board.visible) return
+        board.wasPaused = backend.paused
+        backend.setPaused(true)
+        player.text = backend.playerName
+        board.open()
+        if (backend.pendingScore > 0) player.forceActiveFocus()
+    }
+    function localizedNumber(value) {
+        // Reading the language makes bindings that use this re-run when it changes.
+        const language = translator.language
+        return Number(value).toLocaleString(Qt.locale(), 'f', 0)
+    }
+    Connections {
+        target: backend
+        function onScoresChanged() {
+            if (backend.pendingScore > 0) Qt.callLater(win.showScores)
+        }
+    }
+
     function toggleFullScreen() { win.visibility = win.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
     function wake() { pointerAwake = true; sleepTimer.restart() }
+    function toggleVolume() {
+        if (volume.visible) volume.close()
+        else { volume.open(); musicSlider.forceActiveFocus() }
+    }
 
     onActiveChanged: if (!active) backend.clearInput()
     onVisibilityChanged: backend.setHidden(win.visibility === Window.Minimized || win.visibility === Window.Hidden)
 
-    Shortcut { sequence: "?"; context: Qt.ApplicationShortcut; onActivated: win.helpVisible = !win.helpVisible }
-    Shortcut { sequence: "Q"; context: Qt.ApplicationShortcut; onActivated: Qt.quit() }
-    Shortcut { sequence: "Space"; context: Qt.ApplicationShortcut; onActivated: backend.togglePause() }
-    Shortcut { sequence: "T"; context: Qt.ApplicationShortcut; onActivated: backend.toggleDemo() }
-    Shortcut { sequence: "N"; context: Qt.ApplicationShortcut; onActivated: backend.nextScene() }
-    Shortcut { sequence: "M"; context: Qt.ApplicationShortcut; onActivated: backend.toggleSound() }
-    Shortcut { sequence: "R"; context: Qt.ApplicationShortcut; onActivated: backend.restart() }
-    Shortcut { sequences: ["F", "F11"]; context: Qt.ApplicationShortcut; onActivated: win.toggleFullScreen() }
+    Shortcut { sequence: "?"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.helpVisible = !win.helpVisible }
+    Shortcut { sequence: "Q"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: Qt.quit() }
+    Shortcut { sequence: "Space"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.togglePause() }
+    Shortcut { sequence: "T"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleDemo() }
+    Shortcut { sequence: "N"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.nextScene() }
+    Shortcut { sequence: "M"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleMusic() }
+    Shortcut { sequence: "E"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleEffects() }
+    Shortcut { sequence: "V"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.toggleVolume() }
+    Shortcut { sequence: "P"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.nextTrack() }
+    Shortcut { sequence: "B"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleBanner() }
+    Shortcut { sequence: "H"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.showScores() }
+    Shortcut { sequence: "R"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.restart() }
+    Shortcut { sequences: ["F", "F11"]; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.toggleFullScreen() }
     Shortcut {
         sequence: "Esc"
         context: Qt.ApplicationShortcut
         onActivated: {
-            if (win.helpVisible) win.helpVisible = false
+            if (volume.visible) volume.close()
+            else if (board.visible) board.close()
+            else if (win.helpVisible) win.helpVisible = false
             else if (win.visibility === Window.FullScreen) win.visibility = Window.Windowed
         }
     }
 
     FrameAnimation {
-        running: true
+        running: win.visibility !== Window.Minimized && win.visibility !== Window.Hidden
         onTriggered: backend.tick(frameTime)
     }
 
@@ -93,34 +127,102 @@ ApplicationWindow {
             anchors.bottom: parent.bottom
             // Sits just above the scroller band, which is 60 units of the
             // scene's canvas (at least 540 tall and 860 wide).
-            anchors.bottomMargin: Math.min(parent.height / 540, parent.width / 860) * 64 + 12
+            anchors.bottomMargin: (backend.banner ? Math.min(parent.height / 540, parent.width / 860) * 64 : 0) + 12
             spacing: 8
 
             Label {
                 Layout.alignment: Qt.AlignHCenter
-                visible: backend.soundError !== ""
-                text: backend.soundError
+                visible: backend.soundError !== "" || backend.settingsError !== ""
+                Layout.maximumWidth: win.width - 40
+                wrapMode: Text.WordWrap
+                text: backend.settingsError || backend.soundError
+                textFormat: Text.PlainText
                 color: "#ffb4a9"
                 padding: 10
                 background: Rectangle { color: "#d0101024"; radius: Math.min(4, theme.radius) }
             }
 
+            Button {
+                objectName: "nextMusicTrack"
+                Layout.alignment: Qt.AlignHCenter
+                Layout.maximumWidth: win.width - 40
+                focusPolicy: Qt.NoFocus
+                Material.roundedScale: theme.radius
+                ToolTip.visible: hovered
+                ToolTip.text: qsTr("Next track") + " (P)"
+                onClicked: backend.nextTrack()
+                visible: backend.music && (win.pointerAwake || backend.paused)
+                text: "♫  " + backend.trackTitle
+                contentItem: Label { text: parent.text; textFormat: Text.PlainText; elide: Text.ElideRight }
+                padding: 8
+                background: Rectangle { color: "#d0101024"; radius: Math.min(4, theme.radius) }
+            }
+
             Pane {
                 id: toolbar
+                Layout.preferredWidth: Math.min(win.width - 24, 1120)
                 Layout.alignment: Qt.AlignHCenter
                 padding: 6
-                opacity: win.pointerAwake || backend.paused || toolbarHover.hovered || win.helpVisible ? 1 : 0
+                opacity: win.pointerAwake || backend.paused || toolbarHover.hovered || win.helpVisible || volume.visible ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 220 } }
                 background: Rectangle { color: "#e0101024"; radius: theme.radius; border.color: "#2f3250" }
                 HoverHandler { id: toolbarHover }
 
-                RowLayout {
-                    spacing: 4
+                // Music and effects levels, just above the toolbar. The arrow
+                // keys move the focused slider; Tab switches between them.
+                Popup {
+                    id: volume
+                    objectName: "volumePanel"
+                    x: (toolbar.width - width) / 2
+                    y: -height - 8
+                    padding: 16
+                    closePolicy: Popup.CloseOnPressOutsideParent
+                    onClosed: view.forceActiveFocus()
+                    background: Rectangle { color: "#f0101024"; radius: theme.radius; border.color: "#2f3250" }
+
+                    GridLayout {
+                        columns: 3
+                        columnSpacing: 12
+                        rowSpacing: 4
+                        Label { text: qsTr("Music") }
+                        Slider {
+                            id: musicSlider
+                            objectName: "musicVolume"
+                            Layout.preferredWidth: 220
+                            stepSize: 0.05
+                            value: backend.musicVolume
+                            onMoved: backend.musicVolume = value
+                            KeyNavigation.tab: effectsSlider
+                        }
+                        Label { text: win.localizedNumber(Math.round(musicSlider.value * 100)) + " %"; Layout.preferredWidth: 48; opacity: backend.music ? 1 : 0.5 }
+                        Label { text: qsTr("Effects") }
+                        Slider {
+                            id: effectsSlider
+                            objectName: "effectsVolume"
+                            Layout.preferredWidth: 220
+                            stepSize: 0.05
+                            value: backend.effectsVolume
+                            onMoved: backend.effectsVolume = value
+                            KeyNavigation.tab: musicSlider
+                        }
+                        Label { text: win.localizedNumber(Math.round(effectsSlider.value * 100)) + " %"; Layout.preferredWidth: 48; opacity: backend.effects ? 1 : 0.5 }
+                    }
+                }
+
+                GridLayout {
+                    width: toolbar.availableWidth
+                    columns: win.width < 800 ? 4 : win.width < 1200 ? 6 : 11
+                    columnSpacing: 4
+                    rowSpacing: 0
                     BarButton { text: backend.demo ? qsTr("Take control") : qsTr("Watch demo"); key: "T"; highlighted: backend.demo; onClicked: backend.toggleDemo() }
                     BarButton { text: backend.paused ? qsTr("Play") : qsTr("Pause"); key: "Space"; onClicked: backend.togglePause() }
                     BarButton { text: qsTr("Next scene"); key: "N"; onClicked: backend.nextScene() }
-                    BarButton { text: qsTr("Sound"); key: "M"; checkable: true; checked: backend.sound; onClicked: backend.toggleSound() }
+                    BarButton { text: qsTr("Music"); key: "M"; checkable: true; checked: backend.music; onClicked: backend.toggleMusic() }
+                    BarButton { text: qsTr("Effects"); key: "E"; checkable: true; checked: backend.effects; onClicked: backend.toggleEffects() }
+                    BarButton { text: qsTr("Volume"); key: "V"; checkable: true; checked: volume.visible; onClicked: win.toggleVolume() }
+                    BarButton { text: qsTr("Banner"); key: "B"; checkable: true; checked: backend.banner; onClicked: backend.toggleBanner() }
+                    BarButton { text: qsTr("High scores"); key: "H"; onClicked: win.showScores() }
                     BarButton { text: qsTr("Restart"); key: "R"; onClicked: backend.restart() }
                     BarButton { text: qsTr("Full screen"); key: "F"; checkable: true; checked: win.visibility === Window.FullScreen; onClicked: win.toggleFullScreen() }
                     BarButton { text: "?"; key: "?"; onClicked: win.helpVisible = !win.helpVisible }
@@ -136,43 +238,178 @@ ApplicationWindow {
 
             Pane {
                 anchors.centerIn: parent
-                padding: 24
+                padding: 20
+                width: Math.min(parent.width - 32, 640)
+                height: Math.min(parent.height - 32, helpContent.implicitHeight + 40)
                 background: Rectangle { color: "#14162a"; radius: theme.radius; border.color: "#2f3250" }
 
-                ColumnLayout {
-                    spacing: 16
-                    Label { text: qsTr("Keyboard shortcuts"); font.pixelSize: 20; font.bold: true }
-                    GridLayout {
-                        columns: 2
-                        columnSpacing: 24
-                        rowSpacing: 8
-                        Repeater {
-                            model: [
-                                ["A D  ← →", qsTr("Steer")],
-                                ["W S  ↑ ↓", qsTr("Climb or descend")],
-                                ["Shift", qsTr("Boost")],
-                                [qsTr("Drag"), qsTr("Steer with the mouse")],
-                                ["Space", qsTr("Pause or play")],
-                                ["T", qsTr("Take control or watch the demo")],
-                                ["N", qsTr("Next scene")],
-                                ["M", qsTr("Turn sound on or off")],
-                                ["R", qsTr("Restart from the beginning")],
-                                ["F", qsTr("Full screen on or off")],
-                                ["?", qsTr("Show or hide shortcuts")],
-                                ["Q", qsTr("Quit")]
-                            ]
-                            delegate: RowLayout {
-                                required property var modelData
-                                Layout.columnSpan: 2
-                                spacing: 24
-                                Label {
-                                    Layout.preferredWidth: 110
-                                    text: modelData[0]
-                                    color: theme.accent
-                                    font.family: "monospace"
+                ScrollView {
+                    id: helpScroll
+                    ScrollBar.vertical.policy: ScrollBar.AlwaysOn
+                    anchors.fill: parent
+                    clip: true
+                    contentWidth: availableWidth
+                    contentHeight: helpContent.implicitHeight
+                    ColumnLayout {
+                        id: helpContent
+                        width: helpScroll.availableWidth
+                        spacing: 12
+                        Label { text: qsTr("Keyboard shortcuts"); font.pixelSize: 20; font.bold: true }
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 2
+                            columnSpacing: 24
+                            rowSpacing: 8
+                            Repeater {
+                                model: [
+                                    ["A D  ← →", qsTr("Steer")],
+                                    ["W S  ↑ ↓", qsTr("Climb or descend")],
+                                    ["Shift", qsTr("Boost")],
+                                    [qsTr("Drag"), qsTr("Steer with the mouse")],
+                                    ["Space", qsTr("Pause or play")],
+                                    ["T", qsTr("Take control or watch the demo")],
+                                    ["N", qsTr("Next scene")],
+                                    ["M", qsTr("Turn music on or off")],
+                                    ["E", qsTr("Turn sound effects on or off")],
+                                    ["V", qsTr("Music and effects volume")],
+                                    ["P", qsTr("Next track")],
+                                    ["B", qsTr("Banner")],
+                                    ["H", qsTr("High scores")],
+                                    ["R", qsTr("Restart from the beginning")],
+                                    ["F", qsTr("Full screen on or off")],
+                                    ["?", qsTr("Show or hide shortcuts")],
+                                    ["Q", qsTr("Quit")]
+                                ]
+                                delegate: RowLayout {
+                                    required property var modelData
+                                    Layout.columnSpan: 2
+                                    spacing: 24
+                                    Label {
+                                        Layout.preferredWidth: 110
+                                        text: modelData[0]
+                                        color: theme.accent
+                                        font.family: "monospace"
+                                    }
+                                    Label { text: modelData[1]; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                                 }
-                                Label { text: modelData[1] }
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: board
+        objectName: "scoreBoard"
+        popupType: Popup.Item
+        Material.theme: Material.Dark
+        Material.accent: theme.accent
+        Material.roundedScale: theme.radius
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: Math.min(win.width - 32, 580)
+        height: Math.min(win.height - 32, implicitHeaderHeight + implicitFooterHeight + topPadding + bottomPadding + scoreContent.implicitHeight)
+        leftPadding: 24
+        rightPadding: 24
+        topPadding: 12
+        bottomPadding: 12
+        modal: true
+        focus: true
+        title: qsTr("High scores")
+        header: Label {
+            text: board.title
+            padding: 24
+            bottomPadding: 12
+            font.pixelSize: 24
+            color: "#f4f0ff"
+        }
+        Overlay.modal: Rectangle { color: "#b0060714" }
+        footer: DialogButtonBox {
+            background: Rectangle { color: "transparent" }
+            Button { text: qsTr("Close"); DialogButtonBox.buttonRole: DialogButtonBox.RejectRole }
+            onRejected: board.close()
+        }
+        closePolicy: Popup.CloseOnEscape
+        property bool wasPaused: false
+        background: Rectangle { color: "#14162a"; radius: theme.radius; border.color: "#454867" }
+        onClosed: {
+            if (backend.pendingScore > 0) backend.saveScore(player.text)
+            backend.setPaused(wasPaused)
+            view.forceActiveFocus()
+        }
+        contentItem: ScrollView {
+            id: scoreScroll
+            clip: true
+            contentWidth: availableWidth
+            contentHeight: scoreContent.implicitHeight
+            ColumnLayout {
+                id: scoreContent
+                width: scoreScroll.availableWidth
+                height: implicitHeight
+                spacing: 10
+                Label {
+                    visible: backend.pendingScore > 0
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    text: qsTr("New high score: %1").arg(win.localizedNumber(backend.pendingScore))
+                    color: theme.accent
+                    font.pixelSize: 22
+                }
+                RowLayout {
+                    visible: backend.pendingScore > 0
+                    Layout.fillWidth: true
+                    TextField {
+                        id: player
+                        objectName: "playerName"
+                        Layout.fillWidth: true
+                        maximumLength: backend.nameLength
+                        placeholderText: qsTr("Your name")
+                        onAccepted: backend.saveScore(text)
+                    }
+                    Button { text: qsTr("Save score"); onClicked: backend.saveScore(player.text) }
+                }
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    visible: backend.settingsError !== ""
+                    text: backend.settingsError
+                    textFormat: Text.PlainText
+                    color: "#ffb4a9"
+                }
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    text: qsTr("Fly through rings. Boost doubles points. Chain rings for up to 8×.")
+                    opacity: 0.8
+                }
+                Label {
+                    visible: backend.scores.length === 0
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    text: qsTr("No scores yet. Take control and fly!")
+                    padding: 12
+                }
+                Repeater {
+                    model: backend.scores
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+                        objectName: "scoreRow"
+                        Layout.fillWidth: true
+                        implicitHeight: 44
+                        Layout.minimumHeight: 44
+                        color: index % 2 ? "#22253e" : "#1b1e34"
+                        radius: Math.min(4, theme.radius)
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            Label { text: win.localizedNumber(index + 1); Layout.preferredWidth: 28; color: theme.accent }
+                            // Names are typed by players: shown as text, never as markup.
+                            Label { text: modelData.name; textFormat: Text.PlainText; Layout.fillWidth: true; elide: Text.ElideRight }
+                            Label { text: win.localizedNumber(modelData.score); font.bold: true }
+                            Label { text: qsTr("Rings: %1").arg(win.localizedNumber(modelData.rings)); Layout.preferredWidth: 95; horizontalAlignment: Text.AlignRight }
                         }
                     }
                 }
@@ -182,6 +419,10 @@ ApplicationWindow {
 
     component BarButton: Button {
         property string key
+        Material.roundedScale: theme.radius
+        Layout.fillWidth: true
+        Layout.minimumWidth: 0
+        contentItem: Label { text: parent.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
         flat: true
         // Clicking must not take keyboard focus from the flight.
         focusPolicy: Qt.NoFocus

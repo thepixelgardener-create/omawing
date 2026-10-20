@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QFileSystemWatcher>
+#include <QHash>
 #include <QObject>
 #include <QProcess>
 #include <QTimer>
@@ -18,8 +19,11 @@ public:
     QString accent() const { return m_accent; }
     QString accentForeground() const;
     int radius() const { return m_radius; }
+    QHash<QString, QString> colors() const { return m_colors; }
+    QString name() const { return m_name; }
 
-    static QString readAccent(const QString &path);
+    // Every `name = "#rrggbb"` entry of a colors.toml.
+    static QHash<QString, QString> readColors(const QString &path);
 
 signals:
     void changed();
@@ -28,6 +32,8 @@ private:
     void reload();
     void refreshRounding();
 
+    QHash<QString, QString> m_colors;
+    QString m_name;
     QString m_directory;
     QString m_accent = "#FFD60A";
     QFileSystemWatcher m_watcher;

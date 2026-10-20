@@ -36,5 +36,8 @@ private:
     bool m_stats = false;
     int m_statFrames = 0;
     double m_statTotal = 0, m_statWorst = 0;
-    QElapsedTimer m_statClock;
+    QElapsedTimer m_statClock, m_statInterval;
+    double m_statGap = 0;
+    int m_statHitches = 0;
+    double m_stepLow = 1e9, m_stepHigh = 0;
 };

@@ -61,16 +61,20 @@ void Theme::refreshRounding() {
     m_roundingTimeout.start();
 }
 
-QString Theme::readAccent(const QString &path) {
+QHash<QString, QString> Theme::readColors(const QString &path) {
+    QHash<QString, QString> colors;
     QFile file(path);
-    if (file.open(QIODevice::ReadOnly)) {
-        const QRegularExpression expression(R"re(^\s*accent\s*=\s*["'](#[0-9a-fA-F]{6})["'])re",
-                                            QRegularExpression::MultilineOption);
-        const auto match = expression.match(QString::fromUtf8(file.readAll()));
-        if (match.hasMatch())
-            return match.captured(1);
+    // A theme file is a few hundred bytes; anything far bigger isn't one.
+    if (!file.open(QIODevice::ReadOnly) || file.size() > 64 * 1024)
+        return colors;
+    static const QRegularExpression expression(R"re(^\s*([a-zA-Z_]+)\s*=\s*["'](#[0-9a-fA-F]{6})["'])re",
+                                               QRegularExpression::MultilineOption);
+    auto matches = expression.globalMatch(QString::fromUtf8(file.readAll()));
+    while (matches.hasNext()) {
+        const auto match = matches.next();
+        colors.insert(match.captured(1), match.captured(2));
     }
-    return "#FFD60A";
+    return colors;
 }
 
 // Black or white, whichever reads on the accent (WCAG relative luminance).
@@ -94,15 +98,25 @@ void Theme::reload() {
     while (!QFileInfo::exists(ancestor) && ancestor != "/")
         ancestor = QFileInfo(ancestor).absolutePath();
     QStringList candidates{ancestor, QFileInfo(ancestor).absolutePath(), m_directory,
-                           m_directory + "/theme", m_directory + "/theme/colors.toml"};
+                           m_directory + "/theme", m_directory + "/theme/colors.toml", m_directory + "/theme.name"};
     candidates.removeDuplicates();
     for (const auto &path : candidates)
         if (QFileInfo::exists(path))
             m_watcher.addPath(path);
 
-    const auto accent = readAccent(m_directory + "/theme/colors.toml");
-    if (accent != m_accent) {
+    const auto colors = readColors(m_directory + "/theme/colors.toml");
+    const QString accent = colors.value("accent", "#FFD60A");
+    // The name is a scene title, so only its first line, and not too long.
+    QFile label(m_directory + "/theme.name");
+    QString name;
+    if (label.open(QIODevice::ReadOnly))
+        name = QString::fromUtf8(label.readLine(256)).trimmed().left(32);
+    if (name.isEmpty())
+        name = QFileInfo(QFileInfo(m_directory + "/theme").symLinkTarget()).fileName();
+    if (accent != m_accent || colors != m_colors || name != m_name) {
         m_accent = accent;
+        m_colors = colors;
+        m_name = name;
         emit changed();
     }
 }

@@ -1,78 +1,54 @@
 #pragma once
 
-#include <QIODevice>
 #include <QObject>
 #include <QString>
+#include <QUrl>
+#include <array>
 #include <memory>
-#include <vector>
 
-class QAudioSink;
+class QAudioOutput;
+class QMediaPlayer;
+class QSoundEffect;
 
-// The chip-style loop, as plain samples. It schedules each note at an exact
-// sample, so the rhythm holds however the audio system asks for data.
-class Tune {
-public:
-    static constexpr int SampleRate = 48000;
-    static constexpr double Step = 0.125;   // One sixteenth note, in seconds.
-
-    // Fills `frames` mono samples in -1..1 and moves the song forward.
-    void render(float *out, int frames);
-    void restart();
-    int notesPlayed() const { return m_note; }
-
-private:
-    enum Wave { Square, Triangle, Sine };
-    struct Voice {
-        double frequency, start, duration, volume;
-        Wave wave;
-    };
-    void schedule(double at);
-
-    std::vector<Voice> m_voices;
-    long long m_sample = 0;
-    int m_note = 0;
-    double m_nextNote = 0.03;
-};
-
-// Pulls samples from a Tune for the audio sink.
-class TuneDevice : public QIODevice {
-public:
-    explicit TuneDevice(Tune &tune, QObject *parent = nullptr);
-    bool isSequential() const override { return true; }
-    qint64 bytesAvailable() const override { return 1 << 16; }
-
-protected:
-    qint64 readData(char *data, qint64 maxSize) override;
-    qint64 writeData(const char *, qint64) override { return -1; }
-
-private:
-    Tune &m_tune;
-    std::vector<float> m_buffer;
-};
-
-// Plays the Tune through the default audio output. Sound stays off until
-// the user turns it on, and a missing device is reported, not ignored.
+// Streams the bundled MP3 playlist and mixes short, preloaded gameplay cues.
+// Audio objects are opened only when the user enables sound.
 class Synth : public QObject {
     Q_OBJECT
-
 public:
+    enum Effect { Boost, Ring, Impact, Wreck, EffectCount };
+    static constexpr int TrackCount = 3;
     explicit Synth(QObject *parent = nullptr);
     ~Synth() override;
 
     bool running() const { return m_running; }
     QString error() const { return m_error; }
-    // Starts or suspends output; the first start opens the device.
-    void setRunning(bool running);
+    int track() const { return m_track; }
+    QString trackTitle() const;
+    static QUrl trackSource(int track);
+    static QUrl effectSource(Effect effect);
+
+    // Music and effects switch on and off separately. Pausing the music keeps
+    // its position; cues never replay on resume.
+    void setRunning(bool music, bool effects);
+    void setRunning(bool running) { setRunning(running, running); }
+    bool musicPlaying() const { return m_running && m_music; }
+    bool effectsPlaying() const { return m_running && m_effectsOn; }
+    void nextTrack();
+    void setVolume(float music, float effects);
+    void play(Effect effect);
 
 signals:
     void changed();
 
 private:
     void fail(const QString &message);
-
-    Tune m_tune;
-    std::unique_ptr<TuneDevice> m_device;
-    std::unique_ptr<QAudioSink> m_sink;
-    bool m_running = false;
+    void openAudio();
+    void selectTrack();
+    std::unique_ptr<QMediaPlayer> m_player;
+    std::unique_ptr<QAudioOutput> m_output;
+    std::array<std::unique_ptr<QSoundEffect>, EffectCount> m_effects;
+    float m_musicVolume = 0.48f, m_effectVolume = 1.0f;
+    int m_track = 0;
+    bool m_running = false, m_music = false, m_effectsOn = false;
     QString m_error;
 };

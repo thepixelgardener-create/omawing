@@ -15,7 +15,7 @@
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     app.setApplicationName("omawing");
-    app.setApplicationVersion("0.1.0");
+    app.setApplicationVersion("0.3.0");
 
     // Matches the window to omawing.desktop, so the compositor (Wayland app_id)
     // and the launcher pick up the installed icon.
@@ -31,6 +31,9 @@ int main(int argc, char *argv[]) {
 
     Theme theme;
     Backend backend;
+    const auto applyTheme = [&] { backend.setTheme(theme.colors(), theme.name()); };
+    QObject::connect(&theme, &Theme::changed, &backend, applyTheme);
+    applyTheme();
     qmlRegisterType<FlightView>("Omawing", 1, 0, "FlightView");
 
     QQmlApplicationEngine engine;

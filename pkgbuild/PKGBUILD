@@ -1,5 +1,5 @@
 pkgname=omawing
-pkgver=0.1.0
+pkgver=0.3.0
 pkgrel=1
 pkgdesc='Amiga-style vector flight demo'
 arch=('x86_64' 'aarch64')
@@ -17,6 +17,7 @@ build() {
 package() {
   cd "$startdir/.."
   install -Dm755 build/omawing "$pkgdir/usr/bin/omawing"
+  install -Dm644 -t "$pkgdir/usr/share/omawing/music" src/audio/*.mp3
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 "$startdir/omawing.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/omawing.svg"
   install -Dm644 "$startdir/omawing.desktop" "$pkgdir/usr/share/applications/omawing.desktop"

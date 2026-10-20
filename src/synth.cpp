@@ -1,123 +1,152 @@
 #include "synth.h"
 
-#include <QAudioFormat>
-#include <QAudioSink>
+#include <QAudioDevice>
+#include <QAudioOutput>
 #include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
 #include <QMediaDevices>
+#include <QMediaPlayer>
+#include <QSoundEffect>
 #include <algorithm>
-#include <cmath>
 
 namespace {
-double midiToFrequency(int midi) { return 440 * std::pow(2.0, (midi - 69) / 12.0); }
-}
-
-// Every sixteenth note plays an arpeggio step; every beat adds a bass note
-// and a soft kick. Four chords of four beats each make one bar of the loop.
-void Tune::schedule(double at) {
-    static const int roots[] = {45, 41, 48, 43}, scale[] = {0, 7, 12, 16, 12, 7, 19, 16};
-    const int base = roots[(m_note / 16) % 4];
-    m_voices.push_back({midiToFrequency(base + 24 + scale[m_note % 8]), at, 0.14, 0.1, Square});
-    if (m_note % 4 == 0) {
-        m_voices.push_back({midiToFrequency(base), at, 0.34, 0.45, Triangle});
-        m_voices.push_back({65, at, 0.09, 0.6, Sine});
-    }
-    ++m_note;
-}
-
-void Tune::render(float *out, int frames) {
-    for (int i = 0; i < frames; ++i, ++m_sample) {
-        const double t = double(m_sample) / SampleRate;
-        while (m_nextNote <= t) {
-            schedule(m_nextNote);
-            m_nextNote += Step;
-        }
-        double sum = 0;
-        for (const Voice &v : m_voices) {
-            const double local = t - v.start;
-            if (local < 0 || local > v.duration)
-                continue;
-            // An 8 ms attack, then an exponential fall to near silence, the
-            // same envelope the SVG edition gave Web Audio.
-            const double level = local < 0.008 ? v.volume * local / 0.008
-                               : v.volume * std::pow(0.0001 / v.volume, (local - 0.008) / (v.duration - 0.008));
-            const double cycle = v.frequency * local, phase = cycle - std::floor(cycle);
-            const double wave = v.wave == Square ? (phase < 0.5 ? 1.0 : -1.0)
-                              : v.wave == Triangle ? 4 * std::abs(phase - 0.5) - 1
-                              : std::sin(2 * M_PI * cycle);
-            sum += wave * level;
-        }
-        out[i] = float(std::clamp(sum * 0.2, -1.0, 1.0));
-        if ((m_sample & 1023) == 0)
-            std::erase_if(m_voices, [t](const Voice &v) { return t - v.start > v.duration; });
-    }
-}
-
-void Tune::restart() {
-    m_voices.clear();
-    m_sample = 0;
-    m_note = 0;
-    m_nextNote = 0.03;
-}
-
-TuneDevice::TuneDevice(Tune &tune, QObject *parent) : QIODevice(parent), m_tune(tune) {}
-
-qint64 TuneDevice::readData(char *data, qint64 maxSize) {
-    const int frames = int(maxSize / qint64(sizeof(qint16)));
-    m_buffer.resize(frames);
-    m_tune.render(m_buffer.data(), frames);
-    auto *samples = reinterpret_cast<qint16 *>(data);
-    for (int i = 0; i < frames; ++i)
-        samples[i] = qint16(std::lround(m_buffer[i] * 32767));
-    return qint64(frames) * qint64(sizeof(qint16));
+const std::array<const char *, Synth::TrackCount> tracks = {
+    "Pyramids_Of_Glass", "Across_the_Vector_Plane", "Velvet_Horizon"
+};
+const std::array<const char *, Synth::EffectCount> effects = {"boost", "ring", "impact", "wreck"};
 }
 
 Synth::Synth(QObject *parent) : QObject(parent) {}
+Synth::~Synth() = default;
 
-Synth::~Synth() {
-    if (m_sink)
-        m_sink->stop();
+// The soundtrack is read from files rather than compiled in: Qt's FFmpeg
+// backend copies a compiled-in track to a temporary file to play it, and
+// leaves the 4 MB copy behind. Installed, the tracks are in
+// /usr/share/omawing/music; in a build tree, in src/audio.
+QUrl Synth::trackSource(int track) {
+    const QString file = QString::fromLatin1(tracks.at(track)) + ".mp3";
+    const QString app = QCoreApplication::applicationDirPath();
+    for (const QString &directory : {qEnvironmentVariable("OMAWING_MUSIC_DIR"), app + "/../share/omawing/music",
+                                     app + "/../src/audio"}) {
+        if (directory.isEmpty())
+            continue;
+        const QFileInfo info(QDir(directory).filePath(file));
+        if (info.isFile())
+            return QUrl::fromLocalFile(info.canonicalFilePath());
+    }
+    return {};
+}
+
+QUrl Synth::effectSource(Effect effect) {
+    return QUrl("qrc:/audio/" + QString::fromLatin1(effects.at(effect)) + ".wav");
+}
+
+QString Synth::trackTitle() const {
+    static const std::array<const char *, TrackCount> titles = {"Pyramids Of Glass", "Across the Vector Plane", "Velvet Horizon"};
+    return QString::fromLatin1(titles[m_track]);
 }
 
 void Synth::fail(const QString &message) {
     m_running = false;
     m_error = message;
+    if (m_player) m_player->pause();
+    for (auto &effect : m_effects) if (effect) effect->stop();
     emit changed();
 }
 
-void Synth::setRunning(bool running) {
-    if (running == m_running && m_error.isEmpty())
-        return;
-    if (!running) {
-        if (m_sink)
-            m_sink->suspend();
-        m_running = false;
+void Synth::openAudio() {
+    m_output = std::make_unique<QAudioOutput>(this);
+    m_output->setVolume(m_musicVolume);
+    m_player = std::make_unique<QMediaPlayer>(this);
+    m_player->setAudioOutput(m_output.get());
+    connect(m_player.get(), &QMediaPlayer::errorOccurred, this, [this] {
+        fail(tr("Could not play the soundtrack.") + "\n" + m_player->errorString());
+    });
+    connect(m_player.get(), &QMediaPlayer::mediaStatusChanged, this, [this](QMediaPlayer::MediaStatus status) {
+        if (status == QMediaPlayer::EndOfMedia && m_running && m_music)
+            nextTrack();
+    });
+    for (int i = 0; i < EffectCount; ++i) {
+        m_effects[i] = std::make_unique<QSoundEffect>(this);
+        auto *effect = m_effects[i].get();
+        effect->setVolume(m_effectVolume * (i == Boost ? 0.38 : i == Ring ? 0.55 : 0.65));
+        connect(effect, &QSoundEffect::statusChanged, this, [this, effect] {
+            if (effect->status() == QSoundEffect::Error)
+                fail(tr("The audio output can't play this sound."));
+        });
+        effect->setSource(effectSource(Effect(i)));
+    }
+    selectTrack();
+}
+
+void Synth::selectTrack() {
+    if (!m_player) return;
+    const QUrl source = trackSource(m_track);
+    if (source.isEmpty())
+        return fail(tr("Could not play the soundtrack.") + "\n" + tr("The music files are missing."));
+    m_player->setSource(source);
+    if (m_running && m_music) m_player->play();
+}
+
+void Synth::setRunning(bool music, bool effects) {
+    const bool running = music || effects;
+    if (running == m_running && music == m_music && effects == m_effectsOn && m_error.isEmpty()) return;
+    m_music = music;
+    m_effectsOn = effects;
+    if (!effects)
+        for (auto &effect : m_effects) if (effect) effect->stop();
+    if (running && m_running && m_error.isEmpty()) {
+        // Already open: only the music needs starting or pausing.
+        if (!m_player) {
+        } else if (!music) m_player->pause();
+        else if (m_player->mediaStatus() == QMediaPlayer::EndOfMedia) nextTrack();
+        else m_player->play();
         emit changed();
         return;
     }
-    m_error.clear();
-    if (!m_sink) {
-        const QAudioDevice output = QMediaDevices::defaultAudioOutput();
-        if (output.isNull())
-            return fail(QCoreApplication::translate("Synth", "No audio output device was found."));
-        QAudioFormat format;
-        format.setSampleRate(Tune::SampleRate);
-        format.setChannelCount(1);
-        format.setSampleFormat(QAudioFormat::Int16);
-        if (!output.isFormatSupported(format))
-            return fail(QCoreApplication::translate("Synth", "The audio output can't play this sound."));
-        m_sink = std::make_unique<QAudioSink>(output, format);
-        // About 100 ms of buffer: short enough that pause feels immediate.
-        m_sink->setBufferSize(Tune::SampleRate / 10 * qsizetype(sizeof(qint16)));
-        connect(m_sink.get(), &QAudioSink::stateChanged, this, [this] {
-            if (m_sink->error() != QtAudio::NoError)
-                fail(QCoreApplication::translate("Synth", "Sound stopped: the audio output failed."));
-        });
-        m_device = std::make_unique<TuneDevice>(m_tune);
-        m_device->open(QIODevice::ReadOnly);
-        m_sink->start(m_device.get());
-    } else {
-        m_sink->resume();
+    if (!running) {
+        m_running = false;
+        if (m_player) m_player->pause();
+        for (auto &effect : m_effects) if (effect) effect->stop();
+        emit changed();
+        return;
     }
+    if (!m_error.isEmpty()) {
+        m_player.reset();
+        for (auto &effect : m_effects) effect.reset();
+        m_output.reset();
+    }
+    m_error.clear();
+    if (QMediaDevices::defaultAudioOutput().isNull())
+        return fail(tr("No audio output device was found."));
     m_running = true;
+    if (!m_player) openAudio();
+    // A failed source can be retried after the device or file is repaired.
+    else if (m_player->error() != QMediaPlayer::NoError) selectTrack();
+    else if (!m_music) m_player->pause();
+    else if (m_player->mediaStatus() == QMediaPlayer::EndOfMedia) nextTrack();
+    else m_player->play();
     emit changed();
+}
+
+void Synth::nextTrack() {
+    m_track = (m_track + 1) % TrackCount;
+    selectTrack();
+    emit changed();
+}
+
+void Synth::play(Effect effect) {
+    if (!m_running || !m_effectsOn || !m_effects[effect] || m_effects[effect]->status() != QSoundEffect::Ready) return;
+    // Retrigger rather than stacking copies of the same impact without limit.
+    m_effects[effect]->stop();
+    m_effects[effect]->play();
+}
+
+void Synth::setVolume(float music, float effects) {
+    m_musicVolume = std::clamp(music, 0.0f, 1.0f);
+    m_effectVolume = std::clamp(effects, 0.0f, 1.0f);
+    if (m_output) m_output->setVolume(m_musicVolume);
+    for (int i = 0; i < EffectCount; ++i)
+        if (m_effects[i]) m_effects[i]->setVolume(m_effectVolume * (i == Boost ? 0.38 : i == Ring ? 0.55 : 0.65));
 }

@@ -1,1 +1,18 @@
-{}
+{
+  "HULL": "HULL",
+  "SCORE": "SCORE",
+  "BEST %1": "BEST %1",
+  "HULL BREACHED": "HULL BREACHED",
+  "Banner": "Banner",
+  "High scores": "High scores",
+  "New high score: %1": "New high score: %1",
+  "Your name": "Your name",
+  "Save score": "Save score",
+  "Rings: %1": "Rings: %1",
+  "No scores yet. Take control and fly!": "No scores yet. Take control and fly!",
+  "Fly through rings. Boost doubles points. Chain rings for up to 8×.": "Fly through rings. Boost doubles points. Chain rings for up to 8×.",
+  "Could not save settings. Check folder permissions.": "Could not save settings. Check folder permissions.",
+  "Close": "Close",
+  "Next track": "Next track",
+  "Could not play the soundtrack.": "Could not play the soundtrack."
+}

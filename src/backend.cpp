@@ -1,16 +1,154 @@
 #include "backend.h"
 
+#include <QDateTime>
 #include <QLocale>
+#include <QSettings>
+#include <QtAudio>
+#include <QStandardPaths>
 #include <algorithm>
 #include <cmath>
 
-Backend::Backend(QObject *parent) : QObject(parent) {
+namespace {
+// Six digits, zero-padded in the reader's numerals.
+QString digits(const QLocale &locale, int value) {
+    return locale.toString(value).remove(locale.groupSeparator()).rightJustified(6, locale.zeroDigit().at(0));
+}
+}
+
+Backend::Backend(QObject *parent, const QString &settingsFile)
+    : QObject(parent),
+      m_settingsFile(!settingsFile.isEmpty() ? settingsFile
+                     : QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/omawing.conf") {
     connect(&m_synth, &Synth::changed, this, [this] {
         // A failed device turns the sound off, so the button tells the truth.
         if (!m_synth.error().isEmpty())
-            m_soundWanted = false;
+            m_musicWanted = m_effectsWanted = false;
         emit changed();
     });
+    // Sliders move in many small steps; the levels are written once they settle.
+    m_saveVolume.setSingleShot(true);
+    m_saveVolume.setInterval(400);
+    connect(&m_saveVolume, &QTimer::timeout, this, &Backend::saveVolume);
+    loadSettings();
+    applyVolume();
+    syncSound();
+}
+
+// Quitting mid-run still keeps a score that made the board.
+Backend::~Backend() {
+    if (m_saveVolume.isActive())
+        saveVolume();
+    endRun();
+    if (m_pending.score > 0)
+        record(m_pending, {});
+}
+
+void Backend::loadSettings() {
+    QSettings settings(m_settingsFile, QSettings::IniFormat);
+    m_banner = settings.value("banner", true).toBool();
+    m_musicWanted = settings.value("music", false).toBool();
+    m_effectsWanted = settings.value("effects", false).toBool();
+    m_musicVolume = std::clamp(settings.value("musicVolume", 0.8).toDouble(), 0.0, 1.0);
+    m_effectsVolume = std::clamp(settings.value("effectsVolume", 0.8).toDouble(), 0.0, 1.0);
+    m_look.banner = m_banner;
+    m_playerName = settings.value("name", qEnvironmentVariable("USER")).toString().left(NameLength);
+    const int count = settings.beginReadArray("scores");
+    for (int i = 0; i < count; ++i) {
+        settings.setArrayIndex(i);
+        // An edited file can't stretch the board: names are cut to what the
+        // name field allows.
+        m_scores.append(QVariantMap{{"name", settings.value("name").toString().left(NameLength)},
+                                    {"score", settings.value("score").toInt()},
+                                    {"rings", settings.value("rings").toInt()},
+                                    {"date", settings.value("date").toString()}});
+    }
+    settings.endArray();
+    m_scores.removeIf([](const QVariant &entry) { return entry.toMap().value("score").toInt() <= 0; });
+    std::stable_sort(m_scores.begin(), m_scores.end(), [](const QVariant &a, const QVariant &b) {
+        return a.toMap().value("score").toInt() > b.toMap().value("score").toInt();
+    });
+    while (m_scores.size() > BoardSize)
+        m_scores.removeLast();
+}
+
+int Backend::best() const { return m_scores.isEmpty() ? 0 : m_scores.first().toMap().value("score").toInt(); }
+
+bool Backend::qualifies(int score) const {
+    return score > 0 && (m_scores.size() < BoardSize || score > m_scores.last().toMap().value("score").toInt());
+}
+
+bool Backend::record(const Run &run, const QString &name) {
+    auto scores = m_scores;
+    const QVariantMap entry{{"name", name.isEmpty() ? m_playerName : name},
+                            {"score", run.score},
+                            {"rings", run.rings},
+                            {"date", QDateTime::currentDateTime().toString(Qt::ISODate)}};
+    // Ties keep the earlier score ahead.
+    auto at = std::find_if(scores.begin(), scores.end(),
+                           [&](const QVariant &v) { return v.toMap().value("score").toInt() < run.score; });
+    scores.insert(at, entry);
+    while (scores.size() > BoardSize)
+        scores.removeLast();
+
+    QSettings settings(m_settingsFile, QSettings::IniFormat);
+    settings.setValue("name", m_playerName);
+    settings.beginWriteArray("scores", int(scores.size()));
+    for (int i = 0; i < scores.size(); ++i) {
+        settings.setArrayIndex(i);
+        const QVariantMap score = scores[i].toMap();
+        for (const char *key : {"name", "score", "rings", "date"})
+            settings.setValue(key, score.value(key));
+    }
+    settings.endArray();
+    if (!saved(settings))
+        return false;
+    m_scores = scores;
+    emit changed();
+    return true;
+}
+
+bool Backend::saved(QSettings &settings) {
+    settings.sync();
+    const QString error = settings.status() == QSettings::NoError ? QString()
+                        : tr("Could not save settings. Check folder permissions.");
+    if (error != m_settingsError) {
+        m_settingsError = error;
+        emit changed();
+    }
+    return error.isEmpty();
+}
+
+bool Backend::store(std::initializer_list<std::pair<const char *, QVariant>> values) {
+    QSettings settings(m_settingsFile, QSettings::IniFormat);
+    for (const auto &[key, value] : values)
+        settings.setValue(key, value);
+    return saved(settings);
+}
+
+void Backend::endRun() {
+    if (m_flight.demo && m_flight.score == 0)
+        return;
+    const Run run{m_flight.score, m_flight.ringsFlown};
+    m_flight.newRun();
+    if (!qualifies(run.score))
+        return;
+    // One name at a time: an older score still waiting keeps the last name.
+    if (m_pending.score > 0)
+        record(m_pending, {});
+    m_pending = run;
+    emit scoresChanged();
+}
+
+void Backend::saveScore(const QString &name) {
+    if (m_pending.score <= 0)
+        return;
+    const QString trimmed = name.trimmed().left(NameLength);
+    if (!trimmed.isEmpty())
+        m_playerName = trimmed;
+    if (!record(m_pending, m_playerName))
+        return;
+    m_pending = {};
+    emit scoresChanged();
 }
 
 Scene::Hud Backend::hud() const {
@@ -21,18 +159,70 @@ Scene::Hud Backend::hud() const {
                          : boost > 0.6 ? tr("BOOST ENGAGED")
                          : tr("YOU HAVE THE CONTROLS");
     const int second = int(std::floor(std::fmod(m_flight.time, Flight::ActLength)));
-    const QString clock = locale.toString(second).rightJustified(2, locale.zeroDigit().at(0)) + " / " + locale.toString(24);
+    const QString clock = locale.toString(second).rightJustified(2, locale.zeroDigit().at(0)) + " / " + locale.toString(int(Flight::ActLength));
     const QString mode = (m_flight.demo ? tr("DEMO SEQUENCE") : tr("FREE FLIGHT")) + QString::fromUtf8(" · ") + clock;
     QString altitude = locale.toString(m_flight.ship.y, 'f', 1);
     if (m_flight.ship.y < 10)
         altitude.prepend(locale.zeroDigit());
-    return {status, mode, tr("THRUST"), tr("ALT %1").arg(altitude), tr("A LOVE LETTER TO THE DEMOSCENE")};
+
+    Scene::Hud hud{status, mode, tr("THRUST"), tr("ALT %1").arg(altitude), tr("A LOVE LETTER TO THE DEMOSCENE")};
+    const bool playing = !m_flight.demo;
+    const int top = std::max(best(), playing ? m_flight.score : 0);
+    if (playing) {
+        hud.hull = tr("HULL");
+        hud.score = tr("SCORE");
+        hud.points = digits(locale, m_flight.score);
+    }
+    if (top > 0)
+        hud.best = tr("BEST %1").arg(digits(locale, top));
+    if (m_flight.wrecked >= 0)
+        hud.alert = tr("HULL BREACHED");
+    return hud;
+}
+
+void Backend::setTheme(const QHash<QString, QString> &colors, const QString &name) {
+    const auto palette = Scene::themeColors(colors);
+    // Picking a new Omarchy theme flies straight into its scene, fading in
+    // from the scene before it. The first reading at startup doesn't jump.
+    const bool switched = m_look.theme[0].isValid() && (palette != m_look.theme || name != m_look.themeName);
+    m_look.theme = palette;
+    m_look.themeName = name;
+    if (switched) {
+        m_flight.scene(Scene::ThemeAct);
+        m_flight.time -= 2;
+    }
+    emit frameChanged();
 }
 
 void Backend::tick(double seconds) {
-    const double dt = std::clamp(seconds, 0.0, 0.05);
+    const double refreshRate = m_refreshRate;
+    if (!std::isfinite(seconds) || seconds <= 0 || m_hidden)
+        return;
+    double dt = std::clamp(seconds, 0.0, 0.05);
+    if (refreshRate >= 20 && refreshRate <= 500) {
+        // Frames reach the screen on its beat, but the timer measuring them
+        // wobbles by a few milliseconds. Stepping by whole refreshes moves the
+        // world evenly; what the timer measured beyond that is paid back a
+        // little each frame, so the clock never drifts.
+        const double period = 1 / refreshRate;
+        const double snapped = std::min(0.05, std::max(1.0, std::round(dt / period)) * period);
+        m_drift = std::clamp(m_drift + dt - snapped, -0.25, 0.25);
+        const double payback = std::clamp(m_drift * 0.05, -0.03 * period, 0.03 * period);
+        m_drift -= payback;
+        dt = snapped + payback;
+    }
+    m_lastStep = dt;
     if (!m_paused) {
         m_flight.step(dt);
+        const unsigned cues = m_flight.events;
+        if (cues & Flight::Wreck) m_synth.play(Synth::Wreck);
+        else if (cues & Flight::Impact) m_synth.play(Synth::Impact);
+        if (cues & Flight::RingPassed) m_synth.play(Synth::Ring);
+        if (cues & Flight::BoostStarted) m_synth.play(Synth::Boost);
+        // A wreck that has finished falling ends the run, and the autopilot
+        // takes over again.
+        if (m_flight.over())
+            setDemo(true);
         emit frameChanged();
     }
     ++m_frames;
@@ -54,6 +244,8 @@ void Backend::setPaused(bool paused) {
 }
 
 void Backend::setDemo(bool demo) {
+    if (demo && !m_flight.demo)
+        endRun();
     m_flight.demo = demo;
     m_flight.clearInput();
     emit changed();
@@ -67,18 +259,72 @@ void Backend::nextScene() {
 
 // Restarts the flight and the sequence, keeping pause and sound as they are.
 void Backend::restart() {
+    endRun();
     m_flight.reset();
     emit changed();
     emit frameChanged();
 }
 
-void Backend::toggleSound() {
-    m_soundWanted = !m_soundWanted;
+void Backend::toggleMusic() {
+    m_musicWanted = !m_musicWanted;
+    store({{"music", m_musicWanted}});
     syncSound();
     emit changed();
 }
 
-void Backend::syncSound() { m_synth.setRunning(m_soundWanted && !m_paused && !m_hidden); }
+void Backend::saveVolume() {
+    m_saveVolume.stop();
+    store({{"musicVolume", m_musicVolume}, {"effectsVolume", m_effectsVolume}});
+}
+
+void Backend::setMusicVolume(double volume) {
+    volume = std::clamp(volume, 0.0, 1.0);
+    if (volume == m_musicVolume)
+        return;
+    m_musicVolume = volume;
+    applyVolume();
+    m_saveVolume.start();
+    emit volumeChanged();
+}
+
+void Backend::setEffectsVolume(double volume) {
+    volume = std::clamp(volume, 0.0, 1.0);
+    if (volume == m_effectsVolume)
+        return;
+    m_effectsVolume = volume;
+    applyVolume();
+    m_saveVolume.start();
+    emit volumeChanged();
+}
+
+// The sliders follow loudness; the player wants linear gain. The music sits
+// a little under the effects, so cues cut through it at equal settings.
+void Backend::applyVolume() {
+    auto gain = [](double v) {
+        return QtAudio::convertVolume(float(v), QtAudio::LogarithmicVolumeScale, QtAudio::LinearVolumeScale);
+    };
+    m_synth.setVolume(gain(m_musicVolume) * 0.6f, gain(m_effectsVolume));
+}
+
+void Backend::toggleEffects() {
+    m_effectsWanted = !m_effectsWanted;
+    store({{"effects", m_effectsWanted}});
+    syncSound();
+    emit changed();
+}
+
+void Backend::toggleBanner() {
+    m_banner = !m_banner;
+    m_look.banner = m_banner;
+    store({{"banner", m_banner}});
+    emit changed();
+    emit frameChanged();
+}
+
+void Backend::syncSound() {
+    const bool audible = !m_paused && !m_hidden;
+    m_synth.setRunning(m_musicWanted && audible, m_effectsWanted && audible);
+}
 
 void Backend::setHidden(bool hidden) {
     m_hidden = hidden;
