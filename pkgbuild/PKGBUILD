@@ -2,6 +2,7 @@ pkgname=omawing
 pkgver=0.3.0
 pkgrel=1
 pkgdesc='Amiga-style vector flight demo'
+url='https://github.com/thepixelgardener-create/omawing'
 arch=('x86_64' 'aarch64')
 license=('MIT')
 depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-multimedia')
