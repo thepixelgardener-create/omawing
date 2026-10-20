@@ -45,7 +45,7 @@ public:
     bool qualifies(int score) const;
     // A finished run: held for a name if it made the board. An older score
     // still waiting is saved first, under the last name.
-    void submit(int score, int rings);
+    void offer(int score, int rings);
     // Puts the pending score on the board; an empty name uses the last one.
     // On a failed save the score stays pending, so it can be tried again.
     Q_INVOKABLE void save(const QString &name);

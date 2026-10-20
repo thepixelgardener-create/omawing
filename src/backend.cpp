@@ -72,7 +72,7 @@ void Backend::endRun() {
         return;
     const int score = m_flight.game.score, rings = m_flight.game.ringsFlown;
     m_flight.newRun();
-    m_board.submit(score, rings);
+    m_board.offer(score, rings);
 }
 
 Scene::Hud Backend::hud() const {

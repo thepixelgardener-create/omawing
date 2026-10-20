@@ -37,7 +37,7 @@ bool ScoreBoard::qualifies(int score) const {
     return score > 0 && (m_entries.size() < Size || score > m_entries.last().score);
 }
 
-void ScoreBoard::submit(int score, int rings) {
+void ScoreBoard::offer(int score, int rings) {
     if (!qualifies(score))
         return;
     if (m_pending.score > 0)

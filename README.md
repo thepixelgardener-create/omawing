@@ -170,13 +170,22 @@ GPU finish), so its timings differ from the CPU paint timings in `OMAWING_STATS`
 
 | File | Job |
 | --- | --- |
-| `src/flight.{h,cpp}` | Flight, collisions, rings, particles, chase camera, and act timing. No Qt types. |
-| `src/scene.{h,cpp}` | Projection, clipping, painter's-algorithm sorting, and every layer of the picture. |
-| `src/synth.{h,cpp}` | Streaming MP3 playlist and preloaded gameplay effects through Qt Multimedia. |
-| `src/backend.{h,cpp}` | State and actions for QML: pause, autopilot, sound, input, preferences, and high scores. |
+| `src/flight.{h,cpp}` | The ship, chase camera, particles, scenery layout, and act timing. No Qt types. |
+| `src/game.{h,cpp}` | The arcade rules: rings, the multiplier, hull damage, and wrecks. No Qt types. |
+| `src/geometry.h` | Vector helpers, in namespace `geo`. |
+| `src/scene.{h,cpp}` | Puts a frame together from the layers below. |
+| `src/view.{h,cpp}` | What the layers share: projection, clipping, fog, and the act's colours and style. |
+| `src/sky.{h,cpp}` | Sky, copper bars, stars, sun, clouds, parallax hills, and the ground's gradient. |
+| `src/ground.{h,cpp}` | The checkerboard, grid lines, and the ship's shadow. |
+| `src/worldlayer.{h,cpp}` | Scenery, rings, the ship, and particles, sorted far to near. |
+| `src/overlay.{h,cpp}` | Speed lines, ring points, scanlines, title, HUD, and the sine scroller. |
+| `src/shipshape.h` | The hull and wing geometry, shared by the ship and its shadow. |
+| `src/scoreboard.{h,cpp}` | The saved top ten, as a list model for QML. |
+| `src/audio.{h,cpp}` | The MP3 playlist and gameplay effects, through Qt Multimedia. |
+| `src/backend.{h,cpp}` | State and actions for QML: pause, autopilot, sound, input, and preferences. |
 | `src/flightview.{h,cpp}` | The Qt Quick item that paints the scene. |
-| `src/Main.qml` | The window, toolbar, shortcut overlay, and high-score board. |
-| `src/theme.*`, `src/translator.*` | Omarchy accent, rounding, and language. |
+| `src/Main.qml` | The window, toolbar, shortcut overlay, volume panel, and high-score board. |
+| `src/theme.*`, `src/translator.*` | Omarchy colours, rounding, and language. |
 
 ## Limits
 

@@ -251,13 +251,13 @@ private slots:
         ScoreBoard board(file);
         QCOMPARE(board.count(), 1);
         QCOMPARE(board.entries().first().name, QString("AVERYLONGPIL"));
-        board.submit(500, 3);
+        board.offer(500, 3);
         board.save("Second");
         QCOMPARE(board.entries()[1].name, QString("Second"));   // A tie stays behind the earlier score.
         const QModelIndex top = board.index(0);
         QCOMPARE(board.data(top, ScoreBoard::ScoreRole).toInt(), 500);
         QCOMPARE(board.roleNames().value(ScoreBoard::NameRole), QByteArray("name"));
-        board.submit(0, 0);
+        board.offer(0, 0);
         QCOMPARE(board.pendingScore(), 0);
     }
 

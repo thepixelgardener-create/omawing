@@ -1,0 +1,45 @@
+#pragma once
+
+// Everything standing in the world: scenery, rings, the ship, and particles,
+// projected and drawn far to near (the painter's algorithm).
+
+#include <QColor>
+#include <QImage>
+#include <vector>
+
+#include "view.h"
+
+class QPainter;
+
+class WorldLayer {
+public:
+    void build(const View &view);
+    void paint(QPainter &p);
+    // The projected faces of the last frame, in canvas units.
+    const std::vector<SceneFace> &faces() const { return m_faces; }
+
+private:
+    struct Mesh {
+        std::vector<Vec> vertices;
+        std::vector<std::vector<int>> faces;
+    };
+    struct MeshOptions {
+        bool wire = false, emissive = false, ship = false, glow = false;
+        QColor stroke;
+        double radius = 8, opacity = 1;
+    };
+
+    void face(const std::vector<Vec> &points, const QColor &fill, const QColor &stroke, double opacity, bool ship,
+              bool glow = false);
+    void mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, const std::vector<Vec> &colors,
+              const MeshOptions &options);
+    void ring(const Ring &ring, double spin);
+    void buildScenery();
+    void buildShip();
+    void buildParticles();
+    void preparePuffs();
+
+    const View *m_view = nullptr;
+    std::vector<SceneFace> m_faces;
+    std::vector<QImage> m_puffs;
+};
