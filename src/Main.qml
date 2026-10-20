@@ -30,20 +30,19 @@ ApplicationWindow {
         if (board.visible) return
         board.wasPaused = backend.paused
         backend.setPaused(true)
-        player.text = backend.playerName
+        player.text = backend.scoreBoard.playerName
         board.open()
-        if (backend.pendingScore > 0) player.forceActiveFocus()
+        if (backend.scoreBoard.pendingScore > 0) player.forceActiveFocus()
     }
     function localizedNumber(value) {
         // Reading the language makes bindings that use this re-run when it changes.
         const language = translator.language
         return Number(value).toLocaleString(Qt.locale(), 'f', 0)
     }
+    // A run that made the board opens it, to ask for a name.
     Connections {
-        target: backend
-        function onScoresChanged() {
-            if (backend.pendingScore > 0) Qt.callLater(win.showScores)
-        }
+        target: backend.scoreBoard
+        function onPending() { Qt.callLater(win.showScores) }
     }
 
     function toggleFullScreen() { win.visibility = win.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
@@ -335,7 +334,7 @@ ApplicationWindow {
         property bool wasPaused: false
         background: Rectangle { color: "#14162a"; radius: theme.radius; border.color: "#454867" }
         onClosed: {
-            if (backend.pendingScore > 0) backend.saveScore(player.text)
+            if (backend.scoreBoard.pendingScore > 0) backend.scoreBoard.save(player.text)
             backend.setPaused(wasPaused)
             view.forceActiveFocus()
         }
@@ -350,25 +349,25 @@ ApplicationWindow {
                 height: implicitHeight
                 spacing: 10
                 Label {
-                    visible: backend.pendingScore > 0
+                    visible: backend.scoreBoard.pendingScore > 0
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
-                    text: qsTr("New high score: %1").arg(win.localizedNumber(backend.pendingScore))
+                    text: qsTr("New high score: %1").arg(win.localizedNumber(backend.scoreBoard.pendingScore))
                     color: theme.accent
                     font.pixelSize: 22
                 }
                 RowLayout {
-                    visible: backend.pendingScore > 0
+                    visible: backend.scoreBoard.pendingScore > 0
                     Layout.fillWidth: true
                     TextField {
                         id: player
                         objectName: "playerName"
                         Layout.fillWidth: true
-                        maximumLength: backend.nameLength
+                        maximumLength: backend.scoreBoard.nameLength
                         placeholderText: qsTr("Your name")
-                        onAccepted: backend.saveScore(text)
+                        onAccepted: backend.scoreBoard.save(text)
                     }
-                    Button { text: qsTr("Save score"); onClicked: backend.saveScore(player.text) }
+                    Button { text: qsTr("Save score"); onClicked: backend.scoreBoard.save(player.text) }
                 }
                 Label {
                     Layout.fillWidth: true
@@ -385,17 +384,19 @@ ApplicationWindow {
                     opacity: 0.8
                 }
                 Label {
-                    visible: backend.scores.length === 0
+                    visible: backend.scoreBoard.count === 0
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     text: qsTr("No scores yet. Take control and fly!")
                     padding: 12
                 }
                 Repeater {
-                    model: backend.scores
+                    model: backend.scoreBoard
                     delegate: Rectangle {
-                        required property var modelData
                         required property int index
+                        required property string name
+                        required property int score
+                        required property int rings
                         objectName: "scoreRow"
                         Layout.fillWidth: true
                         implicitHeight: 44
@@ -407,9 +408,9 @@ ApplicationWindow {
                             anchors.margins: 10
                             Label { text: win.localizedNumber(index + 1); Layout.preferredWidth: 28; color: theme.accent }
                             // Names are typed by players: shown as text, never as markup.
-                            Label { text: modelData.name; textFormat: Text.PlainText; Layout.fillWidth: true; elide: Text.ElideRight }
-                            Label { text: win.localizedNumber(modelData.score); font.bold: true }
-                            Label { text: qsTr("Rings: %1").arg(win.localizedNumber(modelData.rings)); Layout.preferredWidth: 95; horizontalAlignment: Text.AlignRight }
+                            Label { text: name; textFormat: Text.PlainText; Layout.fillWidth: true; elide: Text.ElideRight }
+                            Label { text: win.localizedNumber(score); font.bold: true }
+                            Label { text: qsTr("Rings: %1").arg(win.localizedNumber(rings)); Layout.preferredWidth: 95; horizontalAlignment: Text.AlignRight }
                         }
                     }
                 }

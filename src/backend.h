@@ -4,10 +4,10 @@
 #include <QObject>
 #include <QSettings>
 #include <QTimer>
-#include <QVariantList>
 
 #include "flight.h"
 #include "scene.h"
+#include "scoreboard.h"
 #include "audio.h"
 
 // The app's state for QML: the flight, pause, the demo autopilot, sound, the
@@ -25,14 +25,9 @@ class Backend : public QObject {
     Q_PROPERTY(QString soundError READ soundError NOTIFY changed)
     Q_PROPERTY(QString settingsError READ settingsError NOTIFY changed)
     Q_PROPERTY(int fps READ fps NOTIFY fpsChanged)
-    Q_PROPERTY(QVariantList scores READ scores NOTIFY scoresChanged)
-    Q_PROPERTY(int pendingScore READ pendingScore NOTIFY scoresChanged)
-    Q_PROPERTY(QString playerName READ playerName NOTIFY scoresChanged)
-    Q_PROPERTY(int nameLength READ nameLength CONSTANT)
+    Q_PROPERTY(ScoreBoard *scoreBoard READ scoreBoardObject CONSTANT)
 
 public:
-    static constexpr int BoardSize = 10, NameLength = 12;
-
     // Scores and preferences live in an INI file, by default
     // ~/.config/omawing/omawing.conf.
     explicit Backend(QObject *parent = nullptr, const QString &settingsFile = {});
@@ -50,17 +45,13 @@ public:
     bool banner() const { return m_banner; }
     QString trackTitle() const { return m_audio.trackTitle(); }
     QString soundError() const { return m_audio.error(); }
-    QString settingsError() const { return m_settingsError; }
+    // A failed save of preferences or of the score board, or empty.
+    QString settingsError() const { return m_settingsError.isEmpty() ? m_board.error() : m_settingsError; }
     int fps() const { return m_fps; }
     // The simulated time of the last frame, in seconds.
     double lastStep() const { return m_lastStep; }
-    // The board, best first: maps with name, score, rings, and date.
-    QVariantList scores() const { return m_scores; }
-    // A finished run that made the board and is waiting for a name, or 0.
-    int pendingScore() const { return m_pending.score; }
-    QString playerName() const { return m_playerName; }
-    int nameLength() const { return NameLength; }
-    int best() const;
+    ScoreBoard &scoreBoard() { return m_board; }
+    const ScoreBoard &scoreBoard() const { return m_board; }
 
     const Flight &flight() const { return m_flight; }
     Flight &flight() { return m_flight; }
@@ -83,8 +74,6 @@ public:
     Q_INVOKABLE void toggleEffects();
     Q_INVOKABLE void nextTrack() { m_audio.nextTrack(); }
     Q_INVOKABLE void toggleBanner();
-    // Puts the waiting score on the board; an empty name uses the last one.
-    Q_INVOKABLE void saveScore(const QString &name);
 
     // Flight keys take Qt key codes; they return whether the key steers.
     Q_INVOKABLE bool keyDown(int key);
@@ -100,33 +89,25 @@ signals:
     void changed();
     void frameChanged();
     void fpsChanged();
-    void scoresChanged();
     void volumeChanged();
 
 private:
-    struct Run {
-        int score = 0, rings = 0;
-    };
     void syncSound();
     void applyVolume();
     void saveVolume();
-    // Ends the run in progress, holding its score for a name if it made the board.
+    // Ends the run in progress and offers its score to the board.
     void endRun();
-    bool qualifies(int score) const;
-    bool record(const Run &run, const QString &name);
+    ScoreBoard *scoreBoardObject() { return &m_board; }
     void loadSettings();
     // Writes preferences and reports whether they reached the disk.
     bool store(std::initializer_list<std::pair<const char *, QVariant>> values);
-    bool saved(QSettings &settings);
     static int flightKey(int key);
 
     Flight m_flight;
     Audio m_audio;
     QString m_settingsFile, m_settingsError;
     Scene::Look m_look;
-    QVariantList m_scores;
-    Run m_pending;
-    QString m_playerName;
+    ScoreBoard m_board;
     bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true;
     int m_frames = 0, m_fps = 0;
     double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0;

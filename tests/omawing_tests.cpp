@@ -242,6 +242,25 @@ private slots:
         QVERIFY(flight.events & Flight::BoostStarted);
     }
 
+    void scoreBoardKeepsTiesInOrderAndServesQml()
+    {
+        QTemporaryDir dir;
+        const QString file = dir.filePath("board.ini");
+        // A hand-edited file: an overlong name and an empty run.
+        write(file, "[scores]\n1\\name=AVERYLONGPILOTNAME\n1\\score=500\n2\\name=Zero\n2\\score=0\nsize=2\n");
+        ScoreBoard board(file);
+        QCOMPARE(board.count(), 1);
+        QCOMPARE(board.entries().first().name, QString("AVERYLONGPIL"));
+        board.submit(500, 3);
+        board.save("Second");
+        QCOMPARE(board.entries()[1].name, QString("Second"));   // A tie stays behind the earlier score.
+        const QModelIndex top = board.index(0);
+        QCOMPARE(board.data(top, ScoreBoard::ScoreRole).toInt(), 500);
+        QCOMPARE(board.roleNames().value(ScoreBoard::NameRole), QByteArray("name"));
+        board.submit(0, 0);
+        QCOMPARE(board.pendingScore(), 0);
+    }
+
     void switchingThemeShowsItsScene()
     {
         QTemporaryDir dir;
@@ -328,7 +347,7 @@ private slots:
         QVERIFY(f.game.wrecked >= 0);
         for (int i = 0; i < 55; ++i) backend.tick(0.05);
         QVERIFY(backend.demo());
-        QCOMPARE(backend.pendingScore(), 700);
+        QCOMPARE(backend.scoreBoard().pendingScore(), 700);
         QCOMPARE(f.game.hull, Game::FullHull);
     }
 
@@ -361,18 +380,18 @@ private slots:
             b.toggleBanner();
             for (int i = 1; i <= 12; ++i) {
                 b.setDemo(false); b.flight().game.score = i * 100; b.flight().game.ringsFlown = i;
-                b.setDemo(true); b.saveScore("  Pilot  ");
+                b.setDemo(true); b.scoreBoard().save("  Pilot  ");
             }
-            QCOMPARE(b.scores().size(), Backend::BoardSize);
-            QCOMPARE(b.best(), 1200);
-            QCOMPARE(b.scores().last().toMap().value("score").toInt(), 300);
+            QCOMPARE(b.scoreBoard().count(), ScoreBoard::Size);
+            QCOMPARE(b.scoreBoard().best(), 1200);
+            QCOMPARE(b.scoreBoard().entries().last().score, 300);
             b.setDemo(false); b.flight().game.score = 2000; // Quitting mid-run saves too.
         }
         Backend loaded(nullptr, path);
-        QCOMPARE(loaded.best(), 2000);
-        QCOMPARE(loaded.playerName(), QString("Pilot"));
+        QCOMPARE(loaded.scoreBoard().best(), 2000);
+        QCOMPARE(loaded.scoreBoard().playerName(), QString("Pilot"));
         QVERIFY(!loaded.banner() && !loaded.look().banner);
-        QCOMPARE(loaded.scores().size(), Backend::BoardSize);
+        QCOMPARE(loaded.scoreBoard().count(), ScoreBoard::Size);
     }
 
     void failedScoreSaveRetainsPendingRun() {
@@ -381,10 +400,10 @@ private slots:
         write(blocked, "file, not a directory");
         Backend b(nullptr, blocked + "/game.ini");
         b.setDemo(false); b.flight().game.score = 100; b.setDemo(true);
-        b.saveScore("Pilot");
+        b.scoreBoard().save("Pilot");
         QVERIFY(!b.settingsError().isEmpty());
-        QCOMPARE(b.pendingScore(), 100);
-        QVERIFY(b.scores().isEmpty());
+        QCOMPARE(b.scoreBoard().pendingScore(), 100);
+        QVERIFY((b.scoreBoard().count() == 0));
     }
 
     void hiddenWindowAndInvalidTicksDoNotAdvance() {
@@ -453,8 +472,8 @@ private slots:
         QCOMPARE(player->property("text").toString(), QString("qnrw"));
         QVERIFY(backend.demo());
         QTest::keyClick(window, Qt::Key_Return);
-        QCOMPARE(backend.pendingScore(), 0);
-        QCOMPARE(backend.best(), 1200);
+        QCOMPARE(backend.scoreBoard().pendingScore(), 0);
+        QCOMPARE(backend.scoreBoard().best(), 1200);
         auto capture = [&](const QString &name) {
             QTest::qWait(250);
             const QImage shot = window->grabWindow();

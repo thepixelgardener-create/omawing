@@ -18,7 +18,9 @@ QString digits(const QLocale &locale, int value) {
 Backend::Backend(QObject *parent, const QString &settingsFile)
     : QObject(parent),
       m_settingsFile(!settingsFile.isEmpty() ? settingsFile
-                     : QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/omawing.conf") {
+                     : QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/omawing.conf"),
+      m_board(m_settingsFile) {
+    connect(&m_board, &ScoreBoard::changed, this, &Backend::changed);
     connect(&m_audio, &Audio::changed, this, [this] {
         // A failed device turns the sound off, so the button tells the truth.
         if (!m_audio.error().isEmpty())
@@ -39,8 +41,6 @@ Backend::~Backend() {
     if (m_saveVolume.isActive())
         saveVolume();
     endRun();
-    if (m_pending.score > 0)
-        record(m_pending, {});
 }
 
 void Backend::loadSettings() {
@@ -51,63 +51,12 @@ void Backend::loadSettings() {
     m_musicVolume = std::clamp(settings.value("musicVolume", 0.8).toDouble(), 0.0, 1.0);
     m_effectsVolume = std::clamp(settings.value("effectsVolume", 0.8).toDouble(), 0.0, 1.0);
     m_look.banner = m_banner;
-    m_playerName = settings.value("name", qEnvironmentVariable("USER")).toString().left(NameLength);
-    const int count = settings.beginReadArray("scores");
-    for (int i = 0; i < count; ++i) {
-        settings.setArrayIndex(i);
-        // An edited file can't stretch the board: names are cut to what the
-        // name field allows.
-        m_scores.append(QVariantMap{{"name", settings.value("name").toString().left(NameLength)},
-                                    {"score", settings.value("score").toInt()},
-                                    {"rings", settings.value("rings").toInt()},
-                                    {"date", settings.value("date").toString()}});
-    }
-    settings.endArray();
-    m_scores.removeIf([](const QVariant &entry) { return entry.toMap().value("score").toInt() <= 0; });
-    std::stable_sort(m_scores.begin(), m_scores.end(), [](const QVariant &a, const QVariant &b) {
-        return a.toMap().value("score").toInt() > b.toMap().value("score").toInt();
-    });
-    while (m_scores.size() > BoardSize)
-        m_scores.removeLast();
 }
 
-int Backend::best() const { return m_scores.isEmpty() ? 0 : m_scores.first().toMap().value("score").toInt(); }
-
-bool Backend::qualifies(int score) const {
-    return score > 0 && (m_scores.size() < BoardSize || score > m_scores.last().toMap().value("score").toInt());
-}
-
-bool Backend::record(const Run &run, const QString &name) {
-    auto scores = m_scores;
-    const QVariantMap entry{{"name", name.isEmpty() ? m_playerName : name},
-                            {"score", run.score},
-                            {"rings", run.rings},
-                            {"date", QDateTime::currentDateTime().toString(Qt::ISODate)}};
-    // Ties keep the earlier score ahead.
-    auto at = std::find_if(scores.begin(), scores.end(),
-                           [&](const QVariant &v) { return v.toMap().value("score").toInt() < run.score; });
-    scores.insert(at, entry);
-    while (scores.size() > BoardSize)
-        scores.removeLast();
-
+bool Backend::store(std::initializer_list<std::pair<const char *, QVariant>> values) {
     QSettings settings(m_settingsFile, QSettings::IniFormat);
-    settings.setValue("name", m_playerName);
-    settings.beginWriteArray("scores", int(scores.size()));
-    for (int i = 0; i < scores.size(); ++i) {
-        settings.setArrayIndex(i);
-        const QVariantMap score = scores[i].toMap();
-        for (const char *key : {"name", "score", "rings", "date"})
-            settings.setValue(key, score.value(key));
-    }
-    settings.endArray();
-    if (!saved(settings))
-        return false;
-    m_scores = scores;
-    emit changed();
-    return true;
-}
-
-bool Backend::saved(QSettings &settings) {
+    for (const auto &[key, value] : values)
+        settings.setValue(key, value);
     settings.sync();
     const QString error = settings.status() == QSettings::NoError ? QString()
                         : tr("Could not save settings. Check folder permissions.");
@@ -118,37 +67,12 @@ bool Backend::saved(QSettings &settings) {
     return error.isEmpty();
 }
 
-bool Backend::store(std::initializer_list<std::pair<const char *, QVariant>> values) {
-    QSettings settings(m_settingsFile, QSettings::IniFormat);
-    for (const auto &[key, value] : values)
-        settings.setValue(key, value);
-    return saved(settings);
-}
-
 void Backend::endRun() {
     if (m_flight.demo && m_flight.game.score == 0)
         return;
-    const Run run{m_flight.game.score, m_flight.game.ringsFlown};
+    const int score = m_flight.game.score, rings = m_flight.game.ringsFlown;
     m_flight.newRun();
-    if (!qualifies(run.score))
-        return;
-    // One name at a time: an older score still waiting keeps the last name.
-    if (m_pending.score > 0)
-        record(m_pending, {});
-    m_pending = run;
-    emit scoresChanged();
-}
-
-void Backend::saveScore(const QString &name) {
-    if (m_pending.score <= 0)
-        return;
-    const QString trimmed = name.trimmed().left(NameLength);
-    if (!trimmed.isEmpty())
-        m_playerName = trimmed;
-    if (!record(m_pending, m_playerName))
-        return;
-    m_pending = {};
-    emit scoresChanged();
+    m_board.submit(score, rings);
 }
 
 Scene::Hud Backend::hud() const {
@@ -167,7 +91,7 @@ Scene::Hud Backend::hud() const {
 
     Scene::Hud hud{status, mode, tr("THRUST"), tr("ALT %1").arg(altitude), tr("A LOVE LETTER TO THE DEMOSCENE")};
     const bool playing = !m_flight.demo;
-    const int top = std::max(best(), playing ? m_flight.game.score : 0);
+    const int top = std::max(m_board.best(), playing ? m_flight.game.score : 0);
     if (playing) {
         hud.hull = tr("HULL");
         hud.score = tr("SCORE");

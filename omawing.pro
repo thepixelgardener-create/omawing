@@ -12,6 +12,7 @@ HEADERS += \
     src/geometry.h \
     src/flightview.h \
     src/scene.h \
+    src/scoreboard.h \
     src/audio.h \
     src/theme.h \
     src/translator.h
@@ -23,6 +24,7 @@ SOURCES += \
     src/game.cpp \
     src/flightview.cpp \
     src/scene.cpp \
+    src/scoreboard.cpp \
     src/audio.cpp \
     src/theme.cpp \
     src/translator.cpp

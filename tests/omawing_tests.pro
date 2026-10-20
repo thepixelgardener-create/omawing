@@ -6,8 +6,8 @@ TEMPLATE = app
 
 INCLUDEPATH += ../src
 
-HEADERS += ../src/backend.h ../src/flight.h ../src/game.h ../src/scene.h ../src/audio.h ../src/theme.h ../src/translator.h
-SOURCES += omawing_tests.cpp ../src/backend.cpp ../src/flight.cpp ../src/game.cpp ../src/scene.cpp ../src/audio.cpp \
+HEADERS += ../src/backend.h ../src/flight.h ../src/game.h ../src/scene.h ../src/scoreboard.h ../src/audio.h ../src/theme.h ../src/translator.h
+SOURCES += omawing_tests.cpp ../src/backend.cpp ../src/flight.cpp ../src/game.cpp ../src/scene.cpp ../src/scoreboard.cpp ../src/audio.cpp \
     ../src/theme.cpp ../src/translator.cpp
 
 HEADERS += ../src/flightview.h
