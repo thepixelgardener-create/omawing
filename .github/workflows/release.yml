@@ -1,0 +1,59 @@
+# Builds the release package on GitHub, from the public source, in a clean
+# Arch Linux container, and attaches a signed build provenance attestation.
+# Anyone can check where a downloaded package came from with:
+#   gh attestation verify omawing-*.pkg.tar.zst -R thepixelgardener-create/omawing
+name: Release package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and upload to, such as v0.3.0
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Install build dependencies
+        run: pacman -Syu --noconfirm --needed git github-cli qt6-base qt6-declarative qt6-wayland qt6-multimedia
+
+      - uses: actions/checkout@v4
+
+      - name: Check the recipe builds this tag
+        run: |
+          version="$(sed -n 's/^pkgver=//p' aur/PKGBUILD)"
+          test "v$version" = "$TAG" || { echo "aur/PKGBUILD is $version, the release is $TAG"; exit 1; }
+
+      # makepkg refuses to run as root, so build as an unprivileged user. The
+      # recipe downloads the tagged source and checks its SHA-256.
+      - name: Build
+        run: |
+          useradd --create-home builder
+          cp -r aur /home/builder/aur
+          chown -R builder /home/builder/aur
+          su builder -c 'cd ~/aur && PKGDEST=$HOME/out makepkg --noconfirm'
+          # The release carries the package, not its separate debug symbols.
+          mkdir out && cp /home/builder/out/omawing-[0-9]*.pkg.tar.zst out/
+          sha256sum out/*.pkg.tar.zst | tee out/SHA256SUMS
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: out/*.pkg.tar.zst
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --global --add safe.directory "$PWD"
+          gh release upload "$TAG" out/*.pkg.tar.zst out/SHA256SUMS --clobber
