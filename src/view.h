@@ -102,14 +102,25 @@ public:
     // Clips against the near plane and the four sides of the view.
     std::vector<Vec> clip(std::vector<Vec> polygon) const;
     QPolygonF polygonOf(const std::vector<Vec> &points) const;
-    // 0 up close, rising to 1 at Far.
+    // Aerial perspective: how far a thing at this depth has drifted towards
+    // the colour of the air, 0 up close and at most a third at Far. A tint,
+    // not a fog: the distance stays clear.
     double fog(double depth) const;
+    // Scenery fades in over the last stretch before Far instead of popping.
+    double fadeIn(double depth) const;
+    // The checkerboard's contrast at a depth: 1 while a tile is large on
+    // screen, falling to 0 as it shrinks to a fraction of a unit, where its
+    // light and dark squares blend into their average. Mipmapping by hand:
+    // the far plane converges smoothly instead of shimmering.
+    double contrast(double depth) const;
+    // The floor's light and dark squares at a depth, contrast and air applied.
+    Vec floorLight(double depth) const;
+    Vec floorDark(double depth) const;
+    // How far the checkerboard reaches: where its tiles stop showing.
+    double floorReach() const;
+    static constexpr double Tile = 6;
     // Shared atmospheric light keeps scenery and the ground joined at infinity.
     Vec atmosphere() const;
-    // What the ground and the things on it fade to far away: the floor,
-    // dimmed and tinted by the sky, so the distance stays dark and only a
-    // thin line of mist lights the horizon.
-    Vec distance() const;
     double valley = 0; // Neon Mirage treatment, blended at scene boundaries.
 
 private:

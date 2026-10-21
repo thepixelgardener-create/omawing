@@ -160,9 +160,29 @@ QPolygonF View::polygonOf(const std::vector<Vec> &points) const {
     return polygon;
 }
 
-double View::fog(double depth) const { return smooth(clampTo((depth - 35) / (Far - 35), 0, 1)); }
+double View::fog(double depth) const { return 0.34 * smooth(clampTo((depth - 25) / 1400, 0, 1)); }
 
-Vec View::distance() const { return blend(palette.tileB, atmosphere(), 0.42); }
+double View::fadeIn(double depth) const { return smooth(clampTo((Far - depth) / 18, 0, 1)); }
+
+// A ground tile of size Tile at depth d, seen from height h, is about
+// Focal * h * Tile / d^2 canvas units tall on screen.
+double View::contrast(double depth) const {
+    const double h = std::max(1.0, camera.y), d = std::max(1.0, depth);
+    const double size = Focal * h * Tile / (d * d);
+    return smooth(clampTo((size - 0.45) / (2.4 - 0.45), 0, 1));
+}
+
+double View::floorReach() const { return std::min(520.0, std::sqrt(Focal * std::max(1.0, camera.y) * Tile / 0.45)); }
+
+Vec View::floorLight(double depth) const {
+    const Vec average = blend(palette.tileA, palette.tileB, 0.5);
+    return blend(blend(average, palette.tileA, contrast(depth)), atmosphere(), fog(depth));
+}
+
+Vec View::floorDark(double depth) const {
+    const Vec average = blend(palette.tileA, palette.tileB, 0.5);
+    return blend(blend(average, palette.tileB, contrast(depth)), atmosphere(), fog(depth));
+}
 
 Vec View::atmosphere() const {
     // Keep a trace of each act's sky, but scattered blue light dominates

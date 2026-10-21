@@ -13,49 +13,65 @@ using namespace geo;
 using namespace draw;
 
 void Ground::paint(QPainter &p, const View &view) {
-    // The checkerboard reaches past the end of the fog, so its edge is never
-    // seen and rows don't pop in as the camera crosses a tile.
-    const int step = 6, extent = int(std::ceil(View::Far / step)) + 2;
+    // The checkerboard runs out as far as its tiles still show on screen,
+    // hundreds of units, and fades into the floor's average colour as they
+    // shrink, so the plane reaches the horizon unbroken.
+    const double step = View::Tile, reach = view.floorReach();
+    const int extent = int(std::ceil(reach / step)) + 2;
     const int gx = int(std::floor(view.camera.x / step)), gz = int(std::floor(view.camera.z / step));
     const bool gridLines = view.style().grid;
-    std::vector<std::vector<Vec>> grid(extent * 2 + 1, std::vector<Vec>(extent * 2 + 1));
+    const int side = extent * 2 + 1;
+    std::vector<Vec> grid(size_t(side) * side);
     for (int j = -extent; j <= extent; ++j)
         for (int i = -extent; i <= extent; ++i)
-            grid[j + extent][i + extent] = view.toCamera({double(gx + i) * step, 0, double(gz + j) * step});
-    // Group tiles by fog colour and use the convex-polygon fast path. General
-    // paths require stencil passes on the GPU even for these simple tiles.
-    // The fog steps are fine enough that a tile moving between them doesn't
-    // visibly change colour.
-    constexpr int FogSteps = 48, LineBands = 8;
-    std::array<std::vector<QPolygonF>, FogSteps> tiles;
+            grid[size_t(j + extent) * side + (i + extent)] = view.toCamera({double(gx + i) * step, 0, double(gz + j) * step});
+    auto corner = [&](int i, int j) -> const Vec & { return grid[size_t(j) * side + i]; };
+    // Tiles are grouped by depth, in steps that grow with distance, and
+    // drawn with the convex-polygon fast path: a few dozen colours, no
+    // stencil passes.
+    constexpr int Bands = 40, LineBands = 8;
+    const double nearest = 4;
+    auto band = [&](double depth) {
+        return std::clamp(int(std::log(std::max(nearest, depth) / nearest) / std::log(reach / nearest) * Bands), 0, Bands - 1);
+    };
+    std::array<std::vector<QPolygonF>, Bands> tiles;
     std::array<QPainterPath, LineBands> lines;
-    for (int j = 0; j < extent * 2; ++j)
-        for (int i = 0; i < extent * 2; ++i) {
-            const std::vector<Vec> points{grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]};
-            double depth = 0;
-            for (const Vec &q : points)
-                depth += q[2] / 4;
-            const int parity = (((gx + gz + i + j) % 2) + 2) % 2;
-            const double haze = view.fog(std::max(0.0, depth));
-            if (depth < -5 || haze >= 0.995 || (!parity && !gridLines))
+    const double sideSlope = view.width / (2 * View::Focal) + 0.2;
+    for (int j = 0; j < side - 1; ++j)
+        for (int i = 0; i < side - 1; ++i) {
+            const Vec &a = corner(i, j), &b = corner(i + 1, j), &c = corner(i + 1, j + 1), &d = corner(i, j + 1);
+            const double depth = (a[2] + b[2] + c[2] + d[2]) / 4;
+            if (depth < -step || depth > reach)
                 continue;
-            const auto clipped = view.clip(points);
+            // Cheap side culling before the full clip.
+            const double edge = std::max(depth, 1.0) * sideSlope + step;
+            if (std::min({a[0], b[0], c[0], d[0]}) > edge || std::max({a[0], b[0], c[0], d[0]}) < -edge)
+                continue;
+            const int parity = (((gx + gz + i + j) % 2) + 2) % 2;
+            const double contrast = view.contrast(depth);
+            if (!parity && !(gridLines && contrast > 0.02))
+                continue;
+            if (parity && contrast < 0.01 && !gridLines)
+                continue;
+            const auto clipped = view.clip({a, b, c, d});
             if (clipped.size() < 3)
                 continue;
             const QPolygonF polygon = view.polygonOf(clipped);
-            if (parity)
-                tiles[std::min(FogSteps - 1, int(haze * FogSteps))].push_back(polygon);
-            if (gridLines) {
-                // Lines fade into the fog band by band instead of stopping.
-                QPainterPath &band = lines[std::min(LineBands - 1, int(haze * LineBands))];
-                band.addPolygon(polygon);
-                band.closeSubpath();
+            if (parity && contrast >= 0.01)
+                tiles[band(depth)].push_back(polygon);
+            if (gridLines && contrast > 0.02) {
+                // Lines fade out with the squares, band by band.
+                QPainterPath &line = lines[std::min(LineBands - 1, int((1 - contrast) * LineBands))];
+                line.addPolygon(polygon);
+                line.closeSubpath();
             }
         }
-    for (int i = 0; i < FogSteps; ++i) {
-        const double haze = (i + 0.5) / FogSteps;
-        p.setPen(Qt::NoPen);
-        p.setBrush(rgb(blend(view.palette.tileA, view.distance(), haze)));
+    p.setPen(Qt::NoPen);
+    for (int i = 0; i < Bands; ++i) {
+        if (tiles[i].empty())
+            continue;
+        const double depth = nearest * std::pow(reach / nearest, (i + 0.5) / Bands);
+        p.setBrush(rgb(view.floorLight(depth)));
         for (const QPolygonF &polygon : tiles[i]) p.drawConvexPolygon(polygon);
     }
     const QPen linePen(rgb(blend(view.palette.accent, view.palette.tileA, 0.4)), 0.55);
@@ -76,7 +92,7 @@ void Ground::paint(QPainter &p, const View &view) {
                 const double x = side * 7.5, z = i * 12.0;
                 const Vec at = view.toCamera({x, 0.08, z});
                 if (at[2] < 2 || at[2] > View::Far) continue;
-                const double alpha = view.valley * (1 - view.fog(at[2]));
+                const double alpha = view.valley * view.fadeIn(at[2]);
                 const QPointF screen = view.project(at);
                 const double radius = std::min(22.0, View::Focal * 0.65 / at[2]);
                 QRadialGradient glow(screen, radius);

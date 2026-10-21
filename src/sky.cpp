@@ -138,16 +138,16 @@ void Sky::paint(QPainter &p, const View &view) {
     // only the light squares are drawn as polygons over it.
     if (split < view.height) {
         QLinearGradient ground(0, split, 0, view.height);
-        ground.setColorAt(0, rgb(view.distance()));
-        for (double d = View::Far; d >= 3; d *= 0.8) {
+        ground.setColorAt(0, rgb(view.floorDark(4000)));
+        for (double d = 4000; d >= 3; d *= 0.85) {
             const Vec c = view.toCamera({view.camera.x + std::sin(view.camera.yaw) * d, 0, view.camera.z + std::cos(view.camera.yaw) * d});
             if (c[2] <= View::Near)
                 continue;
             const double y = view.project(c).y();
             if (y > split && y < view.height)
-                ground.setColorAt((y - split) / (view.height - split), rgb(blend(view.palette.tileB, view.distance(), view.fog(c[2]))));
+                ground.setColorAt((y - split) / (view.height - split), rgb(view.floorDark(c[2])));
         }
-        ground.setColorAt(1, rgb(view.palette.tileB));
+        ground.setColorAt(1, rgb(view.floorDark(3)));
         p.fillRect(QRectF(0, split, W, view.height - split), ground);
     }
 
@@ -163,17 +163,16 @@ void Sky::paint(QPainter &p, const View &view) {
         p.fillRect(QRectF(0, split, W, reach), reflection);
     }
 
-    // A thin line of mist lies on the horizon, brightest where the hills
-    // meet the ground and gone a few units above and below.
-    if (horizon > -20 && horizon < view.height + 20) {
-        const QColor mist = rgb(blend(view.atmosphere(), hex("#fff0fa"), 0.22));
-        QLinearGradient line(0, horizon - 14, 0, horizon + 12);
+    // One thin, fake stripe of mist on the horizon: brightest on the line
+    // itself, gone a few units above and below. The only mist there is.
+    if (horizon > -10 && horizon < view.height + 10) {
+        const QColor mist = rgb(blend(view.atmosphere(), hex("#fff0fa"), 0.3));
+        QLinearGradient line(0, horizon - 7, 0, horizon + 6);
         line.setColorAt(0, withAlpha(mist, 0));
-        line.setColorAt(0.48, withAlpha(mist, 0.55));
-        line.setColorAt(0.56, withAlpha(mist, 0.7));
-        line.setColorAt(0.7, withAlpha(mist, 0.25));
+        line.setColorAt(0.5, withAlpha(mist, 0.75));
+        line.setColorAt(0.62, withAlpha(mist, 0.5));
         line.setColorAt(1, withAlpha(mist, 0));
-        p.fillRect(QRectF(0, horizon - 14, W, 26), line);
+        p.fillRect(QRectF(0, horizon - 7, W, 13), line);
     }
 }
 

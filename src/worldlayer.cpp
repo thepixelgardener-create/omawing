@@ -22,6 +22,7 @@ void WorldLayer::build(const View &view) {
     m_view = &view;
     m_faces.clear();
     preparePuffs();
+    buildLandmarks();
     buildScenery();
     buildShip();
     buildParticles();
@@ -42,7 +43,7 @@ void WorldLayer::face(const std::vector<Vec> &points, const QColor &fill, const 
 void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, const std::vector<Vec> &colors,
                  const MeshOptions &options) {
     const Vec centreCamera = m_view->toCamera(at);
-    if (centreCamera[2] < -options.radius || centreCamera[2] > View::Far + options.radius ||
+    if (centreCamera[2] < -options.radius || centreCamera[2] > options.far + options.radius ||
         std::abs(centreCamera[0]) > centreCamera[2] * m_view->width / (2 * View::Focal) + options.radius * 2)
         return;
     std::vector<Vec> vertices, projected;
@@ -82,11 +83,12 @@ void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, 
         const Vec &source = colors[i % colors.size()];
         const double brightness = options.emissive ? 1 : mix(0.5 + 0.5 * std::max(0.0, dot(n, light())), 1, options.lift);
         const double haze = options.ship || options.glow ? 0 : m_view->fog(depth);
-        const QColor fill = options.wire ? QColor() : rgb(blend(scaled(source, brightness), m_view->distance(), haze));
-        const QColor stroke = options.wire ? rgb(blend(source, m_view->distance(), haze))
+        const QColor fill = options.wire ? QColor() : rgb(blend(scaled(source, brightness), m_view->atmosphere(), haze));
+        const QColor stroke = options.wire ? rgb(blend(source, m_view->atmosphere(), haze))
                             : options.glow ? QColor()
                             : options.stroke.isValid() ? options.stroke : fill;
-        face(points, fill, stroke, options.opacity, options.ship, options.glow);
+        const double fade = options.far > View::Far || options.ship ? 1 : m_view->fadeIn(depth);
+        face(points, fill, stroke, options.opacity * fade, options.ship, options.glow);
     }
     if (!m_reflecting && m_view->valley > 0 && !options.ship && !options.glow) {
         m_reflecting = true;
@@ -113,14 +115,57 @@ void WorldLayer::ring(const Ring &r, double spin) {
         double depth = 0;
         for (const Vec &p : points)
             depth += p[2] / 4;
-        face(points, rgb(blend(i % 3 ? m_view->palette.accent : m_view->palette.crystal, m_view->distance(), m_view->fog(depth))), QColor(),
-             opacity, false);
+        face(points, rgb(blend(i % 3 ? m_view->palette.accent : m_view->palette.crystal, m_view->atmosphere(), m_view->fog(depth))), QColor(),
+             opacity * m_view->fadeIn(depth), false);
     }
     if (!m_reflecting && m_view->valley > 0) {
         m_reflecting = true;
         ring(r, spin);
         m_reflecting = false;
     }
+}
+
+void WorldLayer::buildLandmarks() {
+    constexpr double Cell = 320, Nearest = 320, Farthest = 1900;
+    const Vec &mid = m_view->palette.mid, &top = m_view->palette.top;
+    // Dark, cool silhouettes, a touch lighter than the night sky behind the
+    // hills; aerial perspective lifts the farthest towards the air.
+    const Vec body = blend(blend(mid, top, 0.45), m_view->palette.tileB, 0.3);
+    const Vec edge = blend(body, m_view->palette.accent, 0.18);
+    const int cx = int(std::floor(m_view->camera.x / Cell)), cz = int(std::floor(m_view->camera.z / Cell));
+    const int reach = int(std::ceil(Farthest / Cell));
+    for (int iz = cz - reach; iz <= cz + reach; ++iz)
+        for (int ix = cx - reach; ix <= cx + reach; ++ix) {
+            // Sparse: fewer than half the cells hold one.
+            if (hash(ix * 3.1 + 500, iz * 7.7) < 0.66)
+                continue;
+            const double x = (ix + 0.5 + (hash(ix, iz + 900) - 0.5) * 0.7) * Cell;
+            const double z = (iz + 0.5 + (hash(ix + 900, iz) - 0.5) * 0.7) * Cell;
+            const double away = std::hypot(x - m_view->camera.x, z - m_view->camera.z);
+            if (away < Nearest || away > Farthest || std::abs(x) < 140)
+                continue;
+            const double size = 0.55 + hash(ix + 40, iz + 70) * 0.6;
+            const double spin = hash(ix + 13, iz + 31) * M_PI;
+            Mesh shape;
+            if (hash(ix + 7, iz + 3) < 0.6) {
+                // A great pyramid.
+                const double half = 22 * size, height = 70 * size;
+                shape = {{{-half, 0, -half}, {half, 0, -half}, {half, 0, half}, {-half, 0, half}, {0, height, 0}},
+                         {{0, 1, 4}, {1, 2, 4}, {2, 3, 4}, {3, 0, 4}}};
+            } else {
+                // A tall monolith with a pointed cap.
+                const double half = 5 * size, top = 0.72 * half, height = 85 * size;
+                shape = {{{-half, 0, -half}, {half, 0, -half}, {half, 0, half}, {-half, 0, half},
+                          {-top, height * 0.9, -top}, {top, height * 0.9, -top}, {top, height * 0.9, top}, {-top, height * 0.9, top},
+                          {0, height, 0}},
+                         {{0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}, {4, 5, 8}, {5, 6, 8}, {6, 7, 8}, {7, 4, 8}}};
+            }
+            // The further away, the more of the air's colour: the oldest trick
+            // for distance, on top of their size shrinking.
+            const double air = 0.22 + 0.5 * smooth(clampTo((away - Nearest) / (Farthest - Nearest), 0, 1));
+            mesh(shape, {x, 0, z}, {spin, 0, 0}, {blend(body, m_view->atmosphere(), air), blend(edge, m_view->atmosphere(), air)},
+                 {.radius = 130 * size, .far = Farthest});
+        }
 }
 
 void WorldLayer::buildScenery() {

@@ -28,6 +28,9 @@ private:
         QColor stroke;
         // lift brightens shading towards fully lit, 0 to 1, smoothly.
         double radius = 8, opacity = 1, scale = 1, lift = 0;
+        // How far away it is still drawn. Ordinary scenery fades in before Far;
+        // the far landmarks reach much further.
+        double far = View::Far;
     };
 
     void face(const std::vector<Vec> &points, const QColor &fill, const QColor &stroke, double opacity, bool ship,
@@ -36,6 +39,9 @@ private:
               const MeshOptions &options);
     void ring(const Ring &ring, double spin);
     void buildScenery();
+    // A few huge, sparse monoliths and pyramids far out on the plane, for
+    // the eye to measure the distance by.
+    void buildLandmarks();
     void buildShip();
     void buildParticles();
     void preparePuffs();
