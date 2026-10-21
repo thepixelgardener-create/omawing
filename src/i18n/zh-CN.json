@@ -63,5 +63,10 @@
   "Sound": "声音",
   "View": "视图",
   "Game": "游戏",
-  "Show or hide the banner": "显示或隐藏横幅"
+  "Show or hide the banner": "显示或隐藏横幅",
+  "Zoom in": "放大",
+  "Zoom out": "缩小",
+  "Reset zoom": "重置缩放",
+  "Mouse wheel": "鼠标滚轮",
+  "Zoom in / out": "放大 / 缩小"
 }

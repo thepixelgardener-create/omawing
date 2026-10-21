@@ -99,6 +99,12 @@ public:
     // where the drag started.
     void setStick(bool active, double x = 0, double y = 0);
     void clearInput();
+    static constexpr double DefaultDistance = 20.5, MinDistance = 15, MaxDistance = 34;
+    double cameraDistance() const { return m_cameraDistance; }
+    void zoom(double steps);
+    void resetZoom() { m_cameraDistance = DefaultDistance; }
+    // The camera can ease towards a zoom while the flight is paused.
+    void updateCamera(double dt);
     bool holding(Key key) const { return m_held & key; }
 
     // Where the two engines' nozzles are, in the world.
@@ -112,12 +118,12 @@ public:
 
 private:
     void steer(double dt, double steer, double climb, bool boost);
-    void follow(double dt);
     void animateParticles(double dt);
 
     int m_held = 0;
     bool m_stick = false, m_boosting = false;
     double m_stickX = 0, m_stickY = 0;
+    double m_cameraDistance = DefaultDistance;
     double m_exhaust = 0;
     unsigned m_seed = 1;
 };

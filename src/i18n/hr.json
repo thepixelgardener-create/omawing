@@ -63,5 +63,10 @@
   "Sound": "Zvuk",
   "View": "Prikaz",
   "Game": "Igra",
-  "Show or hide the banner": "Prikaži ili sakrij natpis"
+  "Show or hide the banner": "Prikaži ili sakrij natpis",
+  "Zoom in": "Približi",
+  "Zoom out": "Udalji",
+  "Reset zoom": "Vrati zumiranje",
+  "Mouse wheel": "Kotačić miša",
+  "Zoom in / out": "Približi / udalji"
 }

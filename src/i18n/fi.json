@@ -63,5 +63,10 @@
   "Sound": "Ääni",
   "View": "Näkymä",
   "Game": "Peli",
-  "Show or hide the banner": "Näytä tai piilota banneri"
+  "Show or hide the banner": "Näytä tai piilota banneri",
+  "Zoom in": "Lähennä",
+  "Zoom out": "Loitonna",
+  "Reset zoom": "Palauta zoomaus",
+  "Mouse wheel": "Hiiren rulla",
+  "Zoom in / out": "Lähennä / loitonna"
 }

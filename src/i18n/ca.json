@@ -63,5 +63,10 @@
   "Sound": "So",
   "View": "Vista",
   "Game": "Joc",
-  "Show or hide the banner": "Mostra o amaga el bàner"
+  "Show or hide the banner": "Mostra o amaga el bàner",
+  "Zoom in": "Apropa",
+  "Zoom out": "Allunya",
+  "Reset zoom": "Restableix el zoom",
+  "Mouse wheel": "Roda del ratolí",
+  "Zoom in / out": "Apropa / allunya"
 }

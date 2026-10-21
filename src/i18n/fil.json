@@ -63,5 +63,10 @@
   "Sound": "Tunog",
   "View": "View",
   "Game": "Laro",
-  "Show or hide the banner": "Ipakita o itago ang banner"
+  "Show or hide the banner": "Ipakita o itago ang banner",
+  "Zoom in": "Ilapit",
+  "Zoom out": "Ilayo",
+  "Reset zoom": "I-reset ang zoom",
+  "Mouse wheel": "Gulong ng mouse",
+  "Zoom in / out": "Ilapit / ilayo"
 }

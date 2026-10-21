@@ -63,5 +63,10 @@
   "Sound": "Ljud",
   "View": "Visning",
   "Game": "Spel",
-  "Show or hide the banner": "Visa eller dölj banderollen"
+  "Show or hide the banner": "Visa eller dölj banderollen",
+  "Zoom in": "Zooma in",
+  "Zoom out": "Zooma ut",
+  "Reset zoom": "Återställ zoom",
+  "Mouse wheel": "Mushjul",
+  "Zoom in / out": "Zooma in / ut"
 }

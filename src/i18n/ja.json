@@ -63,5 +63,10 @@
   "Sound": "サウンド",
   "View": "表示",
   "Game": "ゲーム",
-  "Show or hide the banner": "バナーの表示/非表示"
+  "Show or hide the banner": "バナーの表示/非表示",
+  "Zoom in": "拡大",
+  "Zoom out": "縮小",
+  "Reset zoom": "ズームをリセット",
+  "Mouse wheel": "マウスホイール",
+  "Zoom in / out": "拡大 / 縮小"
 }

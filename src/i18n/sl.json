@@ -63,5 +63,10 @@
   "Sound": "Zvok",
   "View": "Pogled",
   "Game": "Igra",
-  "Show or hide the banner": "Prikaži ali skrij pasico"
+  "Show or hide the banner": "Prikaži ali skrij pasico",
+  "Zoom in": "Približaj",
+  "Zoom out": "Oddalji",
+  "Reset zoom": "Ponastavi povečavo",
+  "Mouse wheel": "Kolešček miške",
+  "Zoom in / out": "Približaj / oddalji"
 }

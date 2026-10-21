@@ -14,5 +14,10 @@
   "Could not save settings. Check folder permissions.": "Could not save settings. Check folder permissions.",
   "Close": "Close",
   "Next track": "Next track",
-  "Could not play the soundtrack.": "Could not play the soundtrack."
+  "Could not play the soundtrack.": "Could not play the soundtrack.",
+  "Zoom in": "Zoom in",
+  "Zoom out": "Zoom out",
+  "Reset zoom": "Reset zoom",
+  "Mouse wheel": "Mouse wheel",
+  "Zoom in / out": "Zoom in / out"
 }

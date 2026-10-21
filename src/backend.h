@@ -102,6 +102,8 @@ public:
     Q_INVOKABLE void stickMove(double x, double y);
     Q_INVOKABLE void stickEnd();
     Q_INVOKABLE void clearInput();
+    Q_INVOKABLE void zoom(double steps);
+    Q_INVOKABLE void resetZoom();
     // A minimized window stops the music rather than playing to nobody.
     Q_INVOKABLE void setHidden(bool hidden);
 
@@ -133,6 +135,7 @@ private:
     bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true, m_titlesOn = true, m_toolbar = true, m_musicThroughPause = false;
     int m_frames = 0, m_fps = 0;
     double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0;
+    double m_zoomFor = 0; // Keep paused redraws limited to an active zoom transition.
     double m_musicVolume = 0.8, m_effectsVolume = 0.8;
     double m_beat = 0, m_beatTarget = 0, m_level = 0, m_sinceBeat = 10;   // The music's pulse, for the picture.
     double m_titles = 1;              // The titles fade in and out with their switch.

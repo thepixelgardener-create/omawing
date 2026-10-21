@@ -63,5 +63,10 @@
   "Sound": "Som",
   "View": "Vista",
   "Game": "Jogo",
-  "Show or hide the banner": "Mostrar ou ocultar a faixa"
+  "Show or hide the banner": "Mostrar ou ocultar a faixa",
+  "Zoom in": "Aproximar",
+  "Zoom out": "Afastar",
+  "Reset zoom": "Repor zoom",
+  "Mouse wheel": "Roda do rato",
+  "Zoom in / out": "Aproximar / afastar"
 }

@@ -63,5 +63,10 @@
   "Sound": "Hang",
   "View": "Nézet",
   "Game": "Játék",
-  "Show or hide the banner": "Szalag megjelenítése vagy elrejtése"
+  "Show or hide the banner": "Szalag megjelenítése vagy elrejtése",
+  "Zoom in": "Közelítés",
+  "Zoom out": "Távolítás",
+  "Reset zoom": "Nagyítás visszaállítása",
+  "Mouse wheel": "Egérgörgő",
+  "Zoom in / out": "Közelítés / távolítás"
 }

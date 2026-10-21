@@ -63,5 +63,10 @@
   "Sound": "Audio",
   "View": "Vista",
   "Game": "Gioco",
-  "Show or hide the banner": "Mostra o nascondi il banner"
+  "Show or hide the banner": "Mostra o nascondi il banner",
+  "Zoom in": "Avvicina",
+  "Zoom out": "Allontana",
+  "Reset zoom": "Ripristina zoom",
+  "Mouse wheel": "Rotella del mouse",
+  "Zoom in / out": "Avvicina / allontana"
 }

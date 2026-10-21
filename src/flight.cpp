@@ -80,7 +80,7 @@ void Flight::step(double dt) {
     if (boost && !m_boosting) events |= BoostStarted;
     m_boosting = boost;
     steer(dt, steering, climb, boost);
-    follow(dt);
+    updateCamera(dt);
 
     // Exhaust, spread along the path the nozzles took this step so the
     // trail stays smooth at any speed.
@@ -133,18 +133,28 @@ void Flight::steer(double dt, double steering, double climb, bool boost) {
     spring(ship.flexRight, ship.flexRightRate, climb * 0.22 - steering * 0.18 - flutter);
 }
 
-void Flight::follow(double dt) {
-    // The camera trails the ship and looks at a point ahead of it, so it
-    // leans into turns before the ship does.
+void Flight::zoom(double steps) {
+    if (std::isfinite(steps))
+        m_cameraDistance = clampTo(m_cameraDistance - clampTo(steps, -20, 20) * 1.5, MinDistance, MaxDistance);
+}
+
+void Flight::updateCamera(double dt) {
+    if (!std::isfinite(dt) || dt <= 0) return;
     const double ox = camera.x, oz = camera.z;
-    const double follow = 1 - std::exp(-dt * 4), yawEase = 1 - std::exp(-dt * 3);
-    const double distance = 20.5 + boostAmount() * 2.5;
+    const double follow = 1 - std::exp(-dt * 4);
+    const double distance = m_cameraDistance + boostAmount() * 2.5;
+    const double scale = m_cameraDistance / DefaultDistance;
     camera.x = mix(camera.x, ship.x - std::sin(ship.yaw) * distance, follow);
     camera.z = mix(camera.z, ship.z - std::cos(ship.yaw) * distance, follow);
-    camera.y = mix(camera.y, ship.y + 5.0, follow);
-    const double tx = ship.x + std::sin(ship.yaw) * 56, ty = ship.y + 1.0, tz = ship.z + std::cos(ship.yaw) * 56;
-    camera.yaw += turn(camera.yaw, std::atan2(tx - camera.x, tz - camera.z)) * yawEase;
-    camera.pitch = mix(camera.pitch, std::atan2(ty - camera.y, std::hypot(tx - camera.x, tz - camera.z)), yawEase);
+    camera.y = mix(camera.y, ship.y + 5.0 * scale, follow);
+    // Look through the ship horizontally, rather than along its changing
+    // heading. Position easing already smooths this bearing; another yaw
+    // delay lets tight turns drag the ship off the side of the screen.
+    const double dx = ship.x - camera.x, dz = ship.z - camera.z;
+    camera.yaw += turn(camera.yaw, std::atan2(dx, dz));
+    const double ahead = std::hypot(dx, dz) + 56 * scale;
+    const double targetPitch = std::atan2(ship.y + scale - camera.y, ahead);
+    camera.pitch = mix(camera.pitch, targetPitch, 1 - std::exp(-dt * 3));
     camera.drift += (camera.x - ox) * std::cos(camera.yaw) - (camera.z - oz) * std::sin(camera.yaw);
     camera.shake = std::max(0.0, camera.shake - dt * 1.8);
 }

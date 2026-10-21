@@ -68,6 +68,9 @@ ApplicationWindow {
     Shortcut { sequence: "U"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleTitles() }
     Shortcut { sequence: "L"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: { backend.toggleToolbar(); if (backend.toolbarShown) win.wake() } }
     Shortcut { sequence: "B"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleBanner() }
+    Shortcut { sequences: ["+", "="]; context: Qt.ApplicationShortcut; enabled: !board.visible && !volume.visible && !win.helpVisible; onActivated: backend.zoom(1) }
+    Shortcut { sequence: "-"; context: Qt.ApplicationShortcut; enabled: !board.visible && !volume.visible && !win.helpVisible; onActivated: backend.zoom(-1) }
+    Shortcut { sequence: "0"; context: Qt.ApplicationShortcut; enabled: !board.visible && !volume.visible && !win.helpVisible; onActivated: backend.resetZoom() }
     Shortcut { sequence: "H"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.showScores() }
     Shortcut { sequence: "R"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.restart() }
     Shortcut { sequences: ["F", "F11"]; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.toggleFullScreen() }
@@ -107,6 +110,12 @@ ApplicationWindow {
             hoverEnabled: true
             // Hold the left button to boost; drag with the right one to steer.
             acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onWheel: wheel => {
+                if (board.visible || volume.visible || win.helpVisible) { wheel.accepted = false; return }
+                const steps = wheel.pixelDelta.y !== 0 ? wheel.pixelDelta.y / 40 : wheel.angleDelta.y / 120
+                backend.zoom(steps)
+                wheel.accepted = true
+            }
             property point origin
             property bool steering: false
             onPressed: mouse => {
@@ -315,6 +324,10 @@ ApplicationWindow {
                                     ["V", qsTr("Music and effects volume")],
                                     ["P", qsTr("Next track")]]},
                                 {title: qsTr("View"), keys: [
+                                    ["+ / =", qsTr("Zoom in")],
+                                    ["−", qsTr("Zoom out")],
+                                    ["0", qsTr("Reset zoom")],
+                                    [qsTr("Mouse wheel"), qsTr("Zoom in / out")],
                                     ["U", qsTr("Show or hide the titles and score")],
                                     ["L", qsTr("Show or hide the toolbar")],
                                     ["B", qsTr("Show or hide the banner")],

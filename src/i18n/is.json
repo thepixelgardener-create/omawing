@@ -63,5 +63,10 @@
   "Sound": "Hljóð",
   "View": "Útlit",
   "Game": "Leikur",
-  "Show or hide the banner": "Sýna eða fela borðann"
+  "Show or hide the banner": "Sýna eða fela borðann",
+  "Zoom in": "Auka aðdrátt",
+  "Zoom out": "Minnka aðdrátt",
+  "Reset zoom": "Endurstilla aðdrátt",
+  "Mouse wheel": "Músarhjól",
+  "Zoom in / out": "Auka / minnka aðdrátt"
 }

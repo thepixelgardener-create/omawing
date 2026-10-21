@@ -1,4 +1,5 @@
 #include <QDir>
+#include <QWheelEvent>
 #include <QAudioDecoder>
 #include <QAudioBuffer>
 #include <QAudioDevice>
@@ -577,6 +578,17 @@ private slots:
         QVERIFY(QTest::qWaitForWindowExposed(window));
         window->requestActivate();
         QTest::qWait(100);
+        QTest::keyClick(window, Qt::Key_Equal);
+        QCOMPARE(backend.flight().cameraDistance(), Flight::DefaultDistance - 1.5);
+        QTest::keyClick(window, Qt::Key_Minus);
+        QCOMPARE(backend.flight().cameraDistance(), Flight::DefaultDistance);
+        const QPointF wheelAt(window->width()/2.0, window->height()/2.0);
+        QWheelEvent wheel(wheelAt, window->mapToGlobal(wheelAt.toPoint()), QPoint(), QPoint(0,120),
+                          Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+        QCoreApplication::sendEvent(window, &wheel);
+        QCOMPARE(backend.flight().cameraDistance(), Flight::DefaultDistance - 1.5);
+        QTest::keyClick(window, Qt::Key_0);
+        QCOMPARE(backend.flight().cameraDistance(), Flight::DefaultDistance);
         QTest::keyClick(window, Qt::Key_B);
         QVERIFY(!backend.banner());
         QTest::keyClick(window, Qt::Key_P);
@@ -747,6 +759,49 @@ private slots:
         QVERIFY(!ring->isPlaying());
         sound.play(Audio::Ring);
         QVERIFY(!ring->isPlaying());
+    }
+
+    void cameraKeepsTurningShipCenteredAtEveryZoom() {
+        for (double zoom : {-100.0, 0.0, 100.0}) {
+            Flight f;
+            f.demo = false;
+            f.zoom(zoom);
+            f.press(Flight::Boost);
+            f.press(Flight::Right);
+            for (int i = 0; i < 1200; ++i) {
+                if (i == 600) { f.release(Flight::Right); f.press(Flight::Left); }
+                f.game.hurt = 2; // Isolate framing from scenery collisions.
+                const double yaw = f.camera.yaw;
+                f.step(1.0 / 60);
+                QVERIFY(std::abs(f.camera.yaw - yaw) < 0.04);
+                View view;
+                view.begin(f, {860, 540}, {});
+                const QPointF centre = view.project(view.toCamera({f.ship.x,f.ship.y,f.ship.z}));
+                QVERIFY(std::abs(centre.x() - view.width / 2) < 0.01);
+                QVERIFY(centre.y() > view.height * 0.5 && centre.y() < view.height * 0.9);
+            }
+        }
+    }
+
+    void zoomIsBoundedSmoothAndWorksWhilePaused() {
+        QTemporaryDir settings;
+        Backend b(nullptr, settings.filePath("game.ini"));
+        b.setPaused(true);
+        const double oldZ = b.flight().camera.z;
+        b.zoom(100);
+        QCOMPARE(b.flight().cameraDistance(), Flight::MinDistance);
+        QCOMPARE(b.flight().camera.z, oldZ);
+        b.tick(1.0/60);
+        QVERIFY(b.flight().camera.z > oldZ && b.flight().camera.z < oldZ + 1);
+        for (int i=0;i<180;++i) b.tick(1.0/60);
+        QCOMPARE(b.flight().time, 0.0);
+        QVERIFY(std::abs(b.flight().camera.z + Flight::MinDistance) < 0.01);
+        b.zoom(-100);
+        QCOMPARE(b.flight().cameraDistance(), Flight::MaxDistance);
+        b.zoom(std::numeric_limits<double>::quiet_NaN());
+        QCOMPARE(b.flight().cameraDistance(), Flight::MaxDistance);
+        b.resetZoom();
+        QCOMPARE(b.flight().cameraDistance(), Flight::DefaultDistance);
     }
 
     void cameraFramesTheShipBelowAnOpenHorizon() {

@@ -63,5 +63,10 @@
   "Sound": "Ton",
   "View": "Ansicht",
   "Game": "Spiel",
-  "Show or hide the banner": "Banner ein- oder ausblenden"
+  "Show or hide the banner": "Banner ein- oder ausblenden",
+  "Zoom in": "Vergrößern",
+  "Zoom out": "Verkleinern",
+  "Reset zoom": "Zoom zurücksetzen",
+  "Mouse wheel": "Mausrad",
+  "Zoom in / out": "Vergrößern / verkleinern"
 }

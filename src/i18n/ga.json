@@ -63,5 +63,10 @@
   "Sound": "Fuaim",
   "View": "Amharc",
   "Game": "Cluiche",
-  "Show or hide the banner": "Taispeáin nó folaigh an meirge"
+  "Show or hide the banner": "Taispeáin nó folaigh an meirge",
+  "Zoom in": "Zúmáil isteach",
+  "Zoom out": "Zúmáil amach",
+  "Reset zoom": "Athshocraigh zúmáil",
+  "Mouse wheel": "Roth luiche",
+  "Zoom in / out": "Zúmáil isteach / amach"
 }

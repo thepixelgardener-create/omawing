@@ -63,5 +63,10 @@
   "Sound": "Sauti",
   "View": "Mwonekano",
   "Game": "Mchezo",
-  "Show or hide the banner": "Onyesha au ficha bana"
+  "Show or hide the banner": "Onyesha au ficha bana",
+  "Zoom in": "Kuza",
+  "Zoom out": "Punguza",
+  "Reset zoom": "Weka upya ukuzaji",
+  "Mouse wheel": "Gurudumu la kipanya",
+  "Zoom in / out": "Kuza / punguza"
 }

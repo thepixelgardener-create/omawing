@@ -63,5 +63,10 @@
   "Sound": "사운드",
   "View": "보기",
   "Game": "게임",
-  "Show or hide the banner": "배너 표시 또는 숨기기"
+  "Show or hide the banner": "배너 표시 또는 숨기기",
+  "Zoom in": "확대",
+  "Zoom out": "축소",
+  "Reset zoom": "확대/축소 초기화",
+  "Mouse wheel": "마우스 휠",
+  "Zoom in / out": "확대 / 축소"
 }

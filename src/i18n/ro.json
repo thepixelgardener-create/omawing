@@ -63,5 +63,10 @@
   "Sound": "Sunet",
   "View": "Vizualizare",
   "Game": "Joc",
-  "Show or hide the banner": "Afișează sau ascunde bannerul"
+  "Show or hide the banner": "Afișează sau ascunde bannerul",
+  "Zoom in": "Apropie",
+  "Zoom out": "Depărtează",
+  "Reset zoom": "Resetează zoomul",
+  "Mouse wheel": "Rotița mouse-ului",
+  "Zoom in / out": "Apropie / depărtează"
 }

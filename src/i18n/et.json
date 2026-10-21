@@ -63,5 +63,10 @@
   "Sound": "Heli",
   "View": "Vaade",
   "Game": "Mäng",
-  "Show or hide the banner": "Näita või peida bänner"
+  "Show or hide the banner": "Näita või peida bänner",
+  "Zoom in": "Suurenda",
+  "Zoom out": "Vähenda",
+  "Reset zoom": "Lähtesta suum",
+  "Mouse wheel": "Hiireratas",
+  "Zoom in / out": "Suurenda / vähenda"
 }

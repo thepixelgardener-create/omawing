@@ -63,5 +63,10 @@
   "Sound": "Skaņa",
   "View": "Skats",
   "Game": "Spēle",
-  "Show or hide the banner": "Rādīt vai paslēpt baneri"
+  "Show or hide the banner": "Rādīt vai paslēpt baneri",
+  "Zoom in": "Tuvināt",
+  "Zoom out": "Tālināt",
+  "Reset zoom": "Atiestatīt tālummaiņu",
+  "Mouse wheel": "Peles ritenītis",
+  "Zoom in / out": "Tuvināt / tālināt"
 }

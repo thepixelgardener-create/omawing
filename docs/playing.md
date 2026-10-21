@@ -11,6 +11,9 @@
 | Shift | Boost |
 | Left mouse button | Boost |
 | Right drag | Steer with the mouse |
+| Wheel up / + / = | Zoom in |
+| Wheel down / − | Zoom out |
+| 0 | Reset zoom |
 | Space | Pause or play |
 | T | Take control or watch the demo |
 | N | Next scene |
@@ -51,6 +54,11 @@ preference are stored in `~/.config/omawing/omawing.conf` (or the platform's
 `XDG_CONFIG_HOME` equivalent).
 
 ## A clear view
+
+The chase camera keeps the ship horizontally centered through turns while
+leaving the horizon visible. Use the mouse wheel or **+ / −** to smoothly
+change the chase distance, and **0** to restore the default. Zoom also works
+while paused; scrolling inside a panel keeps its normal behavior.
 
 Three switches hide parts of the screen: **U** the titles and score at the
 top, **L** the toolbar at the bottom, and **B** the scrolling banner. Their

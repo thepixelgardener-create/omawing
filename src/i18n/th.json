@@ -63,5 +63,10 @@
   "Sound": "เสียง",
   "View": "มุมมอง",
   "Game": "เกม",
-  "Show or hide the banner": "แสดงหรือซ่อนแบนเนอร์"
+  "Show or hide the banner": "แสดงหรือซ่อนแบนเนอร์",
+  "Zoom in": "ซูมเข้า",
+  "Zoom out": "ซูมออก",
+  "Reset zoom": "รีเซ็ตการซูม",
+  "Mouse wheel": "ล้อเมาส์",
+  "Zoom in / out": "ซูมเข้า / ออก"
 }

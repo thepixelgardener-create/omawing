@@ -63,5 +63,10 @@
   "Sound": "Sonido",
   "View": "Vista",
   "Game": "Juego",
-  "Show or hide the banner": "Mostrar u ocultar el banner"
+  "Show or hide the banner": "Mostrar u ocultar el banner",
+  "Zoom in": "Acercar",
+  "Zoom out": "Alejar",
+  "Reset zoom": "Restablecer zoom",
+  "Mouse wheel": "Rueda del ratón",
+  "Zoom in / out": "Acercar / alejar"
 }

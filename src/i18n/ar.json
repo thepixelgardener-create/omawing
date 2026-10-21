@@ -63,5 +63,10 @@
   "Sound": "الصوت",
   "View": "العرض",
   "Game": "اللعبة",
-  "Show or hide the banner": "إظهار الشريط أو إخفاؤه"
+  "Show or hide the banner": "إظهار الشريط أو إخفاؤه",
+  "Zoom in": "تكبير",
+  "Zoom out": "تصغير",
+  "Reset zoom": "إعادة ضبط التكبير",
+  "Mouse wheel": "عجلة الفأرة",
+  "Zoom in / out": "تكبير / تصغير"
 }

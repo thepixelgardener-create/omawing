@@ -63,5 +63,10 @@
   "Sound": "Ses",
   "View": "Görünüm",
   "Game": "Oyun",
-  "Show or hide the banner": "Afişi göster veya gizle"
+  "Show or hide the banner": "Afişi göster veya gizle",
+  "Zoom in": "Yakınlaştır",
+  "Zoom out": "Uzaklaştır",
+  "Reset zoom": "Yakınlaştırmayı sıfırla",
+  "Mouse wheel": "Fare tekerleği",
+  "Zoom in / out": "Yakınlaştır / uzaklaştır"
 }

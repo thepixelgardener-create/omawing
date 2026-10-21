@@ -63,5 +63,10 @@
   "Sound": "Zvuk",
   "View": "Zobrazení",
   "Game": "Hra",
-  "Show or hide the banner": "Zobrazit nebo skrýt banner"
+  "Show or hide the banner": "Zobrazit nebo skrýt banner",
+  "Zoom in": "Přiblížit",
+  "Zoom out": "Oddálit",
+  "Reset zoom": "Obnovit přiblížení",
+  "Mouse wheel": "Kolečko myši",
+  "Zoom in / out": "Přiblížit / oddálit"
 }

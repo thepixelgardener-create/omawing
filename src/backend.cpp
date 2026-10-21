@@ -72,6 +72,18 @@ bool Backend::store(std::initializer_list<std::pair<const char *, QVariant>> val
     return error.isEmpty();
 }
 
+void Backend::zoom(double steps) {
+    const double before = m_flight.cameraDistance();
+    m_flight.zoom(steps);
+    if (before != m_flight.cameraDistance()) m_zoomFor = 3;
+}
+
+void Backend::resetZoom() {
+    const double before = m_flight.cameraDistance();
+    m_flight.resetZoom();
+    if (before != m_flight.cameraDistance()) m_zoomFor = 3;
+}
+
 void Backend::endRun() {
     if (m_flight.demo && m_flight.game.score == 0)
         return;
@@ -177,6 +189,11 @@ void Backend::tick(double seconds) {
             setDemo(true);
         emit frameChanged();
     }
+    if (m_paused && m_zoomFor > 0) {
+        m_flight.updateCamera(dt);
+        emit frameChanged();
+    }
+    m_zoomFor = std::max(0.0, m_zoomFor - dt);
     ++m_frames;
     m_elapsed += seconds;
     if (m_elapsed > 0.75) {

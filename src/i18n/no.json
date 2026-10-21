@@ -63,5 +63,10 @@
   "Sound": "Lyd",
   "View": "Visning",
   "Game": "Spill",
-  "Show or hide the banner": "Vis eller skjul banneret"
+  "Show or hide the banner": "Vis eller skjul banneret",
+  "Zoom in": "Zoom inn",
+  "Zoom out": "Zoom ut",
+  "Reset zoom": "Tilbakestill zoom",
+  "Mouse wheel": "Musehjul",
+  "Zoom in / out": "Zoom inn / ut"
 }

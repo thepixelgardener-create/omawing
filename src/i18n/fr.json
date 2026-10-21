@@ -63,5 +63,10 @@
   "Sound": "Son",
   "View": "Affichage",
   "Game": "Jeu",
-  "Show or hide the banner": "Afficher ou masquer la bannière"
+  "Show or hide the banner": "Afficher ou masquer la bannière",
+  "Zoom in": "Zoom avant",
+  "Zoom out": "Zoom arrière",
+  "Reset zoom": "Réinitialiser le zoom",
+  "Mouse wheel": "Molette",
+  "Zoom in / out": "Zoom avant / arrière"
 }

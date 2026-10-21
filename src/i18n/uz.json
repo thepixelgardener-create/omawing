@@ -63,5 +63,10 @@
   "Sound": "Ovoz",
   "View": "Ko‘rinish",
   "Game": "O‘yin",
-  "Show or hide the banner": "Bannerni ko‘rsatish yoki yashirish"
+  "Show or hide the banner": "Bannerni ko‘rsatish yoki yashirish",
+  "Zoom in": "Yaqinlashtirish",
+  "Zoom out": "Uzoqlashtirish",
+  "Reset zoom": "Masshtabni tiklash",
+  "Mouse wheel": "Sichqoncha g‘ildiragi",
+  "Zoom in / out": "Yaqinlashtirish / uzoqlashtirish"
 }

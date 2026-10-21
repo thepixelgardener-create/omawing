@@ -63,5 +63,10 @@
   "Sound": "Dźwięk",
   "View": "Widok",
   "Game": "Gra",
-  "Show or hide the banner": "Pokaż lub ukryj baner"
+  "Show or hide the banner": "Pokaż lub ukryj baner",
+  "Zoom in": "Przybliż",
+  "Zoom out": "Oddal",
+  "Reset zoom": "Resetuj przybliżenie",
+  "Mouse wheel": "Kółko myszy",
+  "Zoom in / out": "Przybliż / oddal"
 }

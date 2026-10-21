@@ -63,5 +63,10 @@
   "Sound": "צליל",
   "View": "תצוגה",
   "Game": "משחק",
-  "Show or hide the banner": "הצגה או הסתרה של הבאנר"
+  "Show or hide the banner": "הצגה או הסתרה של הבאנר",
+  "Zoom in": "התקרבות",
+  "Zoom out": "התרחקות",
+  "Reset zoom": "איפוס תצוגה",
+  "Mouse wheel": "גלגלת העכבר",
+  "Zoom in / out": "התקרבות / התרחקות"
 }

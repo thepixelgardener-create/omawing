@@ -63,5 +63,10 @@
   "Sound": "ध्वनि",
   "View": "दृश्य",
   "Game": "खेल",
-  "Show or hide the banner": "बैनर दिखाएँ या छिपाएँ"
+  "Show or hide the banner": "बैनर दिखाएँ या छिपाएँ",
+  "Zoom in": "ज़ूम इन",
+  "Zoom out": "ज़ूम आउट",
+  "Reset zoom": "ज़ूम रीसेट करें",
+  "Mouse wheel": "माउस व्हील",
+  "Zoom in / out": "ज़ूम इन / आउट"
 }
