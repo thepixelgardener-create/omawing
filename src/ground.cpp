@@ -82,6 +82,9 @@ void Ground::paint(QPainter &p, const View &view) {
     for (const double side : {-1.0, 1.0})
         for (const auto &panel : ShipShape::wingPanels(ship, side))
             pieces.push_back(panel);
+    for (const double side : {-1.0, 1.0})
+        for (const auto &panel : ShipShape::finPanels(side))
+            pieces.push_back(panel);
     QPainterPath shadow;
     shadow.setFillRule(Qt::WindingFill);
     for (const auto &piece : pieces) {

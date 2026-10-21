@@ -167,23 +167,28 @@ void WorldLayer::buildScenery() {
 
 void WorldLayer::buildShip() {
     static const Mesh hull{ShipShape::HullVertices, ShipShape::HullFaces};
-    static const Mesh canopy{{{0, 0.13, 1.65}, {-0.34, 0.29, -0.2}, {0.34, 0.29, -0.2}, {0, 0.76, -0.35}},
-                             {{0, 1, 3}, {0, 3, 2}, {1, 2, 3}}};
-    static const Mesh flame{{{-0.28, 0.22, -1.6}, {0.28, 0.22, -1.6}, {0.28, -0.2, -1.6}, {-0.28, -0.2, -1.6}, {0, 0, -3.6}},
-                            {{0, 1, 4}, {1, 2, 4}, {2, 3, 4}, {3, 0, 4}}};
+    static const Mesh canopy{{{0, 0.13, 2.7}, {-0.4, 0.25, 0.45}, {0.4, 0.25, 0.45},
+                              {0, 0.98, 1.2}, {0, 0.68, 0.2}},
+                             {{0, 1, 3}, {0, 3, 2}, {1, 4, 3}, {3, 4, 2}, {1, 2, 4}}};
+    static const Mesh engine{{{-0.35, 0.22, 0.65}, {0.35, 0.22, 0.65},
+                              {-0.32, 0.22, -1.65}, {0.32, 0.22, -1.65},
+                              {-0.4, -0.3, -1.7}, {0.4, -0.3, -1.7},
+                              {0, 0.5, -0.55}, {0, -0.25, 0.8}},
+                             {{0, 6, 1}, {0, 2, 6}, {1, 6, 3}, {2, 3, 6},
+                              {2, 4, 5}, {2, 5, 3}, {0, 7, 4}, {0, 4, 2}, {1, 3, 5}, {1, 5, 7}}};
 
     const auto &ship = m_view->flight->ship;
     const Vec at{ship.x, ship.y, ship.z}, rotation{ship.yaw, ship.pitch, ship.bank};
     // After a hit the ship flickers until it can be hurt again.
     const double opacity = m_view->flight->game.hurt > 0 && std::fmod(m_view->flight->game.hurt, 0.2) < 0.1 ? 0.35 : 1;
-    mesh(hull, at, rotation, {hex("#e8e8dc"), hex("#92a9b7"), hex("#59638d")},
-         {.ship = true, .stroke = QColor("#dfd6cd"), .radius = 5, .opacity = opacity});
+    mesh(hull, at, rotation, {hex("#f4c8ba"), hex("#b998ae"), hex("#515575"), hex("#d7a9b6"), hex("#847790"), hex("#373f5d")},
+         {.ship = true, .stroke = QColor("#8e829a"), .radius = 5, .opacity = opacity});
 
     auto place = [&](const Vec &v) { return m_view->toCamera(translated(rotate(v, rotation), at)); };
     for (const double side : {-1.0, 1.0}) {
         const auto panels = ShipShape::wingPanels(ship, side);
-        const char *const colors[] = {"#e4b3ab", "#eec3b6"};
-        for (int i = 0; i < 2; ++i) {
+        const char *const colors[] = {"#ffb4a6", "#f5a399", "#ff32b9", "#655d80", "#403d60", "#c290a6"};
+        for (size_t i = 0; i < panels.size(); ++i) {
             const auto &panel = panels[i];
             // The wings are thin and double-sided, lit from whichever side faces the light.
             const Vec n = normalized(cross(sub(rotate(panel[1], rotation), rotate(panel[0], rotation)),
@@ -191,29 +196,37 @@ void WorldLayer::buildShip() {
             std::vector<Vec> points;
             for (const Vec &v : panel)
                 points.push_back(place(v));
-            face(points, rgb(scaled(hex(colors[i]), 0.7 + 0.3 * std::abs(dot(n, light())))), QColor("#f8dfc1"), opacity, true);
+            face(points, rgb(scaled(hex(colors[i]), 0.7 + 0.3 * std::abs(dot(n, light())))), rgb(scaled(hex(colors[i]), 1.08)), opacity, true);
         }
-        face({place({0.45 * side, 0.1, -1.45}), place({0.75 * side, 1, -1.9}), place({0.7 * side, 0.1, -0.65})},
-             QColor("#cf557a"), QColor("#f8dfc1"), opacity, true);
+        const auto fins = ShipShape::finPanels(side);
+        for (size_t i = 0; i < fins.size(); ++i) {
+            std::vector<Vec> points;
+            for (const Vec &v : fins[i]) points.push_back(place(v));
+            face(points, QColor(i ? "#982377" : "#ef3caa"), QColor("#ee63bf"), opacity, true);
+        }
+        const Vec engineAt = translated(rotate({ShipShape::EngineX * side, 0, 0}, rotation), at);
+        mesh(engine, engineAt, rotation,
+             {hex("#fff0cb"), hex("#dcb8bb"), hex("#7e6589"), hex("#fff1d8"), hex("#423956")},
+             {.ship = true, .radius = 5, .opacity = opacity, .lift = 0.3});
     }
-    mesh(canopy, at, rotation, {hex("#7de6e1"), hex("#398da8"), hex("#286285")},
-         {.emissive = true, .ship = true, .stroke = QColor("#baf8e6"), .radius = 5, .opacity = opacity});
+    mesh(canopy, at, rotation, {hex("#28475e"), hex("#35516d"), hex("#52617e"), hex("#303e5c")},
+         {.emissive = true, .ship = true, .stroke = QColor("#80b8cd"), .radius = 5, .opacity = opacity});
 
-    // The flames are see-through light: a long cone, and a short white-hot
-    // core inside it. The particles do the rest.
-    if (m_view->flight->game.wrecked >= 0)
-        return;
-    const double thrust = 1 + (ship.speed - 13) / 18, flicker = std::sin(m_view->flight->time * 28);
-    Mesh outer = flame, core = flame;
-    outer.vertices[4][2] = -2.4 - thrust * (0.8 + 0.2 * flicker);
-    for (int i = 0; i < 4; ++i)
-        core.vertices[i] = {core.vertices[i][0] * 0.55, core.vertices[i][1] * 0.55, -1.6};
-    core.vertices[4][2] = -2 - thrust * 0.35 * (1 + 0.15 * flicker);
-    for (double offset : {-0.65, 0.65}) {
-        const Vec nozzle = translated(rotate({offset, -0.05, 0}, rotation), at);
-        mesh(outer, nozzle, rotation, {hex("#ff9a5c"), hex("#ffc27a"), hex("#f7689a")},
-             {.emissive = true, .glow = true, .radius = 5, .opacity = 0.42});
-        mesh(core, nozzle, rotation, {hex("#fff6d8")}, {.emissive = true, .glow = true, .radius = 5, .opacity = 0.75});
+    // Short nested jets give the nozzles a continuous white/cyan core;
+    // cached soft particles carry their cooling magenta trail behind them.
+    if (m_view->flight->game.wrecked >= 0) return;
+    const double thrust = 1 + m_view->flight->boostAmount();
+    const double length = (1.2 + 0.08 * std::sin(m_view->flight->time * 28)) * thrust;
+    for (double side : {-1.0, 1.0}) {
+        const Vec nozzle = translated(rotate({ShipShape::EngineX * side, ShipShape::EngineY, ShipShape::EngineZ}, rotation), at);
+        for (int layer = 0; layer < 2; ++layer) {
+            const double r = layer ? 0.21 : 0.32, end = -length * (layer ? 0.7 : 1);
+            const Mesh jet{{{-r, r, 0}, {r, r, 0}, {r, -r, 0}, {-r, -r, 0},
+                            {-r * 0.55, 0, end}, {r * 0.55, 0, end}},
+                           {{0,1,2}, {0,2,3}, {0,4,5}, {0,5,1}, {3,2,5}, {3,5,4}}};
+            mesh(jet, nozzle, rotation, {hex(layer ? "#efffff" : "#65fff3")},
+                 {.emissive = true, .glow = true, .radius = 6, .opacity = layer ? 0.9 : 0.55});
+        }
     }
 }
 
@@ -228,7 +241,7 @@ void WorldLayer::buildParticles() {
         bool glow = true;
         switch (particle.kind) {
         case Particle::Exhaust:
-            // White hot at the nozzle, cooling through orange to pink.
+            // White hot at the nozzle, cooling through cyan to magenta.
             size *= 0.6 + 1.7 * t;
             opacity = 0.85 * std::pow(1 - t, 1.4);
             sprite = std::min(ExhaustSprites - 1, int(t * ExhaustSprites));
@@ -297,7 +310,7 @@ void WorldLayer::preparePuffs() {
         }
         return image;
     };
-    const QColor ramp[] = {QColor("#fff8dc"), QColor("#ffd27a"), QColor("#ff9150"), QColor("#f2577f"), QColor("#7a3a8f")};
+    const QColor ramp[] = {QColor("#edffff"), QColor("#76fff2"), QColor("#dd9dff"), QColor("#ff46c7"), QColor("#8b297f")};
     for (int i = 0; i < ExhaustSprites; ++i) {
         const double t = i / double(ExhaustSprites - 1) * 4;
         const int a = std::min(3, int(t));

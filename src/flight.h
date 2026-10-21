@@ -17,7 +17,7 @@ struct Ship {
 };
 
 struct ChaseCamera {
-    double x = 0, y = 8.2, z = -17.5, yaw = 0, pitch = -0.055;
+    double x = 0, y = 8.2, z = -20.5, yaw = 0, pitch = -0.055;
     // How far the camera has slid sideways, for the parallax background, and
     // how hard it is shaking after a hit.
     double drift = 0, shake = 0;

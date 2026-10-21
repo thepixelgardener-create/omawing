@@ -755,7 +755,8 @@ private slots:
         flight.ship.speed = 0;
         flight.advance(3);
         const double distance = std::hypot(flight.ship.x - flight.camera.x, flight.ship.z - flight.camera.z);
-        QVERIFY(distance > 17 && distance < 22);
+        // The wider interceptor needs a longer chase distance, including follow lag.
+        QVERIFY(distance > 20 && distance < 25);
         QVERIFY(flight.camera.pitch > -0.08 && flight.camera.pitch < 0);
         Scene scene;
         QImage image(960,540,QImage::Format_ARGB32_Premultiplied);

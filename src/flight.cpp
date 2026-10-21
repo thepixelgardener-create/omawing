@@ -1,4 +1,5 @@
 #include "flight.h"
+#include "shipshape.h"
 
 #include <algorithm>
 #include <cmath>
@@ -44,7 +45,7 @@ double Flight::boostAmount() const { return clampTo((ship.speed - CruiseSpeed) /
 
 std::array<Vec, 2> Flight::nozzles() const {
     const Vec rotation{ship.yaw, ship.pitch, ship.bank}, at{ship.x, ship.y, ship.z};
-    return {translated(rotate({-0.65, -0.05, -1.6}, rotation), at), translated(rotate({0.65, -0.05, -1.6}, rotation), at)};
+    return {translated(rotate({-ShipShape::EngineX, ShipShape::EngineY, ShipShape::EngineZ}, rotation), at), translated(rotate({ShipShape::EngineX, ShipShape::EngineY, ShipShape::EngineZ}, rotation), at)};
 }
 
 void Flight::step(double dt) {
@@ -137,7 +138,7 @@ void Flight::follow(double dt) {
     // leans into turns before the ship does.
     const double ox = camera.x, oz = camera.z;
     const double follow = 1 - std::exp(-dt * 4), yawEase = 1 - std::exp(-dt * 3);
-    const double distance = 17.5 + boostAmount() * 2.5;
+    const double distance = 20.5 + boostAmount() * 2.5;
     camera.x = mix(camera.x, ship.x - std::sin(ship.yaw) * distance, follow);
     camera.z = mix(camera.z, ship.z - std::cos(ship.yaw) * distance, follow);
     camera.y = mix(camera.y, ship.y + 5.0, follow);
@@ -157,7 +158,7 @@ void Flight::emitParticles(Particle::Kind kind, const Vec &at, const Vec &veloci
         p.position = at;
         p.velocity = translated(velocity, {std::sin(b) * std::cos(a) * s, std::cos(b) * s, std::sin(b) * std::sin(a) * s});
         switch (kind) {
-        case Particle::Exhaust: p.life = 0.3 + 0.12 * random(); p.size = 0.24; break;
+        case Particle::Exhaust: p.life = 0.38 + 0.12 * random(); p.size = 0.30; break;
         case Particle::Spark: p.life = 0.45 + 0.5 * random(); p.size = 0.1; break;
         case Particle::Glitter: p.life = 0.7 + 0.5 * random(); p.size = 0.16; break;
         case Particle::Smoke: p.life = 0.9 + 0.6 * random(); p.size = 0.55; break;
