@@ -14,56 +14,121 @@ namespace Sky {
 void paintBackdrop(QPainter &p, const View &view, double horizon);
 }
 
+namespace {
+// A direction in the sky, at infinity: only the camera's turning moves it.
+// Returns false when it is behind the camera.
+bool skyPoint(const View &view, double azimuth, double elevation, QPointF *at) {
+    const Vec direction{std::sin(azimuth) * std::cos(elevation), std::sin(elevation), std::cos(azimuth) * std::cos(elevation)};
+    const Vec c{dot(direction, view.right), dot(direction, view.up), dot(direction, view.forward)};
+    if (c[2] <= 0.08)
+        return false;
+    *at = view.project(c);
+    return true;
+}
+
+// A soft round glow, as a radial gradient that fades to nothing.
+void glow(QPainter &p, const QPointF &at, double radius, const QColor &color, double strength) {
+    QRadialGradient g(at, radius);
+    g.setColorAt(0, withAlpha(color, strength));
+    g.setColorAt(0.4, withAlpha(color, strength * 0.45));
+    g.setColorAt(1, withAlpha(color, 0));
+    p.fillRect(QRectF(at.x() - radius, at.y() - radius, radius * 2, radius * 2), g);
+}
+}
+
 void Sky::paint(QPainter &p, const View &view) {
     const double time = view.flight->time, W = view.width;
     const double horizon = view.height / 2 + View::Focal * std::tan(view.camera.pitch), split = clampTo(horizon, 0, view.height);
+    const View::Act &act = view.style();
+    const Vec &top = view.palette.top, &mid = view.palette.mid, &low = view.palette.horizon;
 
-    QLinearGradient sky(0, 0, 0, std::max(1.0, split));
-    sky.setColorAt(0, rgb(view.palette.top));
-    sky.setColorAt(0.66, rgb(view.palette.mid));
-    sky.setColorAt(1, rgb(view.palette.horizon));
+    // The sky deepens upwards from a warm glow at the horizon.
+    QLinearGradient sky(0, std::min(0.0, horizon - 520), 0, std::max(1.0, split));
+    sky.setColorAt(0, rgb(top));
+    sky.setColorAt(0.38, rgb(blend(top, mid, 0.7)));
+    sky.setColorAt(0.72, rgb(blend(mid, low, 0.45)));
+    sky.setColorAt(1, rgb(blend(low, hex("#fff0dc"), 0.12)));
     p.fillRect(QRectF(0, 0, W, std::max(1.0, split)), sky);
 
-    // Copper bars: the Amiga's copper changed colours line by line.
+    // The copper bars, the Amiga's touch, as a faint shimmer near the horizon.
     for (int i = 0; i < 24; ++i) {
         const double y = horizon - 170 + i * 7 + std::sin(time * 0.7 + i * 0.18) * 6;
-        p.setOpacity(0.12 + i / 90.0);
-        p.fillRect(QRectF(0, y, W, 6), rgb(blend(view.palette.mid, view.palette.horizon, i / 24.0)));
+        p.setOpacity(0.04 + i / 260.0);
+        p.fillRect(QRectF(0, y, W, 6), rgb(blend(mid, low, i / 24.0)));
     }
     p.setOpacity(1);
 
-    // Stars sit at infinity: only the camera's rotation moves them.
-    const QColor starColor("#fcecc6");
-    for (int i = 0; i < 130; ++i) {
-        const double az = hash(i, 2) * 2 * M_PI, elevation = 0.05 + hash(i, 3) * 1.2, phase = hash(i, 4);
-        const Vec direction{std::sin(az) * std::cos(elevation), std::sin(elevation), std::cos(az) * std::cos(elevation)};
-        const Vec c{dot(direction, view.right), dot(direction, view.up), dot(direction, view.forward)};
-        if (c[2] <= 0.05)
+    // Stars in the upper sky, fading out as they near the glow.
+    const QColor starColor("#fff4e6");
+    for (int i = 0; i < 140; ++i) {
+        const double az = hash(i, 2) * 2 * M_PI, elevation = 0.12 + hash(i, 3) * 1.1, phase = hash(i, 4);
+        QPointF at;
+        if (!skyPoint(view, az, elevation, &at) || at.x() < 0 || at.x() > W || at.y() < 0)
             continue;
-        const QPointF at = view.project(c);
-        if (at.x() < 0 || at.x() > W || at.y() < 88 || at.y() > horizon)
+        const double height = clampTo((horizon - 70 - at.y()) / 160, 0, 1);
+        if (height <= 0)
             continue;
-        const double s = 0.3 + phase * (0.6 + 0.3 * std::sin(time + phase * 10));
-        p.fillRect(QRectF(at.x() - 0.8, at.y() - 0.8, s + 1.6, 1.6), starColor);
+        const double twinkle = 0.55 + 0.45 * std::sin(time * (1.2 + phase * 2) + phase * 20);
+        p.setOpacity(height * twinkle * (0.5 + 0.5 * phase));
+        const double s = 0.8 + phase * 1.1;
+        p.fillRect(QRectF(at.x() - s / 2, at.y() - s / 2, s, s), starColor);
+    }
+    p.setOpacity(1);
+
+    // A warm haze spreads along the horizon around the sun.
+    const double sunAzimuth = 0.44, sunElevation = 0.1;
+    const Vec sunColor = blend(hex("#fff3dd"), view.palette.accent, 0.18);
+    const Vec haloColor = blend(view.palette.accent, low, 0.35);
+    const double dim = act.dimSun ? 0.35 : 1;
+    QPointF sun;
+    const bool sunAhead = skyPoint(view, sunAzimuth, sunElevation, &sun);
+    if (sunAhead) {
+        p.save();
+        p.translate(sun);
+        p.scale(3.2, 1);
+        glow(p, {0, 0}, 150, rgb(haloColor), 0.42 * dim);
+        p.restore();
     }
 
-    const View::Act &act = view.style();
-    const Vec sunDirection{std::sin(0.44) * std::cos(0.1), std::sin(0.1), std::cos(0.44) * std::cos(0.1)};
-    const Vec sun{dot(sunDirection, view.right), dot(sunDirection, view.up), dot(sunDirection, view.forward)};
-    if (sun[2] > 0.15) {
-        const Vec sunColor = blend(view.palette.accent, hex("#ffd098"), 0.55);
-        p.save();
-        p.translate(view.project(sun));
-        p.setOpacity(act.dimSun ? 0.2 : 0.85);
-        QRadialGradient halo(0, 0, 150);
-        halo.setColorAt(0, withAlpha(rgb(blend(sunColor, hex("#ffb26c"), 0.5)), 0.4));
-        halo.setColorAt(1, withAlpha(rgb(blend(sunColor, hex("#ffb26c"), 0.5)), 0));
-        p.fillRect(QRectF(-150, -150, 300, 300), halo);
-        for (int i = 0; i < 10; ++i) {
-            const double y = -68 + i * 14, half = std::sqrt(std::max(0.0, 70.0 * 70 - (y + 5) * (y + 5)));
-            p.fillRect(QRectF(-half, y, half * 2, i < 4 ? 14 : 10 - (i - 4)), rgb(sunColor));
+    // Moons: a big pale crescent high on the left of the sun, and a small
+    // full one further round, each with a faint glow.
+    struct Moon {
+        double azimuth, elevation, radius, phase;   // phase: how far the shadow covers it.
+        const char *color;
+    };
+    static const Moon moons[] = {{-0.26, 0.21, 15, 0.42, "#f6ecff"}, {0.95, 0.36, 6.5, 0, "#fde9f2"}};
+    for (const Moon &m : moons) {
+        QPointF at;
+        if (!skyPoint(view, m.azimuth, m.elevation, &at) || at.y() > horizon - m.radius)
+            continue;
+        glow(p, at, m.radius * 4.5, QColor(m.color), 0.22);
+        QPainterPath disc;
+        disc.addEllipse(at, m.radius, m.radius);
+        if (m.phase > 0) {
+            QPainterPath shadow;
+            shadow.addEllipse(at + QPointF(m.radius * m.phase * 1.6, -m.radius * 0.25), m.radius * 0.95, m.radius * 0.95);
+            disc = disc.subtracted(shadow);
         }
-        p.restore();
+        p.setOpacity(0.92);
+        p.fillPath(disc, QColor(m.color));
+        p.setOpacity(1);
+    }
+
+    // The sun: small and low, ringed by flat bands of light that grow
+    // fainter outwards, like a lens's halo.
+    if (sunAhead) {
+        const double radius = 15;
+        p.setPen(Qt::NoPen);
+        for (int ring = 5; ring >= 1; --ring) {
+            p.setOpacity((0.07 + 0.035 * (5 - ring)) * dim);
+            p.setBrush(rgb(blend(sunColor, haloColor, ring / 6.0)));
+            const double r = radius * (1 + ring * 0.95);
+            p.drawEllipse(sun, r, r);
+        }
+        p.setOpacity(dim < 1 ? 0.5 : 1);
+        p.setBrush(rgb(sunColor));
+        p.drawEllipse(sun, radius, radius);
+        p.setOpacity(1);
     }
 
     paintBackdrop(p, view, horizon);
@@ -94,19 +159,28 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
     const double W = view.width, time = view.flight->time;
     const View::Act &act = view.style();
 
+    // Billowing banks of cloud, round on top and flat underneath, lit from
+    // the horizon; and thin streaks higher up. Each layer slides at its own
+    // speed with the camera and drifts slowly in the wind.
     struct Clouds {
-        double turn, slide, wind, low, high, opacity;
+        double turn, slide, wind, low, high, size, opacity;
         int count;
+        bool streaks;
     };
-    static const Clouds clouds[] = {{1.4, 1.5, 5, 70, 130, 0.2, 9}, {2.4, 3.6, 13, 130, 240, 0.28, 8}};
-    for (int layer = 0; layer < 2; ++layer) {
+    static const Clouds clouds[] = {
+        {1.3, 1.2, 3, 50, 110, 0.7, 0.42, 7, false},   // Small banks low over the far hills.
+        {2.2, 3.4, 6, 110, 210, 1.9, 0.34, 6, false},  // Big banks higher up, near.
+        {1.8, 2.4, 11, 200, 300, 1, 0.16, 7, true},    // Streaks.
+    };
+    for (int layer = 0; layer < 3; ++layer) {
         const Clouds &c = clouds[layer];
         const double period = 2 * M_PI * View::Focal * c.turn;
         const double scroll = view.camera.yaw * View::Focal * c.turn + view.camera.drift * c.slide + time * c.wind;
-        p.setOpacity(c.opacity * (act.dimSun ? 0.45 : 1));
-        const QColor color = rgb(blend(view.palette.horizon, hex("#fff3e0"), 0.25 + layer * 0.2));
+        const QColor light = rgb(blend(view.palette.horizon, hex("#fff3e6"), 0.35 + layer * 0.1));
+        const QColor shade = rgb(blend(view.palette.mid, view.palette.horizon, 0.55));
+        p.setOpacity(c.opacity * (act.dimSun ? 0.5 : 1));
         for (int i = 0; i < c.count; ++i) {
-            const double width = 80 + hash(i, layer + 30) * 170, height = 6 + hash(i, layer + 40) * 8;
+            const double width = (90 + hash(i, layer + 30) * 160) * c.size;
             const double y = horizon - mix(c.low, c.high, hash(i, layer + 50));
             double x = std::fmod((i + hash(i, layer + 20) * 0.6) / c.count * period - scroll, period);
             if (x < 0)
@@ -115,15 +189,51 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
                 if (at + width < 0 || at > W)
                     continue;
                 QPainterPath cloud;
-                cloud.addRoundedRect(QRectF(at, y, width, height), height / 2, height / 2);
-                cloud.addRoundedRect(QRectF(at + width * 0.18, y - height * 0.7, width * 0.42, height * 1.2), height * 0.6,
-                                     height * 0.6);
                 cloud.setFillRule(Qt::WindingFill);
-                p.fillPath(cloud, color);
+                double top = y;
+                if (c.streaks) {
+                    const double h = 2 + hash(i, layer + 40) * 3;
+                    cloud.addRoundedRect(QRectF(at, y, width, h), h / 2, h / 2);
+                    cloud.addRoundedRect(QRectF(at + width * 0.3, y + h * 1.8, width * 0.55, h * 0.8), h / 2, h / 2);
+                    top = y - h;
+                } else {
+                    // A row of puffs on a flat base; the middle ones tallest.
+                    const int puffs = 5 + int(hash(i, layer + 60) * 3);
+                    const double base = 10 * c.size;
+                    cloud.addRoundedRect(QRectF(at, y - base, width, base), base / 2, base / 2);
+                    for (int k = 0; k < puffs; ++k) {
+                        const double u = (k + 0.5) / puffs, swell = std::sin(u * M_PI);
+                        const double r = (8 + 16 * swell * (0.7 + 0.6 * hash(i * 7 + k, layer + 70))) * c.size;
+                        const QPointF centre(at + u * width, y - base * 0.6 - r * 0.55);
+                        cloud.addEllipse(centre, r, r);
+                        top = std::min(top, centre.y() - r);
+                    }
+                }
+                QLinearGradient tone(0, top, 0, y);
+                tone.setColorAt(0, light);
+                tone.setColorAt(1, shade);
+                p.fillPath(cloud, tone);
             }
         }
     }
     p.setOpacity(1);
+
+    // A small flock drifts across the far sky in a loose V, flapping.
+    {
+        const double azimuth = std::fmod(time * 0.012, 2 * M_PI) - 1.2, elevation = 0.16;
+        QPointF lead;
+        if (skyPoint(view, azimuth, elevation, &lead) && lead.y() < horizon) {
+            p.setPen(QPen(withAlpha(rgb(blend(view.palette.top, view.palette.mid, 0.4)), 0.75), 1.1, Qt::SolidLine, Qt::RoundCap));
+            p.setBrush(Qt::NoBrush);
+            for (int b = 0; b < 9; ++b) {
+                const int rank = (b + 1) / 2, side = b % 2 ? -1 : 1;
+                const QPointF at = lead + QPointF(-rank * 11 + hash(b, 90) * 3, side * rank * 5 + hash(b, 91) * 3);
+                const double flap = std::sin(time * 7 + b * 1.3) * 1.6, span = 3.2;
+                p.drawLine(at, at + QPointF(-span, -1 - flap));
+                p.drawLine(at, at + QPointF(span, -1 - flap));
+            }
+        }
+    }
 
     struct Ridge {
         double turn, slide, sink, spacing, low, high;

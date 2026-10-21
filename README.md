@@ -7,7 +7,10 @@ endless checkerboard under copper-bar skies, with a chase camera, a sine-wave
 scroller, and a three-track MP3 soundtrack with arcade sound effects. Nine
 scenes form a 216-second autopilot loop; press any flight key to take the controls and chase a high score.
 
-Three mountain layers and two cloud layers move at different speeds as you turn.
+A small sun sits low between the hills inside rings of soft light, with a
+pale crescent moon and a small full one higher up, a flock of birds drifting
+across, and banks of cloud. Three mountain layers and three cloud layers
+move at different speeds as you turn.
 The camera follows farther behind the ship and looks ahead toward the horizon.
 The wings flex on springs, sweep back under boost, and shake after impacts. Twin
 exhaust trails glow and fade with soft, transparent particles.
