@@ -7,7 +7,6 @@
   "FREE FLIGHT": "FRI FLYGNING",
   "THRUST": "DRAGKRAFT",
   "ALT %1": "HÖJD %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ETT KÄRLEKSBREV TILL DEMOSCENEN",
   "No audio output device was found.": "Ingen ljudutgång hittades.",
   "The audio output can't play this sound.": "Ljudutgången kan inte spela upp det här ljudet.",
   "Sound stopped: the audio output failed.": "Ljudet stoppades: ljudutgången slutade fungera.",
@@ -53,6 +52,7 @@
   "Volume": "Volym",
   "Music and effects volume": "Volym för musik och effekter",
   "The music files are missing.": "Musikfilerna saknas.",
-  "Show or hide the toolbar": "Visa eller dölj verktygsfältet",
-  "Toolbar hidden. Press U to show it.": "Verktygsfältet är dolt. Tryck på U för att visa det."
+  "Flying into the future": "Vi flyger in i framtiden",
+  "Show or hide the titles and toolbar": "Visa eller dölj rubriker och verktygsfält",
+  "Titles and toolbar hidden. Press U to show them.": "Rubriker och verktygsfält är dolda. Tryck på U för att visa dem."
 }

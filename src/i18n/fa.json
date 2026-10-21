@@ -7,7 +7,6 @@
   "FREE FLIGHT": "پرواز آزاد",
   "THRUST": "رانش",
   "ALT %1": "ارتفاع %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "نامه‌ای عاشقانه به دموسین",
   "No audio output device was found.": "هیچ دستگاه خروجی صدا پیدا نشد.",
   "The audio output can't play this sound.": "خروجی صدا نمی‌تواند این صدا را پخش کند.",
   "Sound stopped: the audio output failed.": "صدا متوقف شد: خروجی صدا از کار افتاد.",
@@ -53,6 +52,7 @@
   "Volume": "صدا",
   "Music and effects volume": "بلندی صدای موسیقی و جلوه‌ها",
   "The music files are missing.": "فایل‌های موسیقی پیدا نشد.",
-  "Show or hide the toolbar": "نمایش یا پنهان کردن نوار ابزار",
-  "Toolbar hidden. Press U to show it.": "نوار ابزار پنهان است. برای نمایش آن U را فشار دهید."
+  "Flying into the future": "پرواز به سوی آینده",
+  "Show or hide the titles and toolbar": "نمایش یا پنهان کردن عنوان‌ها و نوار ابزار",
+  "Titles and toolbar hidden. Press U to show them.": "عنوان‌ها و نوار ابزار پنهان است. برای نمایش U را فشار دهید."
 }

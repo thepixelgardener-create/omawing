@@ -7,7 +7,6 @@
   "FREE FLIGHT": "SZABAD REPÜLÉS",
   "THRUST": "TOLÓERŐ",
   "ALT %1": "MAG. %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "SZERELMESLEVÉL A DEMOSCENE-NEK",
   "No audio output device was found.": "Nem található hangkimeneti eszköz.",
   "The audio output can't play this sound.": "A hangkimenet nem tudja lejátszani ezt a hangot.",
   "Sound stopped: the audio output failed.": "A hang leállt: a hangkimenet meghibásodott.",
@@ -53,6 +52,7 @@
   "Volume": "Hangerő",
   "Music and effects volume": "Zene és effektek hangereje",
   "The music files are missing.": "Hiányoznak a zenefájlok.",
-  "Show or hide the toolbar": "Eszköztár megjelenítése vagy elrejtése",
-  "Toolbar hidden. Press U to show it.": "Az eszköztár rejtve van. Az U billentyűvel jelenítheti meg."
+  "Flying into the future": "Repülés a jövőbe",
+  "Show or hide the titles and toolbar": "Címek és eszköztár megjelenítése vagy elrejtése",
+  "Titles and toolbar hidden. Press U to show them.": "A címek és az eszköztár rejtve vannak. Az U billentyűvel jelenítheti meg őket."
 }

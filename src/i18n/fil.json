@@ -7,7 +7,6 @@
   "FREE FLIGHT": "MALAYANG LIPAD",
   "THRUST": "TULAK",
   "ALT %1": "TAAS %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ISANG LIHAM-PAG-IBIG SA DEMOSCENE",
   "No audio output device was found.": "Walang nakitang audio output device.",
   "The audio output can't play this sound.": "Hindi ma-play ng audio output ang tunog na ito.",
   "Sound stopped: the audio output failed.": "Huminto ang tunog: pumalya ang audio output.",
@@ -53,6 +52,7 @@
   "Volume": "Volume",
   "Music and effects volume": "Volume ng musika at mga effect",
   "The music files are missing.": "Nawawala ang mga music file.",
-  "Show or hide the toolbar": "Ipakita o itago ang toolbar",
-  "Toolbar hidden. Press U to show it.": "Nakatago ang toolbar. Pindutin ang U para ipakita ito."
+  "Flying into the future": "Lumilipad patungo sa hinaharap",
+  "Show or hide the titles and toolbar": "Ipakita o itago ang mga pamagat at toolbar",
+  "Titles and toolbar hidden. Press U to show them.": "Nakatago ang mga pamagat at toolbar. Pindutin ang U para ipakita."
 }

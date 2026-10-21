@@ -2,7 +2,7 @@
 
 #include <QFontDatabase>
 #include <QFontMetricsF>
-#include <QConicalGradient>
+#include <cstring>
 #include <QLocale>
 #include <QLinearGradient>
 #include <QPainter>
@@ -66,6 +66,45 @@ QLinearGradient chrome(const QRectF &box) {
     g.setColorAt(1, QColor("#f6cb9d"));
     return g;
 }
+// The title in the pixel lettering of the Omarchy logo: 16 pixels tall,
+// strokes 3 wide, notched corners, shaded in five bands from light at the
+// top to dark at the bottom. o, m, and a are the logo's own letters; w, i,
+// n, and g are drawn to match.
+struct PixelGlyph {
+    char letter;
+    std::array<const char *, 16> rows;
+};
+const std::array<PixelGlyph, 7> &pixelGlyphs() {
+    static const std::array<PixelGlyph, 7> glyphs{{
+        {'o', {"..#####..", ".#######.", "###...###", "###...###", "###...###", "###...###", "###...###", "###...###",
+               "###...###", "###...###", "###...###", "###...###", "###...###", "###...###", ".#######.", "..#####.#"}},
+        {'m', {"..###########..", ".##############", "###...###...###", "###...###...###", "###...###...###",
+               "###...###...###", "###...###...###", "###...###...###", "###...###...###", "###...###...###",
+               "###...###...###", "###...###...###", "###...###...###", "###...###...###", ".##...###...###",
+               "..#...###...#.."}},
+        {'a', {"...########", "..#########", ".####...###", ".####...###", ".####...###", ".####...###", ".####...###",
+               "###########", "###########", ".####...###", ".####...###", ".####...###", ".####...###", "..###...###",
+               "..###...##.", "..###...#.."}},
+        {'w', {"..#...###...#..", ".##...###...###", "###...###...###", "###...###...###", "###...###...###",
+               "###...###...###", "###...###...###", "###...###...###", "###...###...###", "###...###...###",
+               "###...###...###", "###...###...###", "###...###...###", "###...###...###", ".##############",
+               "..###########.."}},
+        {'i', {"###", "###", "...", "###", "###", "###", "###", "###", "###", "###", "###", "###", "###", "###", "##.",
+               "#.."}},
+        {'n', {"..#####..", ".########", "###...###", "###...###", "###...###", "###...###", "###...###", "###...###",
+               "###...###", "###...###", "###...###", "###...###", "###...###", "###...###", ".##...###", "..#...#.."}},
+        {'g', {"..#####..", ".#######.", "###...###", "###...###", "###...###", "###...###", "###...###", "#########",
+               "#########", "......###", ".##...###", "###...###", "###...###", "###...###", ".#######.", "#.#####.."}},
+    }};
+    return glyphs;
+}
+// The band each row is shaded with, from the logo.
+QColor pixelBand(int row) {
+    static const QColor bands[] = {QColor("#e3d7d5"), QColor("#cbb6b1"), QColor("#b59790"), QColor("#72605c"), QColor("#3a322f")};
+    return bands[row < 4 ? 0 : row < 6 ? 1 : row < 10 ? 2 : row < 13 ? 3 : 4];
+}
+// Logo pixels, in canvas units.
+constexpr double TitlePixel = 2.5;
 } // namespace
 
 Overlay::Sprite Overlay::render(const QRectF &bounds, const std::function<void(QPainter &)> &draw) const {
@@ -166,20 +205,40 @@ void Overlay::prepare(const View &view, double pixelsPerUnit) {
     for (int y = period - std::max(1, int(std::lround(pixelsPerUnit))); y < period; ++y)
         m_scanlines.setPixelColor(0, y, withAlpha("#090f29", 0.14));
     prepareGlyphs();
-    QFont font("Liberation Sans");
-    font.setPixelSize(49);
-    font.setWeight(QFont::Black);
-    font.setItalic(true);
-    font.setLetterSpacing(QFont::AbsoluteSpacing, 1.5);
-    QPainterPath title;
-    title.addText(0, 0, font, "OMAWING");
-    // The shadow sits 2 units right and 4 down from the chrome.
-    m_title = render(title.boundingRect().united(title.boundingRect().translated(2, 4)), [&](QPainter &p) {
-        p.setOpacity(0.85);
-        p.fillPath(title.translated(2, 4), QColor("#211638"));
-        p.setOpacity(1);
-        p.fillPath(title, chrome(title.boundingRect()));
-    });
+    // Each logo pixel is a whole number of screen pixels, so the blocks
+    // stay crisp. A soft shadow one pixel down and right lifts the dark
+    // bottom band off the night sky.
+    const int unit = std::max(1, int(std::lround(TitlePixel * pixelsPerUnit)));
+    int columns = 0;
+    for (const char letter : QByteArrayLiteral("omawing")) {
+        for (const PixelGlyph &g : pixelGlyphs())
+            if (g.letter == letter)
+                columns += int(std::strlen(g.rows[0])) + 2;
+    }
+    QImage title((columns - 1) * unit, 17 * unit, QImage::Format_ARGB32_Premultiplied);
+    title.fill(Qt::transparent);
+    {
+        QPainter t(&title);
+        for (const bool shadow : {true, false}) {
+            int x = 0;
+            for (const char letter : QByteArrayLiteral("omawing")) {
+                const PixelGlyph *glyph = nullptr;
+                for (const PixelGlyph &g : pixelGlyphs())
+                    if (g.letter == letter)
+                        glyph = &g;
+                if (!glyph)
+                    continue;
+                const int width = int(std::strlen(glyph->rows[0]));
+                for (int row = 0; row < 16; ++row)
+                    for (int column = 0; column < width; ++column)
+                        if (glyph->rows[row][column] == '#')
+                            t.fillRect((x + column + shadow) * unit, (row + shadow) * unit, unit, unit,
+                                       shadow ? withAlpha("#07060d", 0.55) : pixelBand(row));
+                x += width + 2;
+            }
+        }
+    }
+    m_title = {title, {0, 0}, {}};
 }
 
 void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
@@ -226,19 +285,24 @@ void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
     p.resetTransform();
     p.fillRect(screen, QBrush(m_scanlines));
     p.restore();
-    blit(p, m_title, {26, 59});
-
-    p.setPen(QColor("#f4cfb2"));
-    p.setFont(hudFont(10, 3.5, hud.subtitle));
-    p.drawText(QPointF(30, 80), hud.subtitle);
-    p.setPen(QColor("#ffe2b3"));
-    p.setFont(monoFont(13, 2));
-    drawEnd(p, W - 30, 36, QString("%1 / %2").arg(m_view->act + 1, 2, 10, QChar('0')).arg(Scene::actName(m_view->act, m_view->look.themeName)));
-    p.setPen(QColor("#d3bdd5"));
-    p.setFont(hudFont(10, 1.6, hud.mode));
-    drawEnd(p, W - 30, 59, hud.mode);
-    for (int i = 0; i < Flight::Acts; ++i)
-        p.fillRect(QRectF(W - 30 - (Flight::Acts - i) * 15 + 3, 74, 12, 3), i == m_view->act ? rgb(m_view->palette.accent) : QColor("#65506f"));
+    // The titles: the logo and its line on the left, the scene on the right.
+    // They fade out together when the interface is switched off.
+    if (m_view->look.titles > 0.01) {
+        p.setOpacity(m_view->look.titles);
+        blit(p, m_title, {28, 20});
+        p.setPen(QColor("#cbb6b1"));
+        p.setFont(hudFont(11, 2.2, hud.subtitle));
+        p.drawText(QPointF(30, 20 + 17 * TitlePixel + 16), hud.subtitle);
+        p.setPen(QColor("#ffe2b3"));
+        p.setFont(monoFont(13, 2));
+        drawEnd(p, W - 30, 36, QString("%1 / %2").arg(m_view->act + 1, 2, 10, QChar('0')).arg(Scene::actName(m_view->act, m_view->look.themeName)));
+        p.setPen(QColor("#d3bdd5"));
+        p.setFont(hudFont(10, 1.6, hud.mode));
+        drawEnd(p, W - 30, 59, hud.mode);
+        for (int i = 0; i < Flight::Acts; ++i)
+            p.fillRect(QRectF(W - 30 - (Flight::Acts - i) * 15 + 3, 74, 12, 3), i == m_view->act ? rgb(m_view->palette.accent) : QColor("#65506f"));
+        p.setOpacity(1);
+    }
 
     // The score, top centre: the current run while flying, the best always.
     if (!hud.points.isEmpty()) {
@@ -324,8 +388,8 @@ void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
 // A round radar on the right, under the scene name: the ship in the middle,
 // heading up, and what stands within Range around it. Pyramids are
 // triangles, crystals diamonds, the ball a dot, and rings short bars, seen
-// from above; the next ring ahead pulses. A sweep turns once a second and a
-// half, and the rim brightens on the music's beat.
+// from above; the next ring ahead pulses. Scans ripple out from the ship in
+// rings, lighting each blip as they pass, and the rim brightens on the beat.
 void Overlay::paintRadar(QPainter &p) {
     constexpr double Radius = 56, Range = 60;
     const View &v = *m_view;
@@ -352,23 +416,37 @@ void Overlay::paintRadar(QPainter &p) {
     p.drawLine(centre - QPointF(Radius, 0), centre + QPointF(Radius, 0));
     p.drawLine(centre - QPointF(0, Radius), centre + QPointF(0, Radius));
 
-    // The sweep: a bright edge with a fading wedge behind it.
-    const double sweep = std::fmod(time * 240, 360);
-    QConicalGradient wedge(centre, -sweep);
-    wedge.setColorAt(0, withAlpha(rgb(v.palette.accent), 0.32));
-    wedge.setColorAt(0.18, withAlpha(rgb(v.palette.accent), 0));
-    wedge.setColorAt(1, withAlpha(rgb(v.palette.accent), 0));
+    // The scan: a ring every Period seconds, growing from the ship to the
+    // rim and fading as it goes, with a soft glow just inside it.
+    constexpr double Period = 1.8;
+    const double phase = std::fmod(time, Period) / Period;
+    {
+        const double r = phase * Radius, fade = 1 - phase;
+        QRadialGradient glow(centre, std::max(1.0, r));
+        glow.setColorAt(0, withAlpha(rgb(v.palette.accent), 0));
+        glow.setColorAt(0.75, withAlpha(rgb(v.palette.accent), 0));
+        glow.setColorAt(1, withAlpha(rgb(v.palette.accent), 0.22 * fade));
+        p.setPen(Qt::NoPen);
+        p.setBrush(glow);
+        p.drawEllipse(centre, r, r);
+        p.setBrush(Qt::NoBrush);
+        p.setPen(QPen(withAlpha(rgb(blend(v.palette.accent, {255, 255, 255}, 0.3)), 0.75 * fade), 1.4));
+        p.drawEllipse(centre, r, r);
+    }
+    // A blip flares as the scan passes it and dims until the next one.
+    auto lit = [&](const QPointF &at) {
+        const double since = std::fmod(phase - QLineF(centre, at).length() / Radius + 1, 1.0);
+        return 0.45 + 0.55 * std::exp(-since * 5);
+    };
     p.setPen(Qt::NoPen);
-    p.setBrush(wedge);
-    p.drawEllipse(centre, Radius - 1, Radius - 1);
 
-    const QColor pyramid = withAlpha(rgb(blend(v.palette.mid, {255, 255, 255}, 0.35)), 0.85);
+    const QColor pyramid = rgb(blend(v.palette.mid, {255, 255, 255}, 0.35));
     const QColor crystal = rgb(blend(v.palette.crystal, {255, 255, 255}, 0.25 + 0.5 * v.look.beat));
     for (const Obstacle &o : World::scenery(ship.x, ship.z, 4, time)) {
         const QPointF at = place(o.x, o.z);
         if (!inside(at, 3))
             continue;
-        p.setBrush(o.kind == Obstacle::Pyramid ? pyramid : crystal);
+        p.setBrush(withAlpha(o.kind == Obstacle::Pyramid ? pyramid : crystal, lit(at)));
         if (o.kind == Obstacle::Pyramid) {
             const double r = World::PyramidHalf / Range * Radius;
             const QPointF triangle[] = {at + QPointF(0, -r), at + QPointF(r, r * 0.8), at + QPointF(-r, r * 0.8)};
@@ -382,7 +460,7 @@ void Overlay::paintRadar(QPainter &p) {
     const Obstacle ball = World::ball(ship.z, time);
     const QPointF ballAt = place(ball.x, ball.z);
     if (inside(ballAt, 3)) {
-        p.setBrush(QColor("#db4c70"));
+        p.setBrush(withAlpha(QColor("#db4c70"), lit(ballAt)));
         p.drawEllipse(ballAt, 2.4, 2.4);
     }
 
@@ -408,7 +486,7 @@ void Overlay::paintRadar(QPainter &p) {
         if (!inside((a + b) / 2, 4))
             continue;
         const bool highlight = i == next && nearest < 1e9;
-        const double glow = highlight ? 0.85 + 0.15 * std::sin(time * 8) : 0.8;
+        const double glow = highlight ? 0.85 + 0.15 * std::sin(time * 8) : 0.8 * lit((a + b) / 2);
         p.setPen(QPen(withAlpha(rgb(highlight ? blend(v.palette.crystal, {255, 255, 255}, 0.2) : v.palette.accent), glow),
                       highlight ? 3.6 : 2.2, Qt::SolidLine, Qt::RoundCap));
         p.drawLine(a, b);

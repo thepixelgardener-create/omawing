@@ -7,7 +7,6 @@
   "FREE FLIGHT": "ВІЛЬНИЙ ПОЛІТ",
   "THRUST": "ТЯГА",
   "ALT %1": "ВИС. %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ЛЮБОВНИЙ ЛИСТ ДЕМОСЦЕНІ",
   "No audio output device was found.": "Пристрій виведення звуку не знайдено.",
   "The audio output can't play this sound.": "Пристрій виведення звуку не може відтворити цей звук.",
   "Sound stopped: the audio output failed.": "Звук зупинено: збій пристрою виведення звуку.",
@@ -53,6 +52,7 @@
   "Volume": "Гучність",
   "Music and effects volume": "Гучність музики та ефектів",
   "The music files are missing.": "Музичні файли відсутні.",
-  "Show or hide the toolbar": "Показати або сховати панель інструментів",
-  "Toolbar hidden. Press U to show it.": "Панель інструментів приховано. Натисніть U, щоб показати її."
+  "Flying into the future": "Летимо в майбутнє",
+  "Show or hide the titles and toolbar": "Показати або сховати заголовки й панель інструментів",
+  "Titles and toolbar hidden. Press U to show them.": "Заголовки й панель інструментів приховано. Натисніть U, щоб показати їх."
 }

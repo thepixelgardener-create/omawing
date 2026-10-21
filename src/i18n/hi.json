@@ -7,7 +7,6 @@
   "FREE FLIGHT": "मुक्त उड़ान",
   "THRUST": "थ्रस्ट",
   "ALT %1": "ऊँचाई %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "डेमोसीन के नाम एक प्रेम पत्र",
   "No audio output device was found.": "कोई ऑडियो आउटपुट डिवाइस नहीं मिला।",
   "The audio output can't play this sound.": "ऑडियो आउटपुट यह ध्वनि नहीं चला सकता।",
   "Sound stopped: the audio output failed.": "ध्वनि रुक गई: ऑडियो आउटपुट विफल हो गया।",
@@ -53,6 +52,7 @@
   "Volume": "वॉल्यूम",
   "Music and effects volume": "संगीत और इफ़ेक्ट का वॉल्यूम",
   "The music files are missing.": "संगीत फ़ाइलें मौजूद नहीं हैं।",
-  "Show or hide the toolbar": "टूलबार दिखाएँ या छिपाएँ",
-  "Toolbar hidden. Press U to show it.": "टूलबार छिपा है। दिखाने के लिए U दबाएँ।"
+  "Flying into the future": "भविष्य की ओर उड़ान",
+  "Show or hide the titles and toolbar": "शीर्षक और टूलबार दिखाएँ या छिपाएँ",
+  "Titles and toolbar hidden. Press U to show them.": "शीर्षक और टूलबार छिपे हैं। दिखाने के लिए U दबाएँ।"
 }

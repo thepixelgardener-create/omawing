@@ -7,7 +7,6 @@
   "FREE FLIGHT": "BAY TỰ DO",
   "THRUST": "LỰC ĐẨY",
   "ALT %1": "ĐỘ CAO %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "BỨC THƯ TÌNH GỬI DEMOSCENE",
   "No audio output device was found.": "Không tìm thấy thiết bị phát âm thanh.",
   "The audio output can't play this sound.": "Thiết bị phát âm thanh không thể phát âm thanh này.",
   "Sound stopped: the audio output failed.": "Âm thanh đã dừng: thiết bị phát âm thanh gặp lỗi.",
@@ -53,6 +52,7 @@
   "Volume": "Âm lượng",
   "Music and effects volume": "Âm lượng nhạc và hiệu ứng",
   "The music files are missing.": "Thiếu tệp nhạc.",
-  "Show or hide the toolbar": "Hiện hoặc ẩn thanh công cụ",
-  "Toolbar hidden. Press U to show it.": "Đã ẩn thanh công cụ. Nhấn U để hiện lại."
+  "Flying into the future": "Bay về tương lai",
+  "Show or hide the titles and toolbar": "Hiện hoặc ẩn tiêu đề và thanh công cụ",
+  "Titles and toolbar hidden. Press U to show them.": "Đã ẩn tiêu đề và thanh công cụ. Nhấn U để hiện lại."
 }

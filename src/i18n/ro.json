@@ -7,7 +7,6 @@
   "FREE FLIGHT": "ZBOR LIBER",
   "THRUST": "TRACȚIUNE",
   "ALT %1": "ALT %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "O SCRISOARE DE DRAGOSTE PENTRU DEMOSCENE",
   "No audio output device was found.": "Nu a fost găsit niciun dispozitiv de ieșire audio.",
   "The audio output can't play this sound.": "Ieșirea audio nu poate reda acest sunet.",
   "Sound stopped: the audio output failed.": "Sunetul s-a oprit: ieșirea audio a cedat.",
@@ -53,6 +52,7 @@
   "Volume": "Volum",
   "Music and effects volume": "Volumul muzicii și al efectelor",
   "The music files are missing.": "Lipsesc fișierele muzicale.",
-  "Show or hide the toolbar": "Afișează sau ascunde bara de instrumente",
-  "Toolbar hidden. Press U to show it.": "Bara de instrumente este ascunsă. Apăsați U pentru a o afișa."
+  "Flying into the future": "Zburăm spre viitor",
+  "Show or hide the titles and toolbar": "Afișează sau ascunde titlurile și bara de instrumente",
+  "Titles and toolbar hidden. Press U to show them.": "Titlurile și bara de instrumente sunt ascunse. Apăsați U pentru a le afișa."
 }

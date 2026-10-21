@@ -7,7 +7,6 @@
   "FREE FLIGHT": "VABALEND",
   "THRUST": "TÕUKEJÕUD",
   "ALT %1": "KÕRGUS %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ARMASTUSKIRI DEMOSTSEENILE",
   "No audio output device was found.": "Heliväljundseadet ei leitud.",
   "The audio output can't play this sound.": "Heliväljund ei saa seda heli esitada.",
   "Sound stopped: the audio output failed.": "Heli peatus: heliväljund ebaõnnestus.",
@@ -53,6 +52,7 @@
   "Volume": "Helitugevus",
   "Music and effects volume": "Muusika ja efektide helitugevus",
   "The music files are missing.": "Muusikafailid puuduvad.",
-  "Show or hide the toolbar": "Näita või peida tööriistariba",
-  "Toolbar hidden. Press U to show it.": "Tööriistariba on peidetud. Vajuta U, et seda näidata."
+  "Flying into the future": "Lend tulevikku",
+  "Show or hide the titles and toolbar": "Näita või peida pealkirjad ja tööriistariba",
+  "Titles and toolbar hidden. Press U to show them.": "Pealkirjad ja tööriistariba on peidetud. Vajuta U, et neid näidata."
 }

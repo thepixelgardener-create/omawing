@@ -15,7 +15,7 @@ using namespace draw;
 namespace {
 // The soft sprites particles are drawn with: the exhaust's cooling ramp,
 // then a spark, two glitters, and smoke.
-constexpr int ExhaustSprites = 8, SparkSprite = 8, GlitterSprite = 9, SmokeSprite = 11, MoteSprite = 12, FlashSprite = 13;
+constexpr int ExhaustSprites = 8, SparkSprite = 8, GlitterSprite = 9, SmokeSprite = 11, FlashSprite = 12;
 }
 
 void WorldLayer::build(const View &view) {
@@ -247,11 +247,6 @@ void WorldLayer::buildParticles() {
             sprite = SmokeSprite;
             glow = false;
             break;
-        case Particle::Mote:
-            // Fades in and out again, so motes never pop.
-            opacity = 0.75 * std::sin(M_PI * t);
-            sprite = MoteSprite;
-            break;
         case Particle::Flash:
             size *= 0.6 + 1.8 * t;
             opacity = 0.9 * (1 - t) * (1 - t);
@@ -312,7 +307,6 @@ void WorldLayer::preparePuffs() {
     m_puffs.push_back(puff(QColor("#fff8e0"), QColor("#ffd36b"), true));
     m_puffs.push_back(puff(QColor("#f0fdff"), QColor("#7fe3ff"), true));
     m_puffs.push_back(puff(withAlpha("#3b3346", 0.9), QColor("#5a5266")));
-    m_puffs.push_back(puff(QColor("#f4f0ff"), QColor("#9fd8ff")));
     m_puffs.push_back(puff(QColor("#ffffff"), QColor("#ffe6a8"), true));
 }
 

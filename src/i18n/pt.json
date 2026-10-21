@@ -7,7 +7,6 @@
   "FREE FLIGHT": "VOO LIVRE",
   "THRUST": "IMPULSO",
   "ALT %1": "ALT %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "UMA CARTA DE AMOR À DEMOSCENE",
   "No audio output device was found.": "Não foi encontrado nenhum dispositivo de saída de áudio.",
   "The audio output can't play this sound.": "A saída de áudio não consegue reproduzir este som.",
   "Sound stopped: the audio output failed.": "O som parou: a saída de áudio falhou.",
@@ -53,6 +52,7 @@
   "Volume": "Volume",
   "Music and effects volume": "Volume da música e dos efeitos",
   "The music files are missing.": "Os ficheiros de música estão em falta.",
-  "Show or hide the toolbar": "Mostrar ou ocultar a barra de ferramentas",
-  "Toolbar hidden. Press U to show it.": "Barra de ferramentas oculta. Prima U para a mostrar."
+  "Flying into the future": "A voar rumo ao futuro",
+  "Show or hide the titles and toolbar": "Mostrar ou ocultar os títulos e a barra de ferramentas",
+  "Titles and toolbar hidden. Press U to show them.": "Títulos e barra de ferramentas ocultos. Prima U para os mostrar."
 }

@@ -7,7 +7,6 @@
   "FREE FLIGHT": "SERBEST UÇUŞ",
   "THRUST": "İTKİ",
   "ALT %1": "İRT. %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "DEMOSCENE’E BİR AŞK MEKTUBU",
   "No audio output device was found.": "Ses çıkış aygıtı bulunamadı.",
   "The audio output can't play this sound.": "Ses çıkışı bu sesi çalamıyor.",
   "Sound stopped: the audio output failed.": "Ses durdu: ses çıkışı başarısız oldu.",
@@ -53,6 +52,7 @@
   "Volume": "Ses düzeyi",
   "Music and effects volume": "Müzik ve efekt ses düzeyi",
   "The music files are missing.": "Müzik dosyaları eksik.",
-  "Show or hide the toolbar": "Araç çubuğunu göster veya gizle",
-  "Toolbar hidden. Press U to show it.": "Araç çubuğu gizlendi. Göstermek için U'ya basın."
+  "Flying into the future": "Geleceğe uçuyoruz",
+  "Show or hide the titles and toolbar": "Başlıkları ve araç çubuğunu göster veya gizle",
+  "Titles and toolbar hidden. Press U to show them.": "Başlıklar ve araç çubuğu gizlendi. Göstermek için U'ya basın."
 }

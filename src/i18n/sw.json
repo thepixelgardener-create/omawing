@@ -7,7 +7,6 @@
   "FREE FLIGHT": "SAFARI HURU",
   "THRUST": "MSUKUMO",
   "ALT %1": "MWINUKO %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "BARUA YA MAPENZI KWA DEMOSCENE",
   "No audio output device was found.": "Hakuna kifaa cha kutoa sauti kilichopatikana.",
   "The audio output can't play this sound.": "Kifaa cha kutoa sauti hakiwezi kucheza sauti hii.",
   "Sound stopped: the audio output failed.": "Sauti imesimama: kifaa cha kutoa sauti kimeshindwa.",
@@ -53,6 +52,7 @@
   "Volume": "Sauti",
   "Music and effects volume": "Kiwango cha sauti ya muziki na madoido",
   "The music files are missing.": "Faili za muziki hazipo.",
-  "Show or hide the toolbar": "Onyesha au ficha upau wa zana",
-  "Toolbar hidden. Press U to show it.": "Upau wa zana umefichwa. Bonyeza U kuuonyesha."
+  "Flying into the future": "Tukiruka kuelekea siku zijazo",
+  "Show or hide the titles and toolbar": "Onyesha au ficha vichwa na upau wa zana",
+  "Titles and toolbar hidden. Press U to show them.": "Vichwa na upau wa zana vimefichwa. Bonyeza U kuvionyesha."
 }

@@ -7,7 +7,6 @@
   "FREE FLIGHT": "طيران حر",
   "THRUST": "الدفع",
   "ALT %1": "الارتفاع %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "رسالة حب إلى مشهد الديمو",
   "No audio output device was found.": "لم يُعثر على جهاز لإخراج الصوت.",
   "The audio output can't play this sound.": "لا يستطيع مخرج الصوت تشغيل هذا الصوت.",
   "Sound stopped: the audio output failed.": "توقف الصوت: تعطّل مخرج الصوت.",
@@ -53,6 +52,7 @@
   "Volume": "مستوى الصوت",
   "Music and effects volume": "مستوى صوت الموسيقى والمؤثرات",
   "The music files are missing.": "ملفات الموسيقى مفقودة.",
-  "Show or hide the toolbar": "إظهار شريط الأدوات أو إخفاؤه",
-  "Toolbar hidden. Press U to show it.": "شريط الأدوات مخفي. اضغط U لإظهاره."
+  "Flying into the future": "نحلّق نحو المستقبل",
+  "Show or hide the titles and toolbar": "إظهار العناوين وشريط الأدوات أو إخفاؤها",
+  "Titles and toolbar hidden. Press U to show them.": "العناوين وشريط الأدوات مخفية. اضغط U لإظهارها."
 }

@@ -7,7 +7,6 @@
   "FREE FLIGHT": "சுதந்திரப் பறப்பு",
   "THRUST": "உந்துவிசை",
   "ALT %1": "உயரம் %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "டெமோசீனுக்கு ஒரு காதல் கடிதம்",
   "No audio output device was found.": "ஒலி வெளியீட்டுச் சாதனம் எதுவும் கிடைக்கவில்லை.",
   "The audio output can't play this sound.": "ஒலி வெளியீட்டால் இந்த ஒலியை இயக்க முடியாது.",
   "Sound stopped: the audio output failed.": "ஒலி நின்றது: ஒலி வெளியீடு தோல்வியடைந்தது.",
@@ -53,6 +52,7 @@
   "Volume": "ஒலியளவு",
   "Music and effects volume": "இசை மற்றும் விளைவுகளின் ஒலியளவு",
   "The music files are missing.": "இசைக் கோப்புகள் இல்லை.",
-  "Show or hide the toolbar": "கருவிப்பட்டியைக் காட்டு அல்லது மறை",
-  "Toolbar hidden. Press U to show it.": "கருவிப்பட்டி மறைக்கப்பட்டுள்ளது. காட்ட U-ஐ அழுத்தவும்."
+  "Flying into the future": "எதிர்காலத்தை நோக்கிப் பறக்கிறோம்",
+  "Show or hide the titles and toolbar": "தலைப்புகளையும் கருவிப்பட்டியையும் காட்டு அல்லது மறை",
+  "Titles and toolbar hidden. Press U to show them.": "தலைப்புகளும் கருவிப்பட்டியும் மறைக்கப்பட்டுள்ளன. காட்ட U-ஐ அழுத்தவும்."
 }

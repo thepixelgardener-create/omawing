@@ -30,7 +30,7 @@ an SVG-in-the-browser demo; the renderer is a port of that code.
 | M | Turn music on or off |
 | E | Turn sound effects on or off |
 | V | Music and effects volume |
-| U | Show or hide the toolbar |
+| U | Show or hide the titles and toolbar |
 | P | Next music track |
 | B | Show or hide the Omarchy slogan banner |
 | H | Open the local high-score board |
@@ -74,16 +74,15 @@ rebuilds the four original WAV cues without touching the soundtrack.
 A round radar on the right shows the 60 units around the ship from above,
 turned so your heading always points up: pyramids as triangles, crystals as
 diamonds, the beach ball as a red dot, and the rings you haven't flown
-through yet as bars, with the next one ahead in a brighter, thicker line. A
-sweep turns once every second and a half, and the rim and the crystals flash
-on the music's beat.
+through yet as bars, with the next one ahead in a brighter, thicker line.
+Scans ripple out from the ship in rings, lighting each blip as they pass,
+and the rim and the crystals flash on the music's beat.
 
 ## Moving with the music
 
 While music plays, Omawing listens to it: a copy of the decoded audio goes
 through a small beat tracker (the bass through a 120 Hz low-pass, compared
-with its recent average). On each kick the crystals swell and light up, and
-the tips of the pyramids ahead breathe out motes. With the music off, the
+with its recent average). On each kick the crystals swell and light up. With the music off, the
 scenery is still.
 
 Every ring you fly through flashes and throws out a ring of glitter, and its

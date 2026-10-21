@@ -30,6 +30,8 @@ struct SceneLook {
     std::array<QColor, 8> theme;   // Invalid colours fall back to built-in ones.
     // The music: beat jumps to 1 on a kick and dies away; level is loudness.
     double beat = 0, level = 0;
+    // How much of the titles at the top shows, 0 to 1, as they fade.
+    double titles = 1;
 };
 
 // One thing to draw in the world, in virtual units, sorted by depth.

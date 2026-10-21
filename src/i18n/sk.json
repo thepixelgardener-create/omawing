@@ -7,7 +7,6 @@
   "FREE FLIGHT": "VOĽNÝ LET",
   "THRUST": "ŤAH",
   "ALT %1": "VÝŠKA %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ĽÚBOSTNÝ LIST DEMOSCÉNE",
   "No audio output device was found.": "Nenašlo sa žiadne zvukové výstupné zariadenie.",
   "The audio output can't play this sound.": "Zvukový výstup nedokáže prehrať tento zvuk.",
   "Sound stopped: the audio output failed.": "Zvuk sa zastavil: zvukový výstup zlyhal.",
@@ -53,6 +52,7 @@
   "Volume": "Hlasitosť",
   "Music and effects volume": "Hlasitosť hudby a efektov",
   "The music files are missing.": "Chýbajú hudobné súbory.",
-  "Show or hide the toolbar": "Zobraziť alebo skryť panel nástrojov",
-  "Toolbar hidden. Press U to show it.": "Panel nástrojov je skrytý. Zobrazíte ho klávesom U."
+  "Flying into the future": "Letíme do budúcnosti",
+  "Show or hide the titles and toolbar": "Zobraziť alebo skryť nadpisy a panel nástrojov",
+  "Titles and toolbar hidden. Press U to show them.": "Nadpisy a panel nástrojov sú skryté. Zobrazíte ich klávesom U."
 }

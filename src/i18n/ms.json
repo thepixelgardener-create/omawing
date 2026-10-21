@@ -7,7 +7,6 @@
   "FREE FLIGHT": "PENERBANGAN BEBAS",
   "THRUST": "TUJAHAN",
   "ALT %1": "KETINGGIAN %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "SURAT CINTA KEPADA DEMOSCENE",
   "No audio output device was found.": "Tiada peranti output audio ditemui.",
   "The audio output can't play this sound.": "Output audio tidak dapat memainkan bunyi ini.",
   "Sound stopped: the audio output failed.": "Bunyi berhenti: output audio gagal.",
@@ -53,6 +52,7 @@
   "Volume": "Kelantangan",
   "Music and effects volume": "Kelantangan muzik dan kesan",
   "The music files are missing.": "Fail muzik tiada.",
-  "Show or hide the toolbar": "Tunjukkan atau sembunyikan bar alat",
-  "Toolbar hidden. Press U to show it.": "Bar alat disembunyikan. Tekan U untuk menunjukkannya."
+  "Flying into the future": "Terbang ke masa depan",
+  "Show or hide the titles and toolbar": "Tunjukkan atau sembunyikan tajuk dan bar alat",
+  "Titles and toolbar hidden. Press U to show them.": "Tajuk dan bar alat disembunyikan. Tekan U untuk menunjukkannya."
 }

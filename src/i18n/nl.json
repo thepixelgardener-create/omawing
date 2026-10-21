@@ -7,7 +7,6 @@
   "FREE FLIGHT": "VRIJE VLUCHT",
   "THRUST": "STUWKRACHT",
   "ALT %1": "HOOGTE %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "EEN LIEFDESBRIEF AAN DE DEMOSCENE",
   "No audio output device was found.": "Er is geen audio-uitvoerapparaat gevonden.",
   "The audio output can't play this sound.": "De audio-uitvoer kan dit geluid niet afspelen.",
   "Sound stopped: the audio output failed.": "Geluid gestopt: de audio-uitvoer is uitgevallen.",
@@ -53,6 +52,7 @@
   "Volume": "Volume",
   "Music and effects volume": "Volume van muziek en effecten",
   "The music files are missing.": "De muziekbestanden ontbreken.",
-  "Show or hide the toolbar": "Werkbalk tonen of verbergen",
-  "Toolbar hidden. Press U to show it.": "Werkbalk verborgen. Druk op U om hem te tonen."
+  "Flying into the future": "Op weg naar de toekomst",
+  "Show or hide the titles and toolbar": "Titels en werkbalk tonen of verbergen",
+  "Titles and toolbar hidden. Press U to show them.": "Titels en werkbalk verborgen. Druk op U om ze te tonen."
 }

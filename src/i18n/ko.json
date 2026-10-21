@@ -7,7 +7,6 @@
   "FREE FLIGHT": "자유 비행",
   "THRUST": "추력",
   "ALT %1": "고도 %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "데모신에 보내는 러브레터",
   "No audio output device was found.": "오디오 출력 장치를 찾을 수 없습니다.",
   "The audio output can't play this sound.": "오디오 출력에서 이 소리를 재생할 수 없습니다.",
   "Sound stopped: the audio output failed.": "소리가 멈췄습니다: 오디오 출력에 문제가 생겼습니다.",
@@ -53,6 +52,7 @@
   "Volume": "볼륨",
   "Music and effects volume": "음악 및 효과음 볼륨",
   "The music files are missing.": "음악 파일이 없습니다.",
-  "Show or hide the toolbar": "도구 모음 표시 또는 숨기기",
-  "Toolbar hidden. Press U to show it.": "도구 모음이 숨겨졌습니다. U 키를 누르면 표시됩니다."
+  "Flying into the future": "미래로 날아가다",
+  "Show or hide the titles and toolbar": "제목과 도구 모음 표시 또는 숨기기",
+  "Titles and toolbar hidden. Press U to show them.": "제목과 도구 모음이 숨겨졌습니다. U 키를 누르면 표시됩니다."
 }

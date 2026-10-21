@@ -7,7 +7,6 @@
   "FREE FLIGHT": "СЛОБОДАН ЛЕТ",
   "THRUST": "ПОТИСАК",
   "ALT %1": "ВИС. %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ЉУБАВНО ПИСМО ДЕМОСЦЕНИ",
   "No audio output device was found.": "Није пронађен ниједан уређај за излаз звука.",
   "The audio output can't play this sound.": "Излаз звука не може да пусти овај звук.",
   "Sound stopped: the audio output failed.": "Звук је заустављен: излаз звука је отказао.",
@@ -53,6 +52,7 @@
   "Volume": "Јачина звука",
   "Music and effects volume": "Јачина музике и ефеката",
   "The music files are missing.": "Недостају музичке датотеке.",
-  "Show or hide the toolbar": "Прикажи или сакриј траку са алаткама",
-  "Toolbar hidden. Press U to show it.": "Трака са алаткама је скривена. Притисните U да је прикажете."
+  "Flying into the future": "Летимо у будућност",
+  "Show or hide the titles and toolbar": "Прикажи или сакриј наслове и траку са алаткама",
+  "Titles and toolbar hidden. Press U to show them.": "Наслови и трака са алаткама су скривени. Притисните U да их прикажете."
 }

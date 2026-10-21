@@ -7,7 +7,6 @@
   "FREE FLIGHT": "フリーフライト",
   "THRUST": "推力",
   "ALT %1": "高度 %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "デモシーンへのラブレター",
   "No audio output device was found.": "音声出力デバイスが見つかりません。",
   "The audio output can't play this sound.": "音声出力でこのサウンドを再生できません。",
   "Sound stopped: the audio output failed.": "サウンドが停止しました：音声出力でエラーが発生しました。",
@@ -53,6 +52,7 @@
   "Volume": "音量",
   "Music and effects volume": "音楽と効果音の音量",
   "The music files are missing.": "音楽ファイルが見つかりません。",
-  "Show or hide the toolbar": "ツールバーの表示/非表示",
-  "Toolbar hidden. Press U to show it.": "ツールバーを非表示にしました。U キーで表示します。"
+  "Flying into the future": "未来へ飛び立とう",
+  "Show or hide the titles and toolbar": "タイトルとツールバーの表示/非表示",
+  "Titles and toolbar hidden. Press U to show them.": "タイトルとツールバーを非表示にしました。U キーで表示します。"
 }

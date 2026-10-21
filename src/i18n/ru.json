@@ -7,7 +7,6 @@
   "FREE FLIGHT": "СВОБОДНЫЙ ПОЛЁТ",
   "THRUST": "ТЯГА",
   "ALT %1": "ВЫС. %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ЛЮБОВНОЕ ПИСЬМО ДЕМОСЦЕНЕ",
   "No audio output device was found.": "Устройство вывода звука не найдено.",
   "The audio output can't play this sound.": "Устройство вывода звука не может воспроизвести этот звук.",
   "Sound stopped: the audio output failed.": "Звук остановлен: сбой устройства вывода звука.",
@@ -53,6 +52,7 @@
   "Volume": "Громкость",
   "Music and effects volume": "Громкость музыки и эффектов",
   "The music files are missing.": "Файлы музыки отсутствуют.",
-  "Show or hide the toolbar": "Показать или скрыть панель инструментов",
-  "Toolbar hidden. Press U to show it.": "Панель инструментов скрыта. Нажмите U, чтобы показать её."
+  "Flying into the future": "Летим в будущее",
+  "Show or hide the titles and toolbar": "Показать или скрыть заголовки и панель инструментов",
+  "Titles and toolbar hidden. Press U to show them.": "Заголовки и панель инструментов скрыты. Нажмите U, чтобы показать их."
 }

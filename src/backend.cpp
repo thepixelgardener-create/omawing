@@ -46,7 +46,9 @@ Backend::~Backend() {
 void Backend::loadSettings() {
     QSettings settings(m_settingsFile, QSettings::IniFormat);
     m_banner = settings.value("banner", true).toBool();
-    m_toolbar = settings.value("toolbar", true).toBool();
+    m_interface = settings.value("interface", true).toBool();
+    m_titles = m_interface ? 1 : 0;
+    m_look.titles = m_titles;
     m_musicWanted = settings.value("music", false).toBool();
     m_effectsWanted = settings.value("effects", false).toBool();
     m_musicVolume = std::clamp(settings.value("musicVolume", 0.8).toDouble(), 0.0, 1.0);
@@ -90,7 +92,7 @@ Scene::Hud Backend::hud() const {
     if (m_flight.ship.y < 10)
         altitude.prepend(locale.zeroDigit());
 
-    Scene::Hud hud{status, mode, tr("THRUST"), tr("ALT %1").arg(altitude), tr("A LOVE LETTER TO THE DEMOSCENE")};
+    Scene::Hud hud{status, mode, tr("THRUST"), tr("ALT %1").arg(altitude), tr("Flying into the future")};
     const bool playing = !m_flight.demo;
     const int top = std::max(m_board.best(), playing ? m_flight.game.score : 0);
     if (playing) {
@@ -137,6 +139,14 @@ void Backend::tick(double seconds) {
         dt = snapped + payback;
     }
     m_lastStep = dt;
+    // The titles fade with the interface, paused or not.
+    const double titles = m_interface ? 1 : 0;
+    if (m_titles != titles) {
+        m_titles = std::abs(titles - m_titles) < 0.01 ? titles : m_titles + (titles - m_titles) * (1 - std::exp(-dt * 8));
+        m_look.titles = m_titles;
+        if (m_paused)
+            emit frameChanged();
+    }
     if (!m_paused) {
         m_flight.step(dt);
         const unsigned cues = m_flight.events;
@@ -146,13 +156,10 @@ void Backend::tick(double seconds) {
         if (cues & Flight::RingPassed)
             m_audio.playRing(m_flight.game.popups.empty() ? 1 : m_flight.game.popups.back().multiplier);
         if (cues & Flight::BoostStarted) m_audio.play(Audio::Boost);
-        // The picture moves with the music: a kick makes the crystals swell
-        // and the pyramids breathe out motes.
+        // The picture moves with the music: a kick makes the crystals swell.
         const BeatTracker::Pulse pulse = m_audio.pulse();
-        if (pulse.beat) {
+        if (pulse.beat)
             m_beat = 1;
-            m_flight.pulse();
-        }
         m_beat *= std::exp(-dt * 5);
         m_level += (pulse.level - m_level) * (1 - std::exp(-dt * 12));
         m_look.beat = m_beat;
@@ -251,9 +258,9 @@ void Backend::toggleEffects() {
     emit changed();
 }
 
-void Backend::toggleToolbar() {
-    m_toolbar = !m_toolbar;
-    store({{"toolbar", m_toolbar}});
+void Backend::toggleInterface() {
+    m_interface = !m_interface;
+    store({{"interface", m_interface}});
     emit changed();
 }
 

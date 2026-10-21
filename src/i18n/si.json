@@ -7,7 +7,6 @@
   "FREE FLIGHT": "නිදහස් පියාසැරිය",
   "THRUST": "තෙරපුම",
   "ALT %1": "උස %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ඩෙමෝසීනයට ආදර ලියුමක්",
   "No audio output device was found.": "ශ්‍රව්‍ය ප්‍රතිදාන උපාංගයක් හමු නොවීය.",
   "The audio output can't play this sound.": "ශ්‍රව්‍ය ප්‍රතිදානයට මෙම ශබ්දය වාදනය කළ නොහැක.",
   "Sound stopped: the audio output failed.": "ශබ්දය නැවතුණි: ශ්‍රව්‍ය ප්‍රතිදානය අසාර්ථක විය.",
@@ -53,6 +52,7 @@
   "Volume": "ශබ්ද මට්ටම",
   "Music and effects volume": "සංගීතයේ සහ ප්‍රයෝගවල ශබ්ද මට්ටම",
   "The music files are missing.": "සංගීත ගොනු නොමැත.",
-  "Show or hide the toolbar": "මෙවලම් තීරුව පෙන්වන්න හෝ සඟවන්න",
-  "Toolbar hidden. Press U to show it.": "මෙවලම් තීරුව සඟවා ඇත. එය පෙන්වීමට U ඔබන්න."
+  "Flying into the future": "අනාගතයට පියාසර කරමින්",
+  "Show or hide the titles and toolbar": "මාතෘකා සහ මෙවලම් තීරුව පෙන්වන්න හෝ සඟවන්න",
+  "Titles and toolbar hidden. Press U to show them.": "මාතෘකා සහ මෙවලම් තීරුව සඟවා ඇත. ඒවා පෙන්වීමට U ඔබන්න."
 }

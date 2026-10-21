@@ -7,7 +7,6 @@
   "FREE FLIGHT": "ΕΛΕΥΘΕΡΗ ΠΤΗΣΗ",
   "THRUST": "ΩΣΗ",
   "ALT %1": "ΥΨ. %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ΕΝΑ ΓΡΑΜΜΑ ΑΓΑΠΗΣ ΣΤΗ DEMOSCENE",
   "No audio output device was found.": "Δεν βρέθηκε συσκευή εξόδου ήχου.",
   "The audio output can't play this sound.": "Η έξοδος ήχου δεν μπορεί να αναπαράγει αυτόν τον ήχο.",
   "Sound stopped: the audio output failed.": "Ο ήχος σταμάτησε: η έξοδος ήχου απέτυχε.",
@@ -53,6 +52,7 @@
   "Volume": "Ένταση",
   "Music and effects volume": "Ένταση μουσικής και εφέ",
   "The music files are missing.": "Λείπουν τα αρχεία μουσικής.",
-  "Show or hide the toolbar": "Εμφάνιση ή απόκρυψη της γραμμής εργαλείων",
-  "Toolbar hidden. Press U to show it.": "Η γραμμή εργαλείων είναι κρυφή. Πατήστε U για να εμφανιστεί."
+  "Flying into the future": "Πετώντας προς το μέλλον",
+  "Show or hide the titles and toolbar": "Εμφάνιση ή απόκρυψη τίτλων και γραμμής εργαλείων",
+  "Titles and toolbar hidden. Press U to show them.": "Οι τίτλοι και η γραμμή εργαλείων είναι κρυφά. Πατήστε U για εμφάνιση."
 }

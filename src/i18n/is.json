@@ -7,7 +7,6 @@
   "FREE FLIGHT": "FRJÁLST FLUG",
   "THRUST": "KNÝR",
   "ALT %1": "HÆÐ %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ÁSTARBRÉF TIL DEMÓSENUNNAR",
   "No audio output device was found.": "Ekkert hljóðúttakstæki fannst.",
   "The audio output can't play this sound.": "Hljóðúttakið getur ekki spilað þetta hljóð.",
   "Sound stopped: the audio output failed.": "Hljóðið stöðvaðist: hljóðúttakið brást.",
@@ -53,6 +52,7 @@
   "Volume": "Hljóðstyrkur",
   "Music and effects volume": "Hljóðstyrkur tónlistar og hljóðbrellna",
   "The music files are missing.": "Tónlistarskrárnar vantar.",
-  "Show or hide the toolbar": "Sýna eða fela tækjastikuna",
-  "Toolbar hidden. Press U to show it.": "Tækjastikan er falin. Ýttu á U til að sýna hana."
+  "Flying into the future": "Flogið inn í framtíðina",
+  "Show or hide the titles and toolbar": "Sýna eða fela titla og tækjastiku",
+  "Titles and toolbar hidden. Press U to show them.": "Titlar og tækjastika eru falin. Ýttu á U til að sýna þau."
 }

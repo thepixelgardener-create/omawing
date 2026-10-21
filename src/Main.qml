@@ -64,7 +64,7 @@ ApplicationWindow {
     Shortcut { sequence: "E"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleEffects() }
     Shortcut { sequence: "V"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.toggleVolume() }
     Shortcut { sequence: "P"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.nextTrack() }
-    Shortcut { sequence: "U"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: { backend.toggleToolbar(); if (backend.toolbar) win.wake(); else toolbarHint.show() } }
+    Shortcut { sequence: "U"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: { backend.toggleInterface(); if (backend.interfaceShown) win.wake(); else toolbarHint.show() } }
     Shortcut { sequence: "B"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleBanner() }
     Shortcut { sequence: "H"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.showScores() }
     Shortcut { sequence: "R"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.restart() }
@@ -167,8 +167,9 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignHCenter
                 padding: 6
                 // Fades and rises in when the pointer moves, and sinks away
-                // again a few seconds later. U switches it off altogether.
-                readonly property bool shown: volume.visible || backend.toolbar
+                // again a few seconds later. U switches it off altogether,
+                // with the titles at the top.
+                readonly property bool shown: volume.visible || backend.interfaceShown
                     && (win.pointerAwake || backend.paused || toolbarHover.hovered || win.helpVisible || volume.visible)
                 opacity: shown ? 1 : 0
                 visible: opacity > 0
@@ -250,7 +251,7 @@ ApplicationWindow {
             opacity: 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: 350; easing.type: Easing.InOutQuad } }
-            text: qsTr("Toolbar hidden. Press U to show it.")
+            text: qsTr("Titles and toolbar hidden. Press U to show them.")
             padding: 10
             background: Rectangle { color: "#e0101024"; radius: Math.min(4, theme.radius) }
             Timer { id: hintTimer; interval: 2200; onTriggered: toolbarHint.opacity = 0 }
@@ -302,7 +303,7 @@ ApplicationWindow {
                                     ["V", qsTr("Music and effects volume")],
                                     ["P", qsTr("Next track")],
                                     ["B", qsTr("Banner")],
-                                    ["U", qsTr("Show or hide the toolbar")],
+                                    ["U", qsTr("Show or hide the titles and toolbar")],
                                     ["H", qsTr("High scores")],
                                     ["R", qsTr("Restart from the beginning")],
                                     ["F", qsTr("Full screen on or off")],

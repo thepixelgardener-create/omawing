@@ -7,7 +7,6 @@
   "FREE FLIGHT": "自由飞行",
   "THRUST": "推力",
   "ALT %1": "高度 %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "致演示场景的一封情书",
   "No audio output device was found.": "未找到音频输出设备。",
   "The audio output can't play this sound.": "音频输出无法播放此声音。",
   "Sound stopped: the audio output failed.": "声音已停止：音频输出出现故障。",
@@ -53,6 +52,7 @@
   "Volume": "音量",
   "Music and effects volume": "音乐和音效音量",
   "The music files are missing.": "缺少音乐文件。",
-  "Show or hide the toolbar": "显示或隐藏工具栏",
-  "Toolbar hidden. Press U to show it.": "工具栏已隐藏。按 U 键显示。"
+  "Flying into the future": "飞向未来",
+  "Show or hide the titles and toolbar": "显示或隐藏标题和工具栏",
+  "Titles and toolbar hidden. Press U to show them.": "标题和工具栏已隐藏。按 U 键显示。"
 }

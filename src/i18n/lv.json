@@ -7,7 +7,6 @@
   "FREE FLIGHT": "BRĪVAIS LIDOJUMS",
   "THRUST": "VILKME",
   "ALT %1": "AUGSTUMS %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "MĪLESTĪBAS VĒSTULE DEMOSCĒNAI",
   "No audio output device was found.": "Netika atrasta neviena audio izvades ierīce.",
   "The audio output can't play this sound.": "Audio izvade nevar atskaņot šo skaņu.",
   "Sound stopped: the audio output failed.": "Skaņa apturēta: audio izvade pārstāja darboties.",
@@ -53,6 +52,7 @@
   "Volume": "Skaļums",
   "Music and effects volume": "Mūzikas un efektu skaļums",
   "The music files are missing.": "Trūkst mūzikas failu.",
-  "Show or hide the toolbar": "Rādīt vai paslēpt rīkjoslu",
-  "Toolbar hidden. Press U to show it.": "Rīkjosla ir paslēpta. Nospiediet U, lai to parādītu."
+  "Flying into the future": "Lidojam nākotnē",
+  "Show or hide the titles and toolbar": "Rādīt vai paslēpt virsrakstus un rīkjoslu",
+  "Titles and toolbar hidden. Press U to show them.": "Virsraksti un rīkjosla ir paslēpti. Nospiediet U, lai tos parādītu."
 }

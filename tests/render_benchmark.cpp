@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
         QOpenGLPaintDevice device(size);
         Scene scene;
         Flight flight;
-        Scene::Hud hud{"YOU HAVE THE CONTROLS", "FREE FLIGHT · 02 / 24", "THRUST", "ALT 04.2", "A LOVE LETTER TO THE DEMOSCENE", "HULL", "SCORE", "001350", "BEST 001350"};
+        Scene::Hud hud{"YOU HAVE THE CONTROLS", "FREE FLIGHT · 02 / 24", "THRUST", "ALT 04.2", "Flying into the future", "HULL", "SCORE", "001350", "BEST 001350"};
         std::vector<double> times;
         for(int act=0; act<Flight::Acts; ++act) {
             flight.scene(act);

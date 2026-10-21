@@ -304,15 +304,13 @@ private slots:
         QVERIFY(!early.take(-1).beat);
     }
 
-    void beatsAndRingsMakeParticles()
+    void ringsFlashAndBurst()
     {
         Flight flight;
         flight.advance(1);
         auto count = [&](Particle::Kind kind) {
             return std::count_if(flight.particles.begin(), flight.particles.end(), [&](const Particle &p) { return p.kind == kind; });
         };
-        flight.pulse();
-        QVERIFY(count(Particle::Mote) > 0);
         flight.demo = false;
         const Ring r = World::ring(0);
         flight.ship.x = r.x; flight.ship.y = r.y; flight.ship.z = r.z - 0.1;
@@ -568,6 +566,8 @@ private slots:
         backend.toggleBanner();
         backend.setPaused(false);
         window->setProperty("pointerAwake", false);
+        // The toolbar takes a moment to fade away.
+        QTRY_VERIFY(!window->findChild<QObject *>("toolbar")->property("visible").toBool());
         capture("gameplay");
         backend.setPaused(true);
         // V opens the volume panel with the music slider focused; the arrow
@@ -582,19 +582,22 @@ private slots:
         capture("volume");
         QTest::keyClick(window, Qt::Key_Escape);
         QTRY_VERIFY(!panel->property("visible").toBool());
-        // U switches the toolbar off, even while the pointer is moving, and
+        // U switches the toolbar (and the titles) off, even while the pointer is moving, and
         // fades it away; a second U brings it back.
         auto bar = window->findChild<QObject *>("toolbar");
         QVERIFY(bar);
         window->setProperty("pointerAwake", true);
         QTRY_VERIFY(bar->property("shown").toBool());
         QTest::keyClick(window, Qt::Key_U);
-        QVERIFY(!backend.toolbar());
+        QVERIFY(!backend.interfaceShown());
         QVERIFY(!bar->property("shown").toBool());
         QTRY_VERIFY(!bar->property("visible").toBool());
+        // The titles at the top fade out with it, even while paused.
+        QTRY_COMPARE(backend.look().titles, 0.0);
         QTest::keyClick(window, Qt::Key_U);
-        QVERIFY(backend.toolbar());
+        QVERIFY(backend.interfaceShown());
         QTRY_COMPARE(bar->property("opacity").toDouble(), 1.0);
+        QTRY_COMPARE(backend.look().titles, 1.0);
         window->setProperty("pointerAwake", false);
         window->resize(640, 400);
         for (const QString &language : {QString("de"), QString("ar")}) {

@@ -7,7 +7,6 @@
   "FREE FLIGHT": "মুক্ত উড়ান",
   "THRUST": "থ্রাস্ট",
   "ALT %1": "উচ্চতা %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "ডেমোসিনের প্রতি একটি প্রেমপত্র",
   "No audio output device was found.": "কোনো অডিও আউটপুট ডিভাইস পাওয়া যায়নি।",
   "The audio output can't play this sound.": "অডিও আউটপুট এই শব্দটি চালাতে পারছে না।",
   "Sound stopped: the audio output failed.": "শব্দ থেমে গেছে: অডিও আউটপুট ব্যর্থ হয়েছে।",
@@ -53,6 +52,7 @@
   "Volume": "ভলিউম",
   "Music and effects volume": "সংগীত ও ইফেক্টের ভলিউম",
   "The music files are missing.": "সংগীতের ফাইলগুলো পাওয়া যাচ্ছে না।",
-  "Show or hide the toolbar": "টুলবার দেখান বা লুকান",
-  "Toolbar hidden. Press U to show it.": "টুলবার লুকানো আছে। দেখাতে U চাপুন।"
+  "Flying into the future": "ভবিষ্যতের দিকে উড়ে চলা",
+  "Show or hide the titles and toolbar": "শিরোনাম ও টুলবার দেখান বা লুকান",
+  "Titles and toolbar hidden. Press U to show them.": "শিরোনাম ও টুলবার লুকানো। দেখাতে U চাপুন।"
 }

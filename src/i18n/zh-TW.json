@@ -7,7 +7,6 @@
   "FREE FLIGHT": "自由飛行",
   "THRUST": "推力",
   "ALT %1": "高度 %1",
-  "A LOVE LETTER TO THE DEMOSCENE": "獻給 Demoscene 的情書",
   "No audio output device was found.": "找不到音訊輸出裝置。",
   "The audio output can't play this sound.": "音訊輸出無法播放此聲音。",
   "Sound stopped: the audio output failed.": "聲音已停止：音訊輸出發生故障。",
@@ -53,6 +52,7 @@
   "Volume": "音量",
   "Music and effects volume": "音樂和音效音量",
   "The music files are missing.": "缺少音樂檔案。",
-  "Show or hide the toolbar": "顯示或隱藏工具列",
-  "Toolbar hidden. Press U to show it.": "工具列已隱藏。按 U 鍵顯示。"
+  "Flying into the future": "飛向未來",
+  "Show or hide the titles and toolbar": "顯示或隱藏標題和工具列",
+  "Titles and toolbar hidden. Press U to show them.": "標題和工具列已隱藏。按 U 鍵顯示。"
 }
