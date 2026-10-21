@@ -29,6 +29,7 @@ void WorldLayer::build(const View &view) {
 
 void WorldLayer::face(const std::vector<Vec> &points, const QColor &fill, const QColor &stroke, double opacity, bool ship,
                  bool glow) {
+    if (m_reflecting) opacity *= 0.24 * m_view->valley;
     const auto clipped = m_view->clip(points);
     if (clipped.size() < 3)
         return;
@@ -56,6 +57,7 @@ void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, 
         vertices.push_back({at[0] + rx[0]*v[0] + ry[0]*v[1] + rz[0]*v[2],
                             at[1] + rx[1]*v[0] + ry[1]*v[1] + rz[1]*v[2],
                             at[2] + rx[2]*v[0] + ry[2]*v[1] + rz[2]*v[2]});
+        if (m_reflecting) vertices.back()[1] = -vertices.back()[1];
         centre = translated(centre, scaled(vertices.back(), 1.0 / geometry.vertices.size()));
     }
     for (const Vec &v : vertices)
@@ -86,9 +88,15 @@ void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, 
                             : options.stroke.isValid() ? options.stroke : fill;
         face(points, fill, stroke, options.opacity, options.ship, options.glow);
     }
+    if (!m_reflecting && m_view->valley > 0 && !options.ship && !options.glow) {
+        m_reflecting = true;
+        mesh(geometry, at, rotation, colors, options);
+        m_reflecting = false;
+    }
 }
 
 void WorldLayer::ring(const Ring &r, double spin) {
+    auto point = [&](const Vec &v) { Vec q = v; if (m_reflecting) q[1] = -q[1]; return m_view->toCamera(q); };
     const int count = 12;
     const double radius = World::RingRadius, thickness = 0.18;
     // Dissolve a gate as it nears the camera, before it sweeps through and
@@ -98,15 +106,20 @@ void WorldLayer::ring(const Ring &r, double spin) {
         return;
     for (int i = 0; i < count; ++i) {
         const double a = i * 2 * M_PI / count + spin, b = (i + 1) * 2 * M_PI / count + spin, inner = radius - thickness;
-        const std::vector<Vec> points{m_view->toCamera({r.x + std::cos(a) * radius, r.y + std::sin(a) * radius, r.z}),
-                                      m_view->toCamera({r.x + std::cos(b) * radius, r.y + std::sin(b) * radius, r.z}),
-                                      m_view->toCamera({r.x + std::cos(b) * inner, r.y + std::sin(b) * inner, r.z}),
-                                      m_view->toCamera({r.x + std::cos(a) * inner, r.y + std::sin(a) * inner, r.z})};
+        const std::vector<Vec> points{point({r.x + std::cos(a) * radius, r.y + std::sin(a) * radius, r.z}),
+                                      point({r.x + std::cos(b) * radius, r.y + std::sin(b) * radius, r.z}),
+                                      point({r.x + std::cos(b) * inner, r.y + std::sin(b) * inner, r.z}),
+                                      point({r.x + std::cos(a) * inner, r.y + std::sin(a) * inner, r.z})};
         double depth = 0;
         for (const Vec &p : points)
             depth += p[2] / 4;
         face(points, rgb(blend(i % 3 ? m_view->palette.accent : m_view->palette.crystal, m_view->atmosphere(), m_view->fog(depth))), QColor(),
              opacity, false);
+    }
+    if (!m_reflecting && m_view->valley > 0) {
+        m_reflecting = true;
+        ring(r, spin);
+        m_reflecting = false;
     }
 }
 
@@ -160,7 +173,11 @@ void WorldLayer::buildScenery() {
             ring(r, act.spinRings ? time * 0.15 : 0);
     }
     const Obstacle ball = World::ball(m_view->flight->ship.z, time);
-    mesh(sphere, {ball.x, ball.y, ball.z}, {ball.spin, 0, 0.25}, ballColors, {.wire = act.wireBall, .radius = 5});
+    std::vector<Vec> sphereColors = ballColors;
+    if (m_view->valley > 0)
+        for (size_t i = 0; i < sphereColors.size(); ++i)
+            sphereColors[i] = blend(sphereColors[i], hex(i % 2 ? "#64547e" : "#333456"), m_view->valley);
+    mesh(sphere, {ball.x, ball.y, ball.z}, {ball.spin, 0, 0.25}, sphereColors, {.wire = act.wireBall, .radius = 5});
     if (act.floater)
         mesh(crystal, {-12, 8 + std::sin(time), m_view->flight->ship.z + 45}, {time * 0.7, time * 0.3, 0}, {m_view->palette.crystal},
              {.wire = true, .radius = 6});

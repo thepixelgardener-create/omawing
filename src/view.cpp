@@ -45,8 +45,8 @@ const View::Act &View::actAt(int act) {
         // View::ThemeAct: these colours stand in until the Omarchy theme is read.
         {"OMARCHY", {"#0e0f17", "#3b4a7a", "#a3b8f0", "#2f3858", "#8fa4e0", "#14151f", "#7aa2f7", "#ad8ee6"},
          false, false, false, true, false, false, false},
-        {"NEON MIRAGE", {"#12002b", "#4b0f6b", "#ff3fa4", "#1a0633", "#3d1466", "#14052a", "#2ee6ff", "#ff5fd2"},
-         true, true, false, true, false, true, false},
+        {"NEON MIRAGE", {"#12002b", "#4b0f6b", "#ff3fa4", "#171538", "#242044", "#191831", "#2ee6ff", "#ff5fd2"},
+         false, false, false, true, false, false, false},
         {"AMBER TERMINAL", {"#0b0600", "#2a1700", "#a35a00", "#1c0f00", "#6b3c00", "#140a00", "#ffb000", "#ffd27a"},
          true, true, true, true, true, false, false},
         {"ICE PALACE", {"#0a2a4a", "#3f7fb5", "#d9f3ff", "#7fa8c9", "#e8f6ff", "#a7c7e0", "#ffffff", "#5fd0ff"},
@@ -82,8 +82,11 @@ void View::begin(const Flight &frame, const QSizeF &size, const SceneLook &wante
                blend(previous.tileA, next.tileA, t), blend(previous.tileB, next.tileB, t),
                blend(previous.accent, next.accent, t), blend(previous.crystal, next.crystal, t)};
 
+    valley = mix((act + Flight::Acts - 1) % Flight::Acts == 4 ? 1.0 : 0.0, act == 4 ? 1.0 : 0.0, t);
+
     // A hit shakes the camera, hard at first and dying away.
     camera = frame.camera;
+    camera.pitch += valley * 0.085;
     if (camera.shake > 0) {
         const double amount = camera.shake * camera.shake, time = frame.time;
         camera.x += amount * 0.45 * std::sin(time * 53);
@@ -162,5 +165,5 @@ double View::fog(double depth) const { return smooth(clampTo((depth - 35) / (Far
 Vec View::atmosphere() const {
     // Keep a trace of each act's sky, but scattered blue light dominates
     // in the distance. This also blends smoothly during scene transitions.
-    return blend(palette.horizon, draw::hex("#8ab9e2"), 0.68);
+    return blend(blend(palette.horizon, draw::hex("#8ab9e2"), 0.68), draw::hex("#9868a5"), valley);
 }

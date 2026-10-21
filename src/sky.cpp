@@ -216,7 +216,7 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
         {1.35, 2.1, 0.8, 145, 12, 68, 0.34, 1.1},
         {1.65, 4.2, 1.4, 180, 8, 55, 0.12, 1.6},
     };
-    const Vec rock = blend(blend(view.palette.floor, view.palette.mid, 0.3), hex("#183e60"), 0.6);
+    const Vec rock = blend(blend(blend(view.palette.floor, view.palette.mid, 0.3), hex("#183e60"), 0.6), hex("#191d49"), view.valley);
     const Vec air = view.atmosphere();
     for (int layer = 0; layer < 4; ++layer) {
         const Ridge &r = ridges[layer];
@@ -252,20 +252,41 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
             profile.reserve(samples);
             for (int i = 0; i < samples; ++i) profile.push_back(height(i * detailStep));
         }
+        auto valleyHeight = [&](double x, double h) {
+            const double angle = (x - W / 2) / period * 2 * M_PI;
+            const double walls = std::pow(std::abs(std::sin(angle)), 0.85);
+            return mix(h, h * 0.85 + walls * (90 - layer * 12), view.valley);
+        };
         const int first = int(std::floor(scroll / detailStep)) - 1;
         const int points = int(std::ceil(W / detailStep)) + 3;
         QPainterPath path(QPointF(first * detailStep - scroll, base + 40));
         for (int j = 0; j <= points; ++j) {
             const double x = (first + j) * detailStep;
             const int index = ((first + j) % samples + samples) % samples;
-            path.lineTo(x - scroll, base - profile[index]);
+            path.lineTo(x - scroll, base - valleyHeight(x, profile[index]));
         }
         path.lineTo((first + points) * detailStep - scroll, base + 40);
         path.closeSubpath();
-        QLinearGradient mist(0, base - r.high, 0, base);
-        mist.setColorAt(0, rgb(blend(rock, air, r.haze)));
+        QLinearGradient mist(0, base - r.high - 100 * view.valley, 0, base);
+        mist.setColorAt(0, rgb(blend(rock, air, r.haze * (1 - view.valley * 0.35))));
         mist.setColorAt(1, rgb(blend(rock, air, std::min(0.97, r.haze + 0.18))));
         p.fillPath(path, mist);
+
+        if (view.valley > 0 && layer >= 2) {
+            QPainterPath forest;
+            const double spacing = layer == 3 ? 5.5 : 8;
+            const int treeStart = int(std::floor(scroll / spacing)) - 1;
+            for (int i = treeStart; i < treeStart + int(W / spacing) + 3; ++i) {
+                const double x = i * spacing, screenX = x - scroll;
+                const double y = base - valleyHeight(x, height(x));
+                const double size = (3 + hash(i, 170 + layer) * 5) * view.valley;
+                forest.moveTo(screenX, y - size);
+                forest.lineTo(screenX + size * 0.36, y + 1);
+                forest.lineTo(screenX - size * 0.36, y + 1);
+                forest.closeSubpath();
+            }
+            p.fillPath(forest, withAlpha(rgb(blend(rock, air, r.haze * 0.65)), view.valley));
+        }
 
         // A few quiet faces suggest volume in the remote peaks. Clip them
         // to their own range; the nearer ranges naturally cover their feet.
@@ -274,8 +295,8 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
             p.setClipPath(path, Qt::IntersectClip);
             const int start = int(std::floor(scroll / step)) - 1;
             for (int j = start; j < start + int(std::ceil(W / step)) + 3; ++j) {
-                const double x = j * step, h = height(x);
-                if (h < height(x - step * 0.4) || h < height(x + step * 0.4)) continue;
+                const double x = j * step, h = valleyHeight(x, height(x));
+                if (h < valleyHeight(x - step * 0.4, height(x - step * 0.4)) || h < valleyHeight(x + step * 0.4, height(x + step * 0.4))) continue;
                 const double px = x - scroll, py = base - h;
                 QPainterPath facet(QPointF(px, py));
                 facet.lineTo(px + step * 0.12, py + h * 0.45);

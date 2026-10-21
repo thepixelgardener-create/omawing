@@ -40,6 +40,7 @@ private:
     void buildParticles();
     void preparePuffs();
 
+    bool m_reflecting = false;
     const View *m_view = nullptr;
     std::vector<SceneFace> m_faces;
     std::vector<QImage> m_puffs;

@@ -67,6 +67,35 @@ void Ground::paint(QPainter &p, const View &view) {
     }
     p.setOpacity(1);
 
+    if (view.valley > 0) {
+        // Small emissive strips mark the corridor. Their soft pools of light
+        // sit on the same projected ground plane as the checkerboard.
+        const int start = int(std::floor((view.camera.z - View::Far) / 12));
+        for (int i = start; i < start + int(View::Far * 2 / 12) + 2; ++i) {
+            for (double side : {-1.0, 1.0}) {
+                const double x = side * 7.5, z = i * 12.0;
+                const Vec at = view.toCamera({x, 0.08, z});
+                if (at[2] < 2 || at[2] > View::Far) continue;
+                const double alpha = view.valley * (1 - view.fog(at[2]));
+                const QPointF screen = view.project(at);
+                const double radius = std::min(22.0, View::Focal * 0.65 / at[2]);
+                QRadialGradient glow(screen, radius);
+                glow.setColorAt(0, withAlpha("#ff7fdd", 0.55 * alpha));
+                glow.setColorAt(1, withAlpha("#ff49c9", 0));
+                p.setPen(Qt::NoPen); p.setBrush(glow);
+                p.drawEllipse(screen, radius, radius);
+                const std::vector<Vec> corners{
+                    view.toCamera({x-0.10,0.08,z-0.65}), view.toCamera({x+0.10,0.08,z-0.65}),
+                    view.toCamera({x+0.10,0.08,z+0.65}), view.toCamera({x-0.10,0.08,z+0.65})};
+                const auto clipped = view.clip(corners);
+                if (clipped.size() >= 3) {
+                    p.setBrush(withAlpha("#fff1fc", alpha));
+                    p.drawConvexPolygon(view.polygonOf(clipped));
+                }
+            }
+        }
+    }
+
     // The ship's shadow: its hull and wings flattened straight down onto the
     // ground, so it banks, flexes, and sweeps with the ship. Every piece is
     // wound the same way and filled as one path, so overlaps don't darken.

@@ -130,6 +130,10 @@ Every ring you fly through flashes and throws out a ring of glitter, and its
 chime climbs a step of a pentatonic scale for each ring in the chain, up to
 eight.
 
+Neon Mirage adds a forested mountain valley, a dark reflective grid, mirrored
+rings and scenery, and pink lights along the flight corridor. Its camera opens
+up more sky while keeping the ship low in the frame.
+
 ## What it follows
 
 - **Any window shape.** The canvas is at least 860 by 540 units and takes the

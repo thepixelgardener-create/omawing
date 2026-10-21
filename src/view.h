@@ -106,6 +106,7 @@ public:
     double fog(double depth) const;
     // Shared atmospheric light keeps scenery and the ground joined at infinity.
     Vec atmosphere() const;
+    double valley = 0; // Neon Mirage treatment, blended at scene boundaries.
 
 private:
     Palette paletteOf(int act) const;
