@@ -305,7 +305,9 @@ void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
     }
 
     // The score, top centre: the current run while flying, the best always.
-    if (!hud.points.isEmpty()) {
+    // It fades with the titles, so U leaves only the radar at the top.
+    p.setOpacity(m_view->look.titles);
+    if (m_view->look.titles > 0.01 && !hud.points.isEmpty()) {
         p.setPen(QColor("#e2c5cf"));
         p.setFont(hudFont(9, 3, hud.score));
         drawCentred(p, W / 2, 26, hud.score);
@@ -319,11 +321,12 @@ void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
                        QString::fromUtf8("×") + locale.toString(m_view->flight->game.multiplier));
         }
     }
-    if (!hud.best.isEmpty()) {
+    if (m_view->look.titles > 0.01 && !hud.best.isEmpty()) {
         p.setPen(QColor("#d3bdd5"));
         p.setFont(hudFont(10, 1.6, hud.best));
         drawCentred(p, W / 2, hud.points.isEmpty() ? 36 : 70, hud.best);
     }
+    p.setOpacity(1);
 
     // The hull, while you fly: green, then amber, then red, blinking after a hit.
     if (!hud.hull.isEmpty()) {

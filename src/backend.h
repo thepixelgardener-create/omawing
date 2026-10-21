@@ -44,8 +44,8 @@ public:
     void setMusicVolume(double volume);
     void setEffectsVolume(double volume);
     bool banner() const { return m_banner; }
-    // Whether the toolbar and the titles at the top may appear at all; the
-    // keys work either way, and the score, gauges, and radar always show.
+    // Whether the toolbar and everything at the top but the radar (titles
+    // and score) may appear; the keys work either way.
     bool interfaceShown() const { return m_interface; }
     QString trackTitle() const { return m_audio.trackTitle(); }
     QString soundError() const { return m_audio.error(); }

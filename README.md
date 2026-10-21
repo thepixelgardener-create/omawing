@@ -30,7 +30,7 @@ an SVG-in-the-browser demo; the renderer is a port of that code.
 | M | Turn music on or off |
 | E | Turn sound effects on or off |
 | V | Music and effects volume |
-| U | Show or hide the titles and toolbar |
+| U | Show or hide the titles, score, and toolbar (the radar stays) |
 | P | Next music track |
 | B | Show or hide the Omarchy slogan banner |
 | H | Open the local high-score board |
