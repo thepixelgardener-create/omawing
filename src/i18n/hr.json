@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Uključi ili isključi zvučne efekte",
   "Volume": "Glasnoća",
   "Music and effects volume": "Glasnoća glazbe i efekata",
-  "The music files are missing.": "Nedostaju glazbene datoteke."
+  "The music files are missing.": "Nedostaju glazbene datoteke.",
+  "Show or hide the toolbar": "Prikaži ili sakrij alatnu traku",
+  "Toolbar hidden. Press U to show it.": "Alatna traka je skrivena. Pritisnite U da je prikažete."
 }

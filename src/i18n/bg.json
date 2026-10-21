@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Включване или изключване на звуковите ефекти",
   "Volume": "Сила на звука",
   "Music and effects volume": "Сила на звука за музика и ефекти",
-  "The music files are missing.": "Музикалните файлове липсват."
+  "The music files are missing.": "Музикалните файлове липсват.",
+  "Show or hide the toolbar": "Показване или скриване на лентата с инструменти",
+  "Toolbar hidden. Press U to show it.": "Лентата с инструменти е скрита. Натиснете U, за да я покажете."
 }

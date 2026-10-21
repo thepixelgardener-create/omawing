@@ -3,7 +3,14 @@
         <file alias="Main.qml">Main.qml</file>
         <file alias="audio/boost.wav">audio/boost.wav</file>
         <file alias="audio/impact.wav">audio/impact.wav</file>
-        <file alias="audio/ring.wav">audio/ring.wav</file>
+        <file alias="audio/ring1.wav">audio/ring1.wav</file>
+        <file alias="audio/ring2.wav">audio/ring2.wav</file>
+        <file alias="audio/ring3.wav">audio/ring3.wav</file>
+        <file alias="audio/ring4.wav">audio/ring4.wav</file>
+        <file alias="audio/ring5.wav">audio/ring5.wav</file>
+        <file alias="audio/ring6.wav">audio/ring6.wav</file>
+        <file alias="audio/ring7.wav">audio/ring7.wav</file>
+        <file alias="audio/ring8.wav">audio/ring8.wav</file>
         <file alias="audio/wreck.wav">audio/wreck.wav</file>
         <file alias="i18n/ar.json">i18n/ar.json</file>
         <file alias="i18n/bg.json">i18n/bg.json</file>

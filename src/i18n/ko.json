@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "효과음 켜기 또는 끄기",
   "Volume": "볼륨",
   "Music and effects volume": "음악 및 효과음 볼륨",
-  "The music files are missing.": "음악 파일이 없습니다."
+  "The music files are missing.": "음악 파일이 없습니다.",
+  "Show or hide the toolbar": "도구 모음 표시 또는 숨기기",
+  "Toolbar hidden. Press U to show it.": "도구 모음이 숨겨졌습니다. U 키를 누르면 표시됩니다."
 }

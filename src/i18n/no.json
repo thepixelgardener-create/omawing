@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Slå lydeffekter på eller av",
   "Volume": "Volum",
   "Music and effects volume": "Volum for musikk og effekter",
-  "The music files are missing.": "Musikkfilene mangler."
+  "The music files are missing.": "Musikkfilene mangler.",
+  "Show or hide the toolbar": "Vis eller skjul verktøylinjen",
+  "Toolbar hidden. Press U to show it.": "Verktøylinjen er skjult. Trykk U for å vise den."
 }

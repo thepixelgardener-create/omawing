@@ -64,6 +64,7 @@ ApplicationWindow {
     Shortcut { sequence: "E"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleEffects() }
     Shortcut { sequence: "V"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.toggleVolume() }
     Shortcut { sequence: "P"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.nextTrack() }
+    Shortcut { sequence: "U"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: { backend.toggleToolbar(); if (backend.toolbar) win.wake(); else toolbarHint.show() } }
     Shortcut { sequence: "B"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.toggleBanner() }
     Shortcut { sequence: "H"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: win.showScores() }
     Shortcut { sequence: "R"; context: Qt.ApplicationShortcut; enabled: !board.visible; onActivated: backend.restart() }
@@ -150,7 +151,9 @@ ApplicationWindow {
                 ToolTip.visible: hovered
                 ToolTip.text: qsTr("Next track") + " (P)"
                 onClicked: backend.nextTrack()
-                visible: backend.music && (win.pointerAwake || backend.paused)
+                opacity: backend.music && toolbar.shown ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity { NumberAnimation { duration: 350; easing.type: Easing.InOutQuad } }
                 text: "♫  " + backend.trackTitle
                 contentItem: Label { text: parent.text; textFormat: Text.PlainText; elide: Text.ElideRight }
                 padding: 8
@@ -159,12 +162,18 @@ ApplicationWindow {
 
             Pane {
                 id: toolbar
+                objectName: "toolbar"
                 Layout.preferredWidth: Math.min(win.width - 24, 1120)
                 Layout.alignment: Qt.AlignHCenter
                 padding: 6
-                opacity: win.pointerAwake || backend.paused || toolbarHover.hovered || win.helpVisible || volume.visible ? 1 : 0
+                // Fades and rises in when the pointer moves, and sinks away
+                // again a few seconds later. U switches it off altogether.
+                readonly property bool shown: volume.visible || backend.toolbar
+                    && (win.pointerAwake || backend.paused || toolbarHover.hovered || win.helpVisible || volume.visible)
+                opacity: shown ? 1 : 0
                 visible: opacity > 0
-                Behavior on opacity { NumberAnimation { duration: 220 } }
+                transform: Translate { y: (1 - toolbar.opacity) * 14 }
+                Behavior on opacity { NumberAnimation { duration: 350; easing.type: Easing.InOutQuad } }
                 background: Rectangle { color: "#e0101024"; radius: theme.radius; border.color: "#2f3250" }
                 HoverHandler { id: toolbarHover }
 
@@ -177,6 +186,8 @@ ApplicationWindow {
                     y: -height - 8
                     padding: 16
                     closePolicy: Popup.CloseOnPressOutsideParent
+                    enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 200; easing.type: Easing.OutQuad } }
+                    exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 200; easing.type: Easing.InQuad } }
                     onClosed: view.forceActiveFocus()
                     background: Rectangle { color: "#f0101024"; radius: theme.radius; border.color: "#2f3250" }
 
@@ -229,9 +240,27 @@ ApplicationWindow {
             }
         }
 
+        // Says where the toolbar went, and how to bring it back.
+        Label {
+            id: toolbarHint
+            function show() { opacity = 1; hintTimer.restart() }
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: (backend.banner ? Math.min(parent.height / 540, parent.width / 860) * 64 : 0) + 18
+            opacity: 0
+            visible: opacity > 0
+            Behavior on opacity { NumberAnimation { duration: 350; easing.type: Easing.InOutQuad } }
+            text: qsTr("Toolbar hidden. Press U to show it.")
+            padding: 10
+            background: Rectangle { color: "#e0101024"; radius: Math.min(4, theme.radius) }
+            Timer { id: hintTimer; interval: 2200; onTriggered: toolbarHint.opacity = 0 }
+        }
+
         Rectangle {
             anchors.fill: parent
-            visible: win.helpVisible
+            opacity: win.helpVisible ? 1 : 0
+            visible: opacity > 0
+            Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
             color: "#b0060714"
             MouseArea { anchors.fill: parent; onClicked: win.helpVisible = false }
 
@@ -273,6 +302,7 @@ ApplicationWindow {
                                     ["V", qsTr("Music and effects volume")],
                                     ["P", qsTr("Next track")],
                                     ["B", qsTr("Banner")],
+                                    ["U", qsTr("Show or hide the toolbar")],
                                     ["H", qsTr("High scores")],
                                     ["R", qsTr("Restart from the beginning")],
                                     ["F", qsTr("Full screen on or off")],
@@ -331,6 +361,14 @@ ApplicationWindow {
             onRejected: board.close()
         }
         closePolicy: Popup.CloseOnEscape
+        enter: Transition {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutQuad }
+            NumberAnimation { property: "scale"; from: 0.96; to: 1; duration: 220; easing.type: Easing.OutQuad }
+        }
+        exit: Transition {
+            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 180; easing.type: Easing.InQuad }
+            NumberAnimation { property: "scale"; from: 1; to: 0.97; duration: 180; easing.type: Easing.InQuad }
+        }
         property bool wasPaused: false
         background: Rectangle { color: "#14162a"; radius: theme.radius; border.color: "#454867" }
         onClosed: {

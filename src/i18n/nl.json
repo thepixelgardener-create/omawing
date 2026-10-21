@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Geluidseffecten aan of uit",
   "Volume": "Volume",
   "Music and effects volume": "Volume van muziek en effecten",
-  "The music files are missing.": "De muziekbestanden ontbreken."
+  "The music files are missing.": "De muziekbestanden ontbreken.",
+  "Show or hide the toolbar": "Werkbalk tonen of verbergen",
+  "Toolbar hidden. Press U to show it.": "Werkbalk verborgen. Druk op U om hem te tonen."
 }

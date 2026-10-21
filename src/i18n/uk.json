@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Увімкнути або вимкнути звукові ефекти",
   "Volume": "Гучність",
   "Music and effects volume": "Гучність музики та ефектів",
-  "The music files are missing.": "Музичні файли відсутні."
+  "The music files are missing.": "Музичні файли відсутні.",
+  "Show or hide the toolbar": "Показати або сховати панель інструментів",
+  "Toolbar hidden. Press U to show it.": "Панель інструментів приховано. Натисніть U, щоб показати її."
 }

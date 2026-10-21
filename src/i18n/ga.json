@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Cas na maisíochtaí fuaime air nó as",
   "Volume": "Airde",
   "Music and effects volume": "Airde an cheoil agus na maisíochtaí",
-  "The music files are missing.": "Tá na comhaid cheoil ar iarraidh."
+  "The music files are missing.": "Tá na comhaid cheoil ar iarraidh.",
+  "Show or hide the toolbar": "Taispeáin nó folaigh an barra uirlisí",
+  "Toolbar hidden. Press U to show it.": "Tá an barra uirlisí i bhfolach. Brúigh U chun é a thaispeáint."
 }

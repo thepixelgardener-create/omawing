@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "ஒலி விளைவுகளை இயக்கு அல்லது நிறுத்து",
   "Volume": "ஒலியளவு",
   "Music and effects volume": "இசை மற்றும் விளைவுகளின் ஒலியளவு",
-  "The music files are missing.": "இசைக் கோப்புகள் இல்லை."
+  "The music files are missing.": "இசைக் கோப்புகள் இல்லை.",
+  "Show or hide the toolbar": "கருவிப்பட்டியைக் காட்டு அல்லது மறை",
+  "Toolbar hidden. Press U to show it.": "கருவிப்பட்டி மறைக்கப்பட்டுள்ளது. காட்ட U-ஐ அழுத்தவும்."
 }

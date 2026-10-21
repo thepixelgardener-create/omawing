@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Ääniefektit päälle tai pois",
   "Volume": "Äänenvoimakkuus",
   "Music and effects volume": "Musiikin ja efektien äänenvoimakkuus",
-  "The music files are missing.": "Musiikkitiedostot puuttuvat."
+  "The music files are missing.": "Musiikkitiedostot puuttuvat.",
+  "Show or hide the toolbar": "Näytä tai piilota työkalurivi",
+  "Toolbar hidden. Press U to show it.": "Työkalurivi on piilotettu. Näytä se painamalla U."
 }

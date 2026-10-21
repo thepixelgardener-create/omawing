@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Ovoz effektlarini yoqish yoki oʻchirish",
   "Volume": "Ovoz balandligi",
   "Music and effects volume": "Musiqa va effektlar ovozi",
-  "The music files are missing.": "Musiqa fayllari topilmadi."
+  "The music files are missing.": "Musiqa fayllari topilmadi.",
+  "Show or hide the toolbar": "Asboblar panelini ko‘rsatish yoki yashirish",
+  "Toolbar hidden. Press U to show it.": "Asboblar paneli yashirildi. Ko‘rsatish uchun U tugmasini bosing."
 }

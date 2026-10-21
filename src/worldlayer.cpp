@@ -15,7 +15,7 @@ using namespace draw;
 namespace {
 // The soft sprites particles are drawn with: the exhaust's cooling ramp,
 // then a spark, two glitters, and smoke.
-constexpr int ExhaustSprites = 8, SparkSprite = 8, GlitterSprite = 9, SmokeSprite = 11;
+constexpr int ExhaustSprites = 8, SparkSprite = 8, GlitterSprite = 9, SmokeSprite = 11, MoteSprite = 12, FlashSprite = 13;
 }
 
 void WorldLayer::build(const View &view) {
@@ -51,7 +51,8 @@ void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, 
     // per vertex (especially costly on the bouncing sphere).
     const Vec rx = rotate({1, 0, 0}, rotation), ry = rotate({0, 1, 0}, rotation), rz = rotate({0, 0, 1}, rotation);
     Vec centre{0, 0, 0};
-    for (const Vec &v : geometry.vertices) {
+    for (const Vec &unscaled : geometry.vertices) {
+        const Vec v = scaled(unscaled, options.scale);
         vertices.push_back({at[0] + rx[0]*v[0] + ry[0]*v[1] + rz[0]*v[2],
                             at[1] + rx[1]*v[0] + ry[1]*v[1] + rz[1]*v[2],
                             at[2] + rx[2]*v[0] + ry[2]*v[1] + rz[2]*v[2]});
@@ -130,7 +131,7 @@ void WorldLayer::buildScenery() {
     }();
 
     const View::Act &act = m_view->style();
-    const double time = m_view->flight->time;
+    const double time = m_view->flight->time, beat = m_view->look.beat, level = m_view->look.level;
     for (const Obstacle &o : World::scenery(m_view->camera.x, m_view->camera.z, 4, time)) {
         if (std::hypot(o.x - m_view->camera.x, o.z - m_view->camera.z) > View::Far)
             continue;
@@ -141,8 +142,11 @@ void WorldLayer::buildScenery() {
                  act.wirePyramids ? std::vector<Vec>{m_view->palette.accent, m_view->palette.crystal} : std::vector<Vec>{m_view->palette.mid, m_view->palette.crystal},
                  {.wire = act.wirePyramids, .radius = 9});
         else
-            mesh(crystal, {o.x, o.y, o.z}, {o.spin, 0, 0}, {m_view->palette.crystal, m_view->palette.accent},
-                 {.wire = act.wireCrystals, .radius = 6});
+            // The crystals swell and light up with the music's kicks, and
+            // breathe a little with its loudness.
+            mesh(crystal, {o.x, o.y, o.z}, {o.spin, 0, 0},
+                 {blend(m_view->palette.crystal, {255, 255, 255}, 0.45 * beat), blend(m_view->palette.accent, {255, 255, 255}, 0.3 * beat)},
+                 {.wire = act.wireCrystals, .emissive = beat > 0.35, .radius = 6, .scale = 1 + 0.05 * level + 0.24 * beat});
     }
     // Rings already flown through are gone; the rest stand along the course
     // in both directions.
@@ -243,6 +247,16 @@ void WorldLayer::buildParticles() {
             sprite = SmokeSprite;
             glow = false;
             break;
+        case Particle::Mote:
+            // Fades in and out again, so motes never pop.
+            opacity = 0.75 * std::sin(M_PI * t);
+            sprite = MoteSprite;
+            break;
+        case Particle::Flash:
+            size *= 0.6 + 1.8 * t;
+            opacity = 0.9 * (1 - t) * (1 - t);
+            sprite = FlashSprite;
+            break;
         }
         // Fade what comes right up to the lens instead of filling the view with it.
         opacity *= clampTo((c[2] - View::Near - 0.4) / 2, 0, 1) * (1 - m_view->fog(c[2]));
@@ -298,6 +312,8 @@ void WorldLayer::preparePuffs() {
     m_puffs.push_back(puff(QColor("#fff8e0"), QColor("#ffd36b"), true));
     m_puffs.push_back(puff(QColor("#f0fdff"), QColor("#7fe3ff"), true));
     m_puffs.push_back(puff(withAlpha("#3b3346", 0.9), QColor("#5a5266")));
+    m_puffs.push_back(puff(QColor("#f4f0ff"), QColor("#9fd8ff")));
+    m_puffs.push_back(puff(QColor("#ffffff"), QColor("#ffe6a8"), true));
 }
 
 // Painter's algorithm: far faces first, near faces over them.

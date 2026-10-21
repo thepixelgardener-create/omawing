@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Hangeffektek be- vagy kikapcsolása",
   "Volume": "Hangerő",
   "Music and effects volume": "Zene és effektek hangereje",
-  "The music files are missing.": "Hiányoznak a zenefájlok."
+  "The music files are missing.": "Hiányoznak a zenefájlok.",
+  "Show or hide the toolbar": "Eszköztár megjelenítése vagy elrejtése",
+  "Toolbar hidden. Press U to show it.": "Az eszköztár rejtve van. Az U billentyűvel jelenítheti meg."
 }

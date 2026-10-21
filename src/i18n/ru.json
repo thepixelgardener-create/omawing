@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Включить или выключить звуковые эффекты",
   "Volume": "Громкость",
   "Music and effects volume": "Громкость музыки и эффектов",
-  "The music files are missing.": "Файлы музыки отсутствуют."
+  "The music files are missing.": "Файлы музыки отсутствуют.",
+  "Show or hide the toolbar": "Показать или скрыть панель инструментов",
+  "Toolbar hidden. Press U to show it.": "Панель инструментов скрыта. Нажмите U, чтобы показать её."
 }

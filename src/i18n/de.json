@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Soundeffekte ein- oder ausschalten",
   "Volume": "Lautstärke",
   "Music and effects volume": "Lautstärke von Musik und Effekten",
-  "The music files are missing.": "Die Musikdateien fehlen."
+  "The music files are missing.": "Die Musikdateien fehlen.",
+  "Show or hide the toolbar": "Werkzeugleiste ein- oder ausblenden",
+  "Toolbar hidden. Press U to show it.": "Werkzeugleiste ausgeblendet. Mit U wieder einblenden."
 }

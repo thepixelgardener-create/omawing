@@ -41,12 +41,7 @@ void Game::collectRings(Flight &flight, double dt, const Vec &from) {
             ++ringsFlown;
             collected.insert(i);
             hull = std::min(FullHull, hull + 3);
-            for (int k = 0; k < 40; ++k) {
-                const double a = k * 2 * M_PI / 40;
-                flight.emitParticles(Particle::Glitter,
-                                     {r.x + std::cos(a) * World::RingRadius, r.y + std::sin(a) * World::RingRadius, r.z},
-                                     {std::cos(a) * 2.5, std::sin(a) * 2.5, (ship.z - pz) / dt * 0.25}, 0.8, 1);
-            }
+            reward(flight, r, {(ship.x - px) / dt, (ship.y - py) / dt, (ship.z - pz) / dt});
         } else if (off < World::RingRadius + 0.75) {
             if (hurt <= 0)
                 damage(flight, 12);
@@ -56,6 +51,21 @@ void Game::collectRings(Flight &flight, double dt, const Vec &from) {
             multiplier = 1;
         }
     }
+}
+
+// The ring lights up and bursts: a flash in its middle, a ring of glitter
+// thrown outwards in its plane, and a stream of sparks that keeps pace with
+// the ship for a moment before falling behind.
+void Game::reward(Flight &flight, const Ring &r, const Vec &velocity) {
+    flight.emitParticles(Particle::Flash, {r.x, r.y, r.z}, scaled(velocity, 0.3), 0, 1);
+    for (int k = 0; k < 48; ++k) {
+        const double a = k * 2 * M_PI / 48;
+        flight.emitParticles(Particle::Glitter,
+                             {r.x + std::cos(a) * World::RingRadius, r.y + std::sin(a) * World::RingRadius, r.z},
+                             translated({std::cos(a) * 7, std::sin(a) * 7, 0}, scaled(velocity, 0.3)), 0.8, 1);
+    }
+    const Ship &ship = flight.ship;
+    flight.emitParticles(Particle::Glitter, {ship.x, ship.y, ship.z}, scaled(velocity, 0.85), 2.5, 18);
 }
 
 void Game::collide(Flight &flight) {

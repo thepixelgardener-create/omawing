@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Lülita heliefektid sisse või välja",
   "Volume": "Helitugevus",
   "Music and effects volume": "Muusika ja efektide helitugevus",
-  "The music files are missing.": "Muusikafailid puuduvad."
+  "The music files are missing.": "Muusikafailid puuduvad.",
+  "Show or hide the toolbar": "Näita või peida tööriistariba",
+  "Toolbar hidden. Press U to show it.": "Tööriistariba on peidetud. Vajuta U, et seda näidata."
 }

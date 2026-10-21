@@ -267,6 +267,61 @@ private slots:
         QCOMPARE(board.pendingScore(), 0);
     }
 
+    void beatTrackerHearsKicksOnTime()
+    {
+        // Ten seconds of a kick drum at 120 bpm over a quiet high hum.
+        const int rate = 44100, seconds = 10;
+        std::vector<float> samples(rate * seconds);
+        for (int i = 0; i < int(samples.size()); ++i) {
+            const double t = double(i) / rate, sinceKick = std::fmod(t, 0.5);
+            samples[i] = float(0.05 * std::sin(2 * M_PI * 2000 * t) +
+                               0.8 * std::sin(2 * M_PI * 55 * sinceKick) * std::exp(-sinceKick * 12));
+        }
+        BeatTracker tracker;
+        // Fed in uneven chunks, as decoders deliver them.
+        for (int at = 0; at < int(samples.size());) {
+            const int frames = std::min(int(samples.size()) - at, 1500 + at % 700);
+            tracker.feed(samples.data() + at, frames, rate, qint64(at) * 1000000 / rate);
+            at += frames;
+        }
+        QList<double> beats;
+        float loudest = 0;
+        for (int ms = 0; ms <= seconds * 1000; ms += 10) {
+            const auto pulse = tracker.take(qint64(ms) * 1000);
+            loudest = std::max(loudest, pulse.level);
+            if (pulse.beat) beats << ms / 1000.0;
+        }
+        // Once the average has settled, one beat per kick, close to it.
+        QVERIFY2(beats.size() >= 17 && beats.size() <= 20, qPrintable(QString::number(beats.size())));
+        for (double at : beats) {
+            const double offset = std::fmod(at, 0.5);
+            QVERIFY2(offset < 0.06 || offset > 0.48, qPrintable(QString::number(at)));
+        }
+        QVERIFY(loudest > 0.3);
+        // Nothing is handed out before its time.
+        BeatTracker early;
+        early.feed(samples.data(), rate, rate, 0);
+        QVERIFY(!early.take(-1).beat);
+    }
+
+    void beatsAndRingsMakeParticles()
+    {
+        Flight flight;
+        flight.advance(1);
+        auto count = [&](Particle::Kind kind) {
+            return std::count_if(flight.particles.begin(), flight.particles.end(), [&](const Particle &p) { return p.kind == kind; });
+        };
+        flight.pulse();
+        QVERIFY(count(Particle::Mote) > 0);
+        flight.demo = false;
+        const Ring r = World::ring(0);
+        flight.ship.x = r.x; flight.ship.y = r.y; flight.ship.z = r.z - 0.1;
+        flight.step(1.0 / 60);
+        QCOMPARE(flight.game.ringsFlown, 1);
+        QCOMPARE(count(Particle::Flash), 1);
+        QVERIFY(count(Particle::Glitter) >= 60);
+    }
+
     void switchingThemeShowsItsScene()
     {
         QTemporaryDir dir;
@@ -527,6 +582,20 @@ private slots:
         capture("volume");
         QTest::keyClick(window, Qt::Key_Escape);
         QTRY_VERIFY(!panel->property("visible").toBool());
+        // U switches the toolbar off, even while the pointer is moving, and
+        // fades it away; a second U brings it back.
+        auto bar = window->findChild<QObject *>("toolbar");
+        QVERIFY(bar);
+        window->setProperty("pointerAwake", true);
+        QTRY_VERIFY(bar->property("shown").toBool());
+        QTest::keyClick(window, Qt::Key_U);
+        QVERIFY(!backend.toolbar());
+        QVERIFY(!bar->property("shown").toBool());
+        QTRY_VERIFY(!bar->property("visible").toBool());
+        QTest::keyClick(window, Qt::Key_U);
+        QVERIFY(backend.toolbar());
+        QTRY_COMPARE(bar->property("opacity").toDouble(), 1.0);
+        window->setProperty("pointerAwake", false);
         window->resize(640, 400);
         for (const QString &language : {QString("de"), QString("ar")}) {
             write(dir.filePath("language"), language.toUtf8());
@@ -555,6 +624,7 @@ private slots:
             sources << Audio::trackSource(i);
         }
         for (int i = 0; i < Audio::EffectCount; ++i) sources << Audio::effectSource(Audio::Effect(i));
+        for (int chain = 2; chain <= Audio::RingSteps; ++chain) sources << Audio::ringSource(chain);
         for (const auto &source : sources) {
             QAudioDecoder decoder;
             decoder.setSource(source);
@@ -596,7 +666,7 @@ private slots:
         player->setPosition(player->duration() - 200);
         QTRY_COMPARE_WITH_TIMEOUT(sound.track(), 0, 10000);
         const auto effects = sound.findChildren<QSoundEffect *>();
-        QCOMPARE(effects.size(), Audio::EffectCount);
+        QCOMPARE(effects.size(), Audio::EffectCount + Audio::RingSteps - 1);
         for (auto effect : effects) QTRY_COMPARE(effect->status(), QSoundEffect::Ready);
         sound.play(Audio::Ring);
         auto ring = *std::find_if(effects.begin(), effects.end(), [](QSoundEffect *e) { return e->source() == Audio::effectSource(Audio::Ring); });

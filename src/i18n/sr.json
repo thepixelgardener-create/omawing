@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Укључи или искључи звучне ефекте",
   "Volume": "Јачина звука",
   "Music and effects volume": "Јачина музике и ефеката",
-  "The music files are missing.": "Недостају музичке датотеке."
+  "The music files are missing.": "Недостају музичке датотеке.",
+  "Show or hide the toolbar": "Прикажи или сакриј траку са алаткама",
+  "Toolbar hidden. Press U to show it.": "Трака са алаткама је скривена. Притисните U да је прикажете."
 }

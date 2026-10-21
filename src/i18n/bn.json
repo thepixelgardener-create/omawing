@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "সাউন্ড ইফেক্ট চালু বা বন্ধ করুন",
   "Volume": "ভলিউম",
   "Music and effects volume": "সংগীত ও ইফেক্টের ভলিউম",
-  "The music files are missing.": "সংগীতের ফাইলগুলো পাওয়া যাচ্ছে না।"
+  "The music files are missing.": "সংগীতের ফাইলগুলো পাওয়া যাচ্ছে না।",
+  "Show or hide the toolbar": "টুলবার দেখান বা লুকান",
+  "Toolbar hidden. Press U to show it.": "টুলবার লুকানো আছে। দেখাতে U চাপুন।"
 }

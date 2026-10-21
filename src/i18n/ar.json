@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "تشغيل المؤثرات الصوتية أو إيقافها",
   "Volume": "مستوى الصوت",
   "Music and effects volume": "مستوى صوت الموسيقى والمؤثرات",
-  "The music files are missing.": "ملفات الموسيقى مفقودة."
+  "The music files are missing.": "ملفات الموسيقى مفقودة.",
+  "Show or hide the toolbar": "إظهار شريط الأدوات أو إخفاؤه",
+  "Toolbar hidden. Press U to show it.": "شريط الأدوات مخفي. اضغط U لإظهاره."
 }

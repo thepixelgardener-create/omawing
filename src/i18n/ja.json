@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "効果音のオン/オフ",
   "Volume": "音量",
   "Music and effects volume": "音楽と効果音の音量",
-  "The music files are missing.": "音楽ファイルが見つかりません。"
+  "The music files are missing.": "音楽ファイルが見つかりません。",
+  "Show or hide the toolbar": "ツールバーの表示/非表示",
+  "Toolbar hidden. Press U to show it.": "ツールバーを非表示にしました。U キーで表示します。"
 }

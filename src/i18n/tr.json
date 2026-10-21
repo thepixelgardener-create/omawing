@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Ses efektlerini aç veya kapat",
   "Volume": "Ses düzeyi",
   "Music and effects volume": "Müzik ve efekt ses düzeyi",
-  "The music files are missing.": "Müzik dosyaları eksik."
+  "The music files are missing.": "Müzik dosyaları eksik.",
+  "Show or hide the toolbar": "Araç çubuğunu göster veya gizle",
+  "Toolbar hidden. Press U to show it.": "Araç çubuğu gizlendi. Göstermek için U'ya basın."
 }

@@ -30,6 +30,7 @@ an SVG-in-the-browser demo; the renderer is a port of that code.
 | M | Turn music on or off |
 | E | Turn sound effects on or off |
 | V | Music and effects volume |
+| U | Show or hide the toolbar |
 | P | Next music track |
 | B | Show or hide the Omarchy slogan banner |
 | H | Open the local high-score board |
@@ -67,6 +68,18 @@ read from `src/audio`); the short effects are compiled into the executable.
 Qt's FFmpeg backend copies a compiled-in track to a temporary file to stream
 it and never removes the copy, so the music stays on disk. `bin/generate-effects`
 rebuilds the four original WAV cues without touching the soundtrack.
+
+## Moving with the music
+
+While music plays, Omawing listens to it: a copy of the decoded audio goes
+through a small beat tracker (the bass through a 120 Hz low-pass, compared
+with its recent average). On each kick the crystals swell and light up, and
+the tips of the pyramids ahead breathe out motes. With the music off, the
+scenery is still.
+
+Every ring you fly through flashes and throws out a ring of glitter, and its
+chime climbs a step of a pentatonic scale for each ring in the chain, up to
+eight.
 
 ## Flying for points
 

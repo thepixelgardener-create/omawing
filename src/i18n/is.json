@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Kveikja eða slökkva á hljóðbrellum",
   "Volume": "Hljóðstyrkur",
   "Music and effects volume": "Hljóðstyrkur tónlistar og hljóðbrellna",
-  "The music files are missing.": "Tónlistarskrárnar vantar."
+  "The music files are missing.": "Tónlistarskrárnar vantar.",
+  "Show or hide the toolbar": "Sýna eða fela tækjastikuna",
+  "Toolbar hidden. Press U to show it.": "Tækjastikan er falin. Ýttu á U til að sýna hana."
 }

@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "साउंड इफ़ेक्ट चालू या बंद करें",
   "Volume": "वॉल्यूम",
   "Music and effects volume": "संगीत और इफ़ेक्ट का वॉल्यूम",
-  "The music files are missing.": "संगीत फ़ाइलें मौजूद नहीं हैं।"
+  "The music files are missing.": "संगीत फ़ाइलें मौजूद नहीं हैं।",
+  "Show or hide the toolbar": "टूलबार दिखाएँ या छिपाएँ",
+  "Toolbar hidden. Press U to show it.": "टूलबार छिपा है। दिखाने के लिए U दबाएँ।"
 }

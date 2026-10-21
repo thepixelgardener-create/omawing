@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Vklopi ali izklopi zvočne učinke",
   "Volume": "Glasnost",
   "Music and effects volume": "Glasnost glasbe in učinkov",
-  "The music files are missing.": "Glasbene datoteke manjkajo."
+  "The music files are missing.": "Glasbene datoteke manjkajo.",
+  "Show or hide the toolbar": "Prikaži ali skrij orodno vrstico",
+  "Toolbar hidden. Press U to show it.": "Orodna vrstica je skrita. Pritisnite U, da jo prikažete."
 }

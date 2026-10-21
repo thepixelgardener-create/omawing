@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Zapnout nebo vypnout zvukové efekty",
   "Volume": "Hlasitost",
   "Music and effects volume": "Hlasitost hudby a efektů",
-  "The music files are missing.": "Chybí hudební soubory."
+  "The music files are missing.": "Chybí hudební soubory.",
+  "Show or hide the toolbar": "Zobrazit nebo skrýt panel nástrojů",
+  "Toolbar hidden. Press U to show it.": "Panel nástrojů je skrytý. Zobrazíte ho klávesou U."
 }

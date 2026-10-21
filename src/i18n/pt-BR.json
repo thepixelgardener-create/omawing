@@ -28,5 +28,7 @@
   "Close": "Fechar",
   "Next track": "Próxima faixa",
   "Could not play the soundtrack.": "Não foi possível reproduzir a trilha sonora.",
-  "The music files are missing.": "Os arquivos de música estão faltando."
+  "The music files are missing.": "Os arquivos de música estão faltando.",
+  "Show or hide the toolbar": "Mostrar ou ocultar a barra de ferramentas",
+  "Toolbar hidden. Press U to show it.": "Barra de ferramentas oculta. Pressione U para mostrá-la."
 }

@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "روشن یا خاموش کردن جلوه‌های صوتی",
   "Volume": "صدا",
   "Music and effects volume": "بلندی صدای موسیقی و جلوه‌ها",
-  "The music files are missing.": "فایل‌های موسیقی پیدا نشد."
+  "The music files are missing.": "فایل‌های موسیقی پیدا نشد.",
+  "Show or hide the toolbar": "نمایش یا پنهان کردن نوار ابزار",
+  "Toolbar hidden. Press U to show it.": "نوار ابزار پنهان است. برای نمایش آن U را فشار دهید."
 }

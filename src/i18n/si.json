@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "ශබ්ද ප්‍රයෝග සක්‍රිය හෝ අක්‍රිය කරන්න",
   "Volume": "ශබ්ද මට්ටම",
   "Music and effects volume": "සංගීතයේ සහ ප්‍රයෝගවල ශබ්ද මට්ටම",
-  "The music files are missing.": "සංගීත ගොනු නොමැත."
+  "The music files are missing.": "සංගීත ගොනු නොමැත.",
+  "Show or hide the toolbar": "මෙවලම් තීරුව පෙන්වන්න හෝ සඟවන්න",
+  "Toolbar hidden. Press U to show it.": "මෙවලම් තීරුව සඟවා ඇත. එය පෙන්වීමට U ඔබන්න."
 }

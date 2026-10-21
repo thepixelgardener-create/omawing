@@ -11,6 +11,7 @@
 #include "geometry.h"
 
 class Flight;
+struct Ring;
 
 // Points scored at a ring, floating up where they were won.
 struct Popup {
@@ -45,6 +46,7 @@ public:
 
 private:
     void collectRings(Flight &flight, double dt, const Vec &from);
+    void reward(Flight &flight, const Ring &ring, const Vec &velocity);
     void collide(Flight &flight);
     void damage(Flight &flight, double amount);
 };

@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Washa au zima madoido ya sauti",
   "Volume": "Sauti",
   "Music and effects volume": "Kiwango cha sauti ya muziki na madoido",
-  "The music files are missing.": "Faili za muziki hazipo."
+  "The music files are missing.": "Faili za muziki hazipo.",
+  "Show or hide the toolbar": "Onyesha au ficha upau wa zana",
+  "Toolbar hidden. Press U to show it.": "Upau wa zana umefichwa. Bonyeza U kuuonyesha."
 }

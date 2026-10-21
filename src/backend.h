@@ -22,6 +22,7 @@ class Backend : public QObject {
     Q_PROPERTY(double effectsVolume READ effectsVolume WRITE setEffectsVolume NOTIFY volumeChanged)
     Q_PROPERTY(QString trackTitle READ trackTitle NOTIFY changed)
     Q_PROPERTY(bool banner READ banner NOTIFY changed)
+    Q_PROPERTY(bool toolbar READ toolbar NOTIFY changed)
     Q_PROPERTY(QString soundError READ soundError NOTIFY changed)
     Q_PROPERTY(QString settingsError READ settingsError NOTIFY changed)
     Q_PROPERTY(int fps READ fps NOTIFY fpsChanged)
@@ -43,6 +44,8 @@ public:
     void setMusicVolume(double volume);
     void setEffectsVolume(double volume);
     bool banner() const { return m_banner; }
+    // Whether the toolbar may appear at all; the keys work either way.
+    bool toolbar() const { return m_toolbar; }
     QString trackTitle() const { return m_audio.trackTitle(); }
     QString soundError() const { return m_audio.error(); }
     // A failed save of preferences or of the score board, or empty.
@@ -75,6 +78,7 @@ public:
     Q_INVOKABLE void toggleEffects();
     Q_INVOKABLE void nextTrack() { m_audio.nextTrack(); }
     Q_INVOKABLE void toggleBanner();
+    Q_INVOKABLE void toggleToolbar();
 
     // Flight keys take Qt key codes; they return whether the key steers.
     Q_INVOKABLE bool keyDown(int key);
@@ -109,9 +113,10 @@ private:
     QString m_settingsFile, m_settingsError;
     Scene::Look m_look;
     ScoreBoard m_board;
-    bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true;
+    bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true, m_toolbar = true;
     int m_frames = 0, m_fps = 0;
     double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0;
     double m_musicVolume = 0.8, m_effectsVolume = 0.8;
+    double m_beat = 0, m_level = 0;   // The music's pulse, for the picture.
     QTimer m_saveVolume;
 };

@@ -46,6 +46,7 @@ Backend::~Backend() {
 void Backend::loadSettings() {
     QSettings settings(m_settingsFile, QSettings::IniFormat);
     m_banner = settings.value("banner", true).toBool();
+    m_toolbar = settings.value("toolbar", true).toBool();
     m_musicWanted = settings.value("music", false).toBool();
     m_effectsWanted = settings.value("effects", false).toBool();
     m_musicVolume = std::clamp(settings.value("musicVolume", 0.8).toDouble(), 0.0, 1.0);
@@ -141,8 +142,21 @@ void Backend::tick(double seconds) {
         const unsigned cues = m_flight.events;
         if (cues & Flight::Wreck) m_audio.play(Audio::Wreck);
         else if (cues & Flight::Impact) m_audio.play(Audio::Impact);
-        if (cues & Flight::RingPassed) m_audio.play(Audio::Ring);
+        // Each ring of a chain chimes a step higher.
+        if (cues & Flight::RingPassed)
+            m_audio.playRing(m_flight.game.popups.empty() ? 1 : m_flight.game.popups.back().multiplier);
         if (cues & Flight::BoostStarted) m_audio.play(Audio::Boost);
+        // The picture moves with the music: a kick makes the crystals swell
+        // and the pyramids breathe out motes.
+        const BeatTracker::Pulse pulse = m_audio.pulse();
+        if (pulse.beat) {
+            m_beat = 1;
+            m_flight.pulse();
+        }
+        m_beat *= std::exp(-dt * 5);
+        m_level += (pulse.level - m_level) * (1 - std::exp(-dt * 12));
+        m_look.beat = m_beat;
+        m_look.level = m_level;
         // A wreck that has finished falling ends the run, and the autopilot
         // takes over again.
         if (m_flight.game.over())
@@ -234,6 +248,12 @@ void Backend::toggleEffects() {
     m_effectsWanted = !m_effectsWanted;
     store({{"effects", m_effectsWanted}});
     syncSound();
+    emit changed();
+}
+
+void Backend::toggleToolbar() {
+    m_toolbar = !m_toolbar;
+    store({{"toolbar", m_toolbar}});
     emit changed();
 }
 

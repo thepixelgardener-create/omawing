@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "I-on o i-off ang mga sound effect",
   "Volume": "Volume",
   "Music and effects volume": "Volume ng musika at mga effect",
-  "The music files are missing.": "Nawawala ang mga music file."
+  "The music files are missing.": "Nawawala ang mga music file.",
+  "Show or hide the toolbar": "Ipakita o itago ang toolbar",
+  "Toolbar hidden. Press U to show it.": "Nakatago ang toolbar. Pindutin ang U para ipakita ito."
 }

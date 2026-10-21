@@ -161,6 +161,8 @@ void Flight::emitParticles(Particle::Kind kind, const Vec &at, const Vec &veloci
         case Particle::Spark: p.life = 0.45 + 0.5 * random(); p.size = 0.1; break;
         case Particle::Glitter: p.life = 0.7 + 0.5 * random(); p.size = 0.16; break;
         case Particle::Smoke: p.life = 0.9 + 0.6 * random(); p.size = 0.55; break;
+        case Particle::Mote: p.life = 1.6 + 0.8 * random(); p.size = 0.3; break;
+        case Particle::Flash: p.life = 0.4; p.size = 2.6; break;
         }
         particles.push_back(p);
     }
@@ -176,6 +178,8 @@ void Flight::animateParticles(double dt) {
         case Particle::Spark: p.velocity[1] -= 16 * dt; break;
         case Particle::Glitter: p.velocity = scaled(p.velocity, std::exp(-dt * 2.5)); p.velocity[1] -= 1.5 * dt; break;
         case Particle::Smoke: p.velocity = scaled(p.velocity, std::exp(-dt * 1.2)); p.velocity[1] += 1.2 * dt; break;
+        case Particle::Mote: p.velocity = scaled(p.velocity, std::exp(-dt * 0.9)); p.velocity[1] += 0.4 * dt; break;
+        case Particle::Flash: break;
         }
         p.position = translated(p.position, scaled(p.velocity, dt));
         // Sparks bounce off the ground.
@@ -185,6 +189,16 @@ void Flight::animateParticles(double dt) {
         }
     }
     std::erase_if(particles, [](const Particle &p) { return p.age >= p.life; });
+}
+
+void Flight::pulse() {
+    const Vec forward{std::sin(camera.yaw), 0, std::cos(camera.yaw)};
+    for (const Obstacle &o : World::scenery(camera.x, camera.z, 3, time)) {
+        const Vec offset{o.x - camera.x, 0, o.z - camera.z};
+        if (o.kind != Obstacle::Pyramid || dot(offset, forward) < 4 || std::hypot(offset[0], offset[2]) > 80)
+            continue;
+        emitParticles(Particle::Mote, {o.x, World::PyramidHeight + 0.1, o.z}, {0, 2.2, 0}, 1.3, 4);
+    }
 }
 
 // A small linear congruential generator.

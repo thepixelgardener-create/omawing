@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Ieslēgt vai izslēgt skaņas efektus",
   "Volume": "Skaļums",
   "Music and effects volume": "Mūzikas un efektu skaļums",
-  "The music files are missing.": "Trūkst mūzikas failu."
+  "The music files are missing.": "Trūkst mūzikas failu.",
+  "Show or hide the toolbar": "Rādīt vai paslēpt rīkjoslu",
+  "Toolbar hidden. Press U to show it.": "Rīkjosla ir paslēpta. Nospiediet U, lai to parādītu."
 }

@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Ενεργοποίηση ή απενεργοποίηση ηχητικών εφέ",
   "Volume": "Ένταση",
   "Music and effects volume": "Ένταση μουσικής και εφέ",
-  "The music files are missing.": "Λείπουν τα αρχεία μουσικής."
+  "The music files are missing.": "Λείπουν τα αρχεία μουσικής.",
+  "Show or hide the toolbar": "Εμφάνιση ή απόκρυψη της γραμμής εργαλείων",
+  "Toolbar hidden. Press U to show it.": "Η γραμμή εργαλείων είναι κρυφή. Πατήστε U για να εμφανιστεί."
 }

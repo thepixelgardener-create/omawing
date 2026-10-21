@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Activer ou couper les effets sonores",
   "Volume": "Volume",
   "Music and effects volume": "Volume de la musique et des effets",
-  "The music files are missing.": "Les fichiers de musique sont introuvables."
+  "The music files are missing.": "Les fichiers de musique sont introuvables.",
+  "Show or hide the toolbar": "Afficher ou masquer la barre d'outils",
+  "Toolbar hidden. Press U to show it.": "Barre d'outils masquée. Appuyez sur U pour l'afficher."
 }

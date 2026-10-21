@@ -24,7 +24,9 @@ struct ChaseCamera {
 };
 
 struct Particle {
-    enum Kind { Exhaust, Spark, Glitter, Smoke };
+    // Motes drift up from the pyramids on the beat; a flash lights a ring
+    // as you fly through it.
+    enum Kind { Exhaust, Spark, Glitter, Smoke, Mote, Flash };
     Vec position, velocity;
     double age = 0, life = 1, size = 0.3;
     Kind kind = Exhaust;
@@ -107,6 +109,8 @@ public:
     void emitParticles(Particle::Kind kind, const Vec &at, const Vec &velocity, double spread, int count);
     // A number in [0, 1) from a fixed seed, so a flight replays exactly.
     double random();
+    // A beat in the music: the tips of the pyramids ahead breathe out motes.
+    void pulse();
 
 private:
     void steer(double dt, double steer, double climb, bool boost);

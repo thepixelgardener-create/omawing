@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "Activa o desactiva els efectes de so",
   "Volume": "Volum",
   "Music and effects volume": "Volum de la música i els efectes",
-  "The music files are missing.": "Falten els fitxers de música."
+  "The music files are missing.": "Falten els fitxers de música.",
+  "Show or hide the toolbar": "Mostra o amaga la barra d'eines",
+  "Toolbar hidden. Press U to show it.": "La barra d'eines està amagada. Premeu U per mostrar-la."
 }

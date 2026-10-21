@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "開啟或關閉音效",
   "Volume": "音量",
   "Music and effects volume": "音樂和音效音量",
-  "The music files are missing.": "缺少音樂檔案。"
+  "The music files are missing.": "缺少音樂檔案。",
+  "Show or hide the toolbar": "顯示或隱藏工具列",
+  "Toolbar hidden. Press U to show it.": "工具列已隱藏。按 U 鍵顯示。"
 }

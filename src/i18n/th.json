@@ -52,5 +52,7 @@
   "Turn sound effects on or off": "เปิดหรือปิดเสียงเอฟเฟกต์",
   "Volume": "ระดับเสียง",
   "Music and effects volume": "ระดับเสียงเพลงและเอฟเฟกต์",
-  "The music files are missing.": "ไม่พบไฟล์เพลง"
+  "The music files are missing.": "ไม่พบไฟล์เพลง",
+  "Show or hide the toolbar": "แสดงหรือซ่อนแถบเครื่องมือ",
+  "Toolbar hidden. Press U to show it.": "ซ่อนแถบเครื่องมือแล้ว กด U เพื่อแสดง"
 }
