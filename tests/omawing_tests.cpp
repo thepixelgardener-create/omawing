@@ -804,6 +804,47 @@ private slots:
         QCOMPARE(b.flight().cameraDistance(), Flight::DefaultDistance);
     }
 
+    void distantObjectsFadeBeforeTheirRangeLimit() {
+        View view;
+        QCOMPARE(view.fadeIn(View::Far), 0.0);
+        QCOMPARE(view.fadeIn(View::Far + 1), 0.0);
+        QCOMPARE(view.fadeIn(View::Far - View::FadeIn), 1.0);
+        QCOMPARE(view.fadeIn(View::Far - View::FadeIn / 2), 0.5);
+        double previous = 0;
+        for (double away = View::Far; away >= 0; away -= 0.5) {
+            const double opacity = view.fadeIn(away);
+            QVERIFY(opacity >= previous && opacity - previous < 0.02);
+            previous = opacity;
+        }
+    }
+
+    void ballsStayInTheWorldAcrossShipSegments() {
+        Flight f;
+        f.camera.z = 80;
+        auto scenery = [&] {
+            View view; view.begin(f, {960,540}, {});
+            WorldLayer world; world.build(view);
+            QList<QPolygonF> polygons;
+            for (const auto &face : world.faces())
+                if (!face.ship && !face.glow) polygons.append(face.polygon);
+            return polygons;
+        };
+        // With the camera held still, crossing the old ball-selection
+        // boundary must not replace any scenery polygons.
+        f.ship.z = 101.999;
+        const auto before = scenery();
+        f.ship.z = 102.001;
+        QCOMPARE(scenery(), before);
+        for (double z : {-228.0, -8.0, 102.0, 212.0}) {
+            const auto candidates = World::balls(z, View::Far, 2);
+            const auto collision = World::ball(z, 2);
+            QVERIFY(candidates.size() >= 3 && candidates.size() <= 5);
+            QVERIFY(std::any_of(candidates.begin(), candidates.end(), [&](const Obstacle &o) {
+                return o.z == collision.z && o.y == collision.y;
+            }));
+        }
+    }
+
     void cameraFramesTheShipBelowAnOpenHorizon() {
         Flight flight;
         flight.demo = false;

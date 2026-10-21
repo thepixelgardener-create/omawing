@@ -53,6 +53,9 @@ std::vector<Obstacle> scenery(double x, double z, int reach, double time);
 Ring ring(int index);
 // One beach ball bounces beside the course every 110 units.
 Obstacle ball(double z, double time);
+// Stable neighboring balls for rendering and radar, including the next one
+// before it becomes the nearby collision candidate.
+std::vector<Obstacle> balls(double z, double reach, double time);
 }
 
 class Flight {

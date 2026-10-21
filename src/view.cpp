@@ -162,7 +162,7 @@ QPolygonF View::polygonOf(const std::vector<Vec> &points) const {
 
 double View::fog(double depth) const { return 0.34 * smooth(clampTo((depth - 25) / 1400, 0, 1)); }
 
-double View::fadeIn(double depth) const { return smooth(clampTo((Far - depth) / 18, 0, 1)); }
+double View::fadeIn(double distance) const { return smooth(clampTo((Far - distance) / FadeIn, 0, 1)); }
 
 // A ground tile of size Tile at depth d, seen from height h, is about
 // Focal * h * Tile / d^2 canvas units tall on screen.

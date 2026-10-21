@@ -42,6 +42,9 @@ void WorldLayer::face(const std::vector<Vec> &points, const QColor &fill, const 
 
 void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, const std::vector<Vec> &colors,
                  const MeshOptions &options) {
+    const double away = std::hypot(at[0] - m_view->camera.x, at[2] - m_view->camera.z);
+    const double fade = options.far > View::Far || options.ship || options.glow ? 1 : m_view->fadeIn(away);
+    if (options.opacity * fade <= 0) return;
     const Vec centreCamera = m_view->toCamera(at);
     if (centreCamera[2] < -options.radius || centreCamera[2] > options.far + options.radius ||
         std::abs(centreCamera[0]) > centreCamera[2] * m_view->width / (2 * View::Focal) + options.radius * 2)
@@ -87,7 +90,6 @@ void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, 
         const QColor stroke = options.wire ? rgb(blend(source, m_view->atmosphere(), haze))
                             : options.glow ? QColor()
                             : options.stroke.isValid() ? options.stroke : fill;
-        const double fade = options.far > View::Far || options.ship ? 1 : m_view->fadeIn(depth);
         face(points, fill, stroke, options.opacity * fade, options.ship, options.glow);
     }
     if (!m_reflecting && m_view->valley > 0 && !options.ship && !options.glow) {
@@ -103,7 +105,8 @@ void WorldLayer::ring(const Ring &r, double spin) {
     const double radius = World::RingRadius, thickness = 0.18;
     // Dissolve a gate as it nears the camera, before it sweeps through and
     // covers the entire view.
-    const double opacity = smooth(clampTo((m_view->toCamera({r.x, r.y, r.z})[2] - 13.5) / 7, 0, 1));
+    const double opacity = smooth(clampTo((m_view->toCamera({r.x, r.y, r.z})[2] - 13.5) / 7, 0, 1))
+                         * m_view->fadeIn(std::hypot(r.x - m_view->camera.x, r.z - m_view->camera.z));
     if (opacity <= 0)
         return;
     for (int i = 0; i < count; ++i) {
@@ -116,7 +119,7 @@ void WorldLayer::ring(const Ring &r, double spin) {
         for (const Vec &p : points)
             depth += p[2] / 4;
         face(points, rgb(blend(i % 3 ? m_view->palette.accent : m_view->palette.crystal, m_view->atmosphere(), m_view->fog(depth))), QColor(),
-             opacity * m_view->fadeIn(depth), false);
+             opacity, false);
     }
     if (!m_reflecting && m_view->valley > 0) {
         m_reflecting = true;
@@ -144,6 +147,8 @@ void WorldLayer::buildLandmarks() {
             const double away = std::hypot(x - m_view->camera.x, z - m_view->camera.z);
             if (away < Nearest || away > Farthest || std::abs(x) < 140)
                 continue;
+            const double shown = smooth(clampTo((away - Nearest) / 160, 0, 1))
+                               * smooth(clampTo((Farthest - away) / 320, 0, 1));
             const double size = 0.55 + hash(ix + 40, iz + 70) * 0.6;
             const double spin = hash(ix + 13, iz + 31) * M_PI;
             Mesh shape;
@@ -164,7 +169,7 @@ void WorldLayer::buildLandmarks() {
             // for distance, on top of their size shrinking.
             const double air = 0.22 + 0.5 * smooth(clampTo((away - Nearest) / (Farthest - Nearest), 0, 1));
             mesh(shape, {x, 0, z}, {spin, 0, 0}, {blend(body, m_view->atmosphere(), air), blend(edge, m_view->atmosphere(), air)},
-                 {.radius = 130 * size, .far = Farthest});
+                 {.radius = 130 * size, .opacity = shown, .far = Farthest});
         }
 }
 
@@ -191,22 +196,31 @@ void WorldLayer::buildScenery() {
 
     const View::Act &act = m_view->style();
     const double time = m_view->flight->time, beat = m_view->look.beat, level = m_view->look.level;
-    for (const Obstacle &o : World::scenery(m_view->camera.x, m_view->camera.z, 4, time)) {
-        if (std::hypot(o.x - m_view->camera.x, o.z - m_view->camera.z) > View::Far)
+    // The scenery thins out with distance, like the floor's detail: each
+    // piece has its own distance, between Sparse and Far, at which it
+    // starts to fade in. Far off only a few stand; closer, all of them.
+    constexpr double Sparse = 100, Fade = 40;
+    const int reach = int(std::ceil(View::Far / World::Cell)) + 1;
+    for (const Obstacle &o : World::scenery(m_view->camera.x, m_view->camera.z, reach, time)) {
+        const double away = std::hypot(o.x - m_view->camera.x, o.z - m_view->camera.z);
+        const double chance = hash(o.cellX * 1.7 + 31, o.cellZ * 2.3 + 77);
+        const double appear = mix(Sparse, View::Far, chance * chance);
+        if (away > appear)
             continue;
+        const double shown = smooth(clampTo((appear - away) / Fade, 0, 1));
         if (o.kind == Obstacle::Pyramid)
             // Wireframes are drawn in the bright highlights: the sky's dark middle
             // colour that shades solid faces vanishes against the ground.
             mesh(pyramid, {o.x, o.y, o.z}, {0, 0, 0},
                  act.wirePyramids ? std::vector<Vec>{m_view->palette.accent, m_view->palette.crystal} : std::vector<Vec>{m_view->palette.mid, m_view->palette.crystal},
-                 {.wire = act.wirePyramids, .radius = 9});
+                 {.wire = act.wirePyramids, .radius = 9, .opacity = shown});
         else
             // The crystals swell and brighten softly with the music's kicks,
             // and breathe a little with its loudness. Every change is gentle
             // and gradual: a glow, never a flash.
             mesh(crystal, {o.x, o.y, o.z}, {o.spin, 0, 0},
                  {blend(m_view->palette.crystal, {255, 255, 255}, 0.2 * beat), blend(m_view->palette.accent, {255, 255, 255}, 0.12 * beat)},
-                 {.wire = act.wireCrystals, .radius = 6, .scale = 1 + 0.03 * level + 0.14 * beat, .lift = 0.35 * beat});
+                 {.wire = act.wireCrystals, .radius = 6, .opacity = shown, .scale = 1 + 0.03 * level + 0.14 * beat, .lift = 0.35 * beat});
     }
     // Rings already flown through are gone; the rest stand along the course
     // in both directions.
@@ -217,12 +231,15 @@ void WorldLayer::buildScenery() {
         if (!m_view->flight->game.collected.count(i) && std::hypot(r.x - m_view->camera.x, r.z - m_view->camera.z) < View::Far)
             ring(r, act.spinRings ? time * 0.15 : 0);
     }
-    const Obstacle ball = World::ball(m_view->flight->ship.z, time);
     std::vector<Vec> sphereColors = ballColors;
     if (m_view->valley > 0)
         for (size_t i = 0; i < sphereColors.size(); ++i)
             sphereColors[i] = blend(sphereColors[i], hex(i % 2 ? "#64547e" : "#333456"), m_view->valley);
-    mesh(sphere, {ball.x, ball.y, ball.z}, {ball.spin, 0, 0.25}, sphereColors, {.wire = act.wireBall, .radius = 5});
+    // A ball belongs to its fixed world cell, not to the ship's current
+    // segment. Crossing a segment boundary must not replace a visible ball.
+    for (const Obstacle &ball : World::balls(m_view->camera.z, View::Far, time))
+        mesh(sphere, {ball.x, ball.y, ball.z}, {ball.spin, 0, 0.25}, sphereColors,
+             {.wire = act.wireBall, .radius = 5});
     if (act.floater)
         mesh(crystal, {-12, 8 + std::sin(time), m_view->flight->ship.z + 45}, {time * 0.7, time * 0.3, 0}, {m_view->palette.crystal},
              {.wire = true, .radius = 6});

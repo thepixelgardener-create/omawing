@@ -134,6 +134,10 @@ Neon Mirage adds a forested mountain valley, a dark reflective grid, mirrored
 rings and scenery, and pink lights along the flight corridor. Its camera opens
 up more sky while keeping the ship low in the frame.
 
+Scenery is considered out to 220 units and fades in at staggered distances,
+keeping the far field sparse. Rings and beach balls have a 60-unit fade at
+the outer edge; neighboring balls stay in place as you cross course segments.
+
 ## What it follows
 
 - **Any window shape.** The canvas is at least 860 by 540 units and takes the

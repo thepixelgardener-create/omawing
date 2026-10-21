@@ -461,11 +461,12 @@ void Overlay::paintRadar(QPainter &p) {
             p.drawConvexPolygon(diamond, 4);
         }
     }
-    const Obstacle ball = World::ball(ship.z, time);
-    const QPointF ballAt = place(ball.x, ball.z);
-    if (inside(ballAt, 3)) {
-        p.setBrush(withAlpha(QColor("#db4c70"), lit(ballAt)));
-        p.drawEllipse(ballAt, 2.4, 2.4);
+    for (const Obstacle &ball : World::balls(ship.z, Range, time)) {
+        const QPointF ballAt = place(ball.x, ball.z);
+        if (inside(ballAt, 3)) {
+            p.setBrush(withAlpha(QColor("#db4c70"), lit(ballAt)));
+            p.drawEllipse(ballAt, 2.4, 2.4);
+        }
     }
 
     // Rings stand across the course; from above they are bars. The nearest

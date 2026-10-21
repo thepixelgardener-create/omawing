@@ -37,6 +37,15 @@ Obstacle ball(double z, double time) {
     return {Obstacle::Ball, 14, 4.3 + std::abs(std::sin(time * 1.25)) * 3.5, std::floor((z + 8) / 110) * 110 + 36,
             time * 0.5};
 }
+
+std::vector<Obstacle> balls(double z, double reach, double time) {
+    std::vector<Obstacle> list;
+    const int first = int(std::ceil((z - reach - 36) / 110));
+    const int last = int(std::floor((z + reach - 36) / 110));
+    for (int cell = first; cell <= last; ++cell)
+        list.push_back(ball(cell * 110.0, time));
+    return list;
+}
 }
 
 int Flight::act() const { return int(std::floor(time / ActLength)) % Acts; }
