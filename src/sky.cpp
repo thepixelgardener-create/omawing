@@ -138,21 +138,21 @@ void Sky::paint(QPainter &p, const View &view) {
     // only the light squares are drawn as polygons over it.
     if (split < view.height) {
         QLinearGradient ground(0, split, 0, view.height);
-        ground.setColorAt(0, rgb(view.palette.floor));
+        ground.setColorAt(0, rgb(view.atmosphere()));
         for (double d = View::Far; d >= 3; d *= 0.8) {
             const Vec c = view.toCamera({view.camera.x + std::sin(view.camera.yaw) * d, 0, view.camera.z + std::cos(view.camera.yaw) * d});
             if (c[2] <= View::Near)
                 continue;
             const double y = view.project(c).y();
             if (y > split && y < view.height)
-                ground.setColorAt((y - split) / (view.height - split), rgb(blend(view.palette.tileB, view.palette.floor, view.fog(c[2]))));
+                ground.setColorAt((y - split) / (view.height - split), rgb(blend(view.palette.tileB, view.atmosphere(), view.fog(c[2]))));
         }
         ground.setColorAt(1, rgb(view.palette.tileB));
         p.fillRect(QRectF(0, split, W, view.height - split), ground);
     }
 }
 
-// Clouds and three ranges of hills, each sliding at its own speed: the
+// Clouds and four ranges of hills, each sliding at its own speed: the
 // nearer a layer, the further it moves when the camera turns or drifts
 // sideways. Each layer wraps once per full turn.
 void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
@@ -208,28 +208,32 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
     }
 
     struct Ridge {
-        double turn, slide, sink, spacing, low, high;
+        double turn, slide, sink, spacing, low, high, haze;
         bool rounded;
     };
     static const Ridge ridges[] = {
-        {1.0, 0.4, 0.15, 22, 26, 86, false},   // Far mountains, nearly at infinity.
-        {1.8, 2.2, 0.7, 34, 14, 52, false},
-        {3.0, 6, 1.8, 54, 6, 28, true},        // Rolling hills close by.
+        {1.0, 0.18, 0.08, 38, 48, 115, 0.86, false}, // Distant pale-blue peaks.
+        {1.15, 0.75, 0.3, 55, 32, 82, 0.65, false},
+        {1.35, 2.1, 0.8, 72, 16, 52, 0.36, false},
+        {1.65, 4.2, 1.4, 94, 8, 29, 0.10, true},   // Dark, broad foothills.
     };
-    const Vec colors[] = {blend(blend(view.palette.floor, view.palette.mid, 0.5), view.palette.horizon, 0.45),
-                          blend(view.palette.floor, view.palette.mid, 0.5), blend(view.palette.floor, view.palette.tileB, 0.5)};
-    for (int layer = 0; layer < 3; ++layer) {
+    const Vec rock = blend(view.palette.floor, view.palette.mid, 0.3);
+    const Vec air = view.atmosphere();
+    for (int layer = 0; layer < 4; ++layer) {
         const Ridge &r = ridges[layer];
         const double period = 2 * M_PI * View::Focal * r.turn;
         const int count = std::max(8, int(std::lround(period / r.spacing)));
         const double step = period / count;
         const double scroll = view.camera.yaw * View::Focal * r.turn + view.camera.drift * r.slide;
-        // Flying higher lets the nearer hills sink below the horizon.
+        // Flying higher reveals the valleys. Near hills move more quickly
+        // across the view, while the remote peaks barely shift sideways.
         const double base = horizon + std::max(0.0, view.camera.y - 2) * r.sink;
         const int first = int(std::floor(scroll / step)) - 1, points = int(std::ceil(W / step)) + 3;
         auto peak = [&](int g) {
             const int index = ((g % count) + count) % count;
-            return QPointF(g * step - scroll, base - mix(r.low, r.high, hash(index, 60 + layer)));
+            // Broad shoulders break up the repeated triangular silhouette.
+            const double shape = 0.65 * hash(index, 60 + layer) + 0.35 * hash(index / 3, 80 + layer);
+            return QPointF(g * step - scroll, base - mix(r.low, r.high, shape));
         };
         QPainterPath path(QPointF(first * step - scroll, base + 40));
         path.lineTo(peak(first));
@@ -244,6 +248,11 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
         }
         path.lineTo((first + points) * step - scroll, base + 40);
         path.closeSubpath();
-        p.fillPath(path, rgb(colors[layer]));
+        // Haze pools in each valley, separating overlapping silhouettes.
+        // Far ridges lose contrast and saturation, not just opacity.
+        QLinearGradient mist(0, base - r.high, 0, base);
+        mist.setColorAt(0, rgb(blend(rock, air, r.haze)));
+        mist.setColorAt(1, rgb(blend(rock, air, std::min(0.97, r.haze + 0.18))));
+        p.fillPath(path, mist);
     }
 }

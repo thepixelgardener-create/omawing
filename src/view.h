@@ -104,6 +104,8 @@ public:
     QPolygonF polygonOf(const std::vector<Vec> &points) const;
     // 0 up close, rising to 1 at Far.
     double fog(double depth) const;
+    // Shared atmospheric light keeps scenery and the ground joined at infinity.
+    Vec atmosphere() const;
 
 private:
     Palette paletteOf(int act) const;

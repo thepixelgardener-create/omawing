@@ -76,6 +76,13 @@ through yet as bars, with the next one ahead in a brighter, thicker line.
 Scans ripple out from the ship in rings, lighting each blip as they pass,
 and the rim and the crystals flash on the music's beat.
 
+## Landscape depth
+
+Four mountain ranges overlap from dark foothills to pale blue distant peaks.
+Each moves at a different speed as the camera travels, with soft haze in the
+valleys. Atmospheric perspective shifts distant scenery and the checkerboard
+toward the same blue haze, reducing contrast while keeping the nearby ship crisp.
+
 ## Scenes
 
 Copper Coast · Vector Garden · Star Run · Omarchy · Neon Mirage · Amber Terminal ·
