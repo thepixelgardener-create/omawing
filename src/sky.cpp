@@ -138,17 +138,42 @@ void Sky::paint(QPainter &p, const View &view) {
     // only the light squares are drawn as polygons over it.
     if (split < view.height) {
         QLinearGradient ground(0, split, 0, view.height);
-        ground.setColorAt(0, rgb(view.atmosphere()));
+        ground.setColorAt(0, rgb(view.distance()));
         for (double d = View::Far; d >= 3; d *= 0.8) {
             const Vec c = view.toCamera({view.camera.x + std::sin(view.camera.yaw) * d, 0, view.camera.z + std::cos(view.camera.yaw) * d});
             if (c[2] <= View::Near)
                 continue;
             const double y = view.project(c).y();
             if (y > split && y < view.height)
-                ground.setColorAt((y - split) / (view.height - split), rgb(blend(view.palette.tileB, view.atmosphere(), view.fog(c[2]))));
+                ground.setColorAt((y - split) / (view.height - split), rgb(blend(view.palette.tileB, view.distance(), view.fog(c[2]))));
         }
         ground.setColorAt(1, rgb(view.palette.tileB));
         p.fillRect(QRectF(0, split, W, view.height - split), ground);
+    }
+
+    // The far ground mirrors the glow of the sky, strongest just under the
+    // horizon and fading towards the ship; most on Neon Mirage's mirror floor.
+    if (split < view.height) {
+        const QColor glowColor = rgb(blend(view.palette.horizon, view.atmosphere(), 0.35));
+        const double reach = 70 + 40 * view.valley, strength = 0.14 + 0.3 * view.valley;
+        QLinearGradient reflection(0, split, 0, split + reach);
+        reflection.setColorAt(0, withAlpha(glowColor, strength));
+        reflection.setColorAt(0.35, withAlpha(glowColor, strength * 0.45));
+        reflection.setColorAt(1, withAlpha(glowColor, 0));
+        p.fillRect(QRectF(0, split, W, reach), reflection);
+    }
+
+    // A thin line of mist lies on the horizon, brightest where the hills
+    // meet the ground and gone a few units above and below.
+    if (horizon > -20 && horizon < view.height + 20) {
+        const QColor mist = rgb(blend(view.atmosphere(), hex("#fff0fa"), 0.22));
+        QLinearGradient line(0, horizon - 14, 0, horizon + 12);
+        line.setColorAt(0, withAlpha(mist, 0));
+        line.setColorAt(0.48, withAlpha(mist, 0.55));
+        line.setColorAt(0.56, withAlpha(mist, 0.7));
+        line.setColorAt(0.7, withAlpha(mist, 0.25));
+        line.setColorAt(1, withAlpha(mist, 0));
+        p.fillRect(QRectF(0, horizon - 14, W, 26), line);
     }
 }
 
@@ -267,9 +292,13 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
         }
         path.lineTo((first + points) * detailStep - scroll, base + 40);
         path.closeSubpath();
-        QLinearGradient mist(0, base - r.high - 100 * view.valley, 0, base);
+        // Each range keeps its colour down to its feet and only melts into
+        // the air in the last few units, where the horizon mist lies.
+        const double top = base - r.high - 100 * view.valley, feet = 26.0 / std::max(1.0, base - top);
+        QLinearGradient mist(0, top, 0, base);
         mist.setColorAt(0, rgb(blend(rock, air, r.haze * (1 - view.valley * 0.35))));
-        mist.setColorAt(1, rgb(blend(rock, air, std::min(0.97, r.haze + 0.18))));
+        mist.setColorAt(std::max(0.0, 1 - feet), rgb(blend(rock, air, r.haze * (1 - view.valley * 0.2))));
+        mist.setColorAt(1, rgb(blend(rock, air, std::min(0.85, r.haze + 0.3))));
         p.fillPath(path, mist);
 
         if (view.valley > 0 && layer >= 2) {

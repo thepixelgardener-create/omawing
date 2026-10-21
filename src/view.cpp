@@ -162,6 +162,8 @@ QPolygonF View::polygonOf(const std::vector<Vec> &points) const {
 
 double View::fog(double depth) const { return smooth(clampTo((depth - 35) / (Far - 35), 0, 1)); }
 
+Vec View::distance() const { return blend(palette.tileB, atmosphere(), 0.42); }
+
 Vec View::atmosphere() const {
     // Keep a trace of each act's sky, but scattered blue light dominates
     // in the distance. This also blends smoothly during scene transitions.

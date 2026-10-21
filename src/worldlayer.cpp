@@ -82,8 +82,8 @@ void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, 
         const Vec &source = colors[i % colors.size()];
         const double brightness = options.emissive ? 1 : mix(0.5 + 0.5 * std::max(0.0, dot(n, light())), 1, options.lift);
         const double haze = options.ship || options.glow ? 0 : m_view->fog(depth);
-        const QColor fill = options.wire ? QColor() : rgb(blend(scaled(source, brightness), m_view->atmosphere(), haze));
-        const QColor stroke = options.wire ? rgb(blend(source, m_view->atmosphere(), haze))
+        const QColor fill = options.wire ? QColor() : rgb(blend(scaled(source, brightness), m_view->distance(), haze));
+        const QColor stroke = options.wire ? rgb(blend(source, m_view->distance(), haze))
                             : options.glow ? QColor()
                             : options.stroke.isValid() ? options.stroke : fill;
         face(points, fill, stroke, options.opacity, options.ship, options.glow);
@@ -113,7 +113,7 @@ void WorldLayer::ring(const Ring &r, double spin) {
         double depth = 0;
         for (const Vec &p : points)
             depth += p[2] / 4;
-        face(points, rgb(blend(i % 3 ? m_view->palette.accent : m_view->palette.crystal, m_view->atmosphere(), m_view->fog(depth))), QColor(),
+        face(points, rgb(blend(i % 3 ? m_view->palette.accent : m_view->palette.crystal, m_view->distance(), m_view->fog(depth))), QColor(),
              opacity, false);
     }
     if (!m_reflecting && m_view->valley > 0) {

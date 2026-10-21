@@ -55,7 +55,7 @@ void Ground::paint(QPainter &p, const View &view) {
     for (int i = 0; i < FogSteps; ++i) {
         const double haze = (i + 0.5) / FogSteps;
         p.setPen(Qt::NoPen);
-        p.setBrush(rgb(blend(view.palette.tileA, view.atmosphere(), haze)));
+        p.setBrush(rgb(blend(view.palette.tileA, view.distance(), haze)));
         for (const QPolygonF &polygon : tiles[i]) p.drawConvexPolygon(polygon);
     }
     const QPen linePen(rgb(blend(view.palette.accent, view.palette.tileA, 0.4)), 0.55);

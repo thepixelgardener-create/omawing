@@ -106,6 +106,10 @@ public:
     double fog(double depth) const;
     // Shared atmospheric light keeps scenery and the ground joined at infinity.
     Vec atmosphere() const;
+    // What the ground and the things on it fade to far away: the floor,
+    // dimmed and tinted by the sky, so the distance stays dark and only a
+    // thin line of mist lights the horizon.
+    Vec distance() const;
     double valley = 0; // Neon Mirage treatment, blended at scene boundaries.
 
 private:
