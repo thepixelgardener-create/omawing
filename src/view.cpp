@@ -166,22 +166,33 @@ double View::fadeIn(double depth) const { return smooth(clampTo((Far - depth) / 
 
 // A ground tile of size Tile at depth d, seen from height h, is about
 // Focal * h * Tile / d^2 canvas units tall on screen.
+// Detail falls off steadily with distance: full contrast while a tile is
+// at least FullSize tall, none once it is down to GoneSize, and a smooth
+// slope between them on a logarithmic scale, so there is no edge.
+namespace { constexpr double FullSize = 24, GoneSize = 1.5; }
+
 double View::contrast(double depth) const {
     const double h = std::max(1.0, camera.y), d = std::max(1.0, depth);
     const double size = Focal * h * Tile / (d * d);
-    return smooth(clampTo((size - 0.45) / (2.4 - 0.45), 0, 1));
+    return smooth(clampTo(std::log(size / GoneSize) / std::log(FullSize / GoneSize), 0, 1));
 }
 
-double View::floorReach() const { return std::min(520.0, std::sqrt(Focal * std::max(1.0, camera.y) * Tile / 0.45)); }
+double View::floorReach() const { return std::min(700.0, std::sqrt(Focal * std::max(1.0, camera.y) * Tile / GoneSize)); }
+
+// The floor brightens a little towards the horizon, more than objects do:
+// the plane's own sense of distance, without any mist.
+static double floorAir(const View &view, double depth) {
+    return std::max(view.fog(depth), 0.42 * smooth(clampTo((depth - 60) / 2400, 0, 1)));
+}
 
 Vec View::floorLight(double depth) const {
     const Vec average = blend(palette.tileA, palette.tileB, 0.5);
-    return blend(blend(average, palette.tileA, contrast(depth)), atmosphere(), fog(depth));
+    return blend(blend(average, palette.tileA, contrast(depth)), atmosphere(), floorAir(*this, depth));
 }
 
 Vec View::floorDark(double depth) const {
     const Vec average = blend(palette.tileA, palette.tileB, 0.5);
-    return blend(blend(average, palette.tileB, contrast(depth)), atmosphere(), fog(depth));
+    return blend(blend(average, palette.tileB, contrast(depth)), atmosphere(), floorAir(*this, depth));
 }
 
 Vec View::atmosphere() const {

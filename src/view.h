@@ -118,7 +118,7 @@ public:
     Vec floorDark(double depth) const;
     // How far the checkerboard reaches: where its tiles stop showing.
     double floorReach() const;
-    static constexpr double Tile = 6;
+    static constexpr double Tile = 12;
     // Shared atmospheric light keeps scenery and the ground joined at infinity.
     Vec atmosphere() const;
     double valley = 0; // Neon Mirage treatment, blended at scene boundaries.
