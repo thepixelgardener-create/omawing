@@ -1,6 +1,6 @@
 # Maintainer: thepixelgardener-create <309403284+thepixelgardener-create@users.noreply.github.com>
 pkgname=omawing
-pkgver=0.3.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc='Amiga-style vector flight demo and arcade game for Omarchy'
 arch=('x86_64' 'aarch64')
@@ -9,7 +9,7 @@ url='https://github.com/thepixelgardener-create/omawing'
 license=('MIT' 'LicenseRef-omawing-soundtrack')
 depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-multimedia' 'gcc-libs' 'glibc')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('87799d15692c4e5b2bb7073082a9af1d3ced9a3df00db655735a102293b2fcc7')
+sha256sums=('a7874f81462eaadbfc9e0ff45eed77b8668893f87d0733edb5d10fb7c328b30f')
 
 build() {
   cd "$pkgname-$pkgver"
