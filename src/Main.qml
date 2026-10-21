@@ -289,45 +289,91 @@ ApplicationWindow {
                         width: helpScroll.availableWidth
                         spacing: 12
                         Label { text: qsTr("Keyboard shortcuts"); font.pixelSize: 20; font.bold: true }
-                        GridLayout {
-                            Layout.fillWidth: true
-                            columns: 2
-                            columnSpacing: 24
-                            rowSpacing: 8
-                            Repeater {
-                                model: [
+                        // Grouped like the game: flying, sound, what shows on
+                        // screen, and the rest. Keys are keycaps, like the
+                        // switch keys in the corner of the picture; the key
+                        // column is as wide as the widest key in the language.
+                        FontMetrics { id: keyMetrics; font.family: "monospace"; font.bold: true }
+                        readonly property real keyColumn: {
+                            let widest = 0
+                            for (const group of shortcutGroups)
+                                for (const key of group.keys)
+                                    widest = Math.max(widest, keyMetrics.advanceWidth(key[0]))
+                            return Math.min(widest + 16, helpContent.width * 0.45)
+                        }
+                        readonly property var shortcutGroups: [
+                                {title: qsTr("Flying"), keys: [
                                     ["A D  ← →", qsTr("Steer")],
                                     ["W S  ↑ ↓", qsTr("Climb or descend")],
                                     ["Shift", qsTr("Boost")],
                                     [qsTr("Left button"), qsTr("Boost")],
                                     [qsTr("Right drag"), qsTr("Steer with the mouse")],
-                                    ["Space", qsTr("Pause or play")],
-                                    ["T", qsTr("Take control or watch the demo")],
-                                    ["N", qsTr("Next scene")],
+                                    ["T", qsTr("Take control or watch the demo")]]},
+                                {title: qsTr("Sound"), keys: [
                                     ["M", qsTr("Turn music on or off")],
                                     ["E", qsTr("Turn sound effects on or off")],
                                     ["V", qsTr("Music and effects volume")],
-                                    ["P", qsTr("Next track")],
-                                    ["B", qsTr("Banner")],
+                                    ["P", qsTr("Next track")]]},
+                                {title: qsTr("View"), keys: [
                                     ["U", qsTr("Show or hide the titles and score")],
                                     ["L", qsTr("Show or hide the toolbar")],
+                                    ["B", qsTr("Show or hide the banner")],
+                                    ["F", qsTr("Full screen on or off")],
+                                    ["N", qsTr("Next scene")]]},
+                                {title: qsTr("Game"), keys: [
+                                    ["Space", qsTr("Pause or play")],
                                     ["H", qsTr("High scores")],
                                     ["R", qsTr("Restart from the beginning")],
-                                    ["F", qsTr("Full screen on or off")],
                                     ["?", qsTr("Show or hide shortcuts")],
-                                    ["Q", qsTr("Quit")]
-                                ]
-                                delegate: RowLayout {
-                                    required property var modelData
-                                    Layout.columnSpan: 2
-                                    spacing: 24
-                                    Label {
-                                        Layout.preferredWidth: 110
-                                        text: modelData[0]
-                                        color: theme.accent
-                                        font.family: "monospace"
+                                    ["Q", qsTr("Quit")]]}
+                            ]
+                        Repeater {
+                            model: helpContent.shortcutGroups
+                            delegate: ColumnLayout {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                spacing: 8
+                                Label {
+                                    Layout.topMargin: 6
+                                    text: modelData.title
+                                    color: theme.accent
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    // Spaced out only in scripts whose letters stand
+                                    // alone; spacing would break up joined ones.
+                                    font.letterSpacing: /^[\u0000-\u024F\u0370-\u04FF\s]*$/.test(text) ? 2 : 0
+                                    font.capitalization: Font.AllUppercase
+                                }
+                                Repeater {
+                                    model: modelData.keys
+                                    delegate: RowLayout {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        spacing: 16
+                                        Item {
+                                            Layout.preferredWidth: helpContent.keyColumn
+                                            implicitHeight: keycap.height
+                                            Rectangle {
+                                                id: keycap
+                                                width: Math.min(keyLabel.implicitWidth + 14, helpContent.keyColumn)
+                                                height: keyLabel.height + 6
+                                                radius: Math.min(4, theme.radius + 2)
+                                                color: Qt.lighter(theme.accent, 1.15)
+                                                Label {
+                                                    id: keyLabel
+                                                    anchors.centerIn: parent
+                                                    width: Math.min(implicitWidth, helpContent.keyColumn - 14)
+                                                    wrapMode: Text.WordWrap
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    text: modelData[0]
+                                                    color: theme.accentForeground === "black" ? "#14122a" : "white"
+                                                    font.family: "monospace"
+                                                    font.bold: true
+                                                }
+                                            }
+                                        }
+                                        Label { text: modelData[1]; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                                     }
-                                    Label { text: modelData[1]; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                                 }
                             }
                         }

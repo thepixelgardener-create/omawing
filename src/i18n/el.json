@@ -58,5 +58,10 @@
   "MENU": "ΜΕΝΟΥ",
   "BANNER": "ΛΩΡΙΔΑ",
   "Show or hide the titles and score": "Εμφάνιση ή απόκρυψη τίτλων και σκορ",
-  "Show or hide the toolbar": "Εμφάνιση ή απόκρυψη της γραμμής εργαλείων"
+  "Show or hide the toolbar": "Εμφάνιση ή απόκρυψη της γραμμής εργαλείων",
+  "Flying": "Πτήση",
+  "Sound": "Ήχος",
+  "View": "Προβολή",
+  "Game": "Παιχνίδι",
+  "Show or hide the banner": "Εμφάνιση ή απόκρυψη της λωρίδας"
 }

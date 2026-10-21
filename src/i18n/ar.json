@@ -58,5 +58,10 @@
   "MENU": "القائمة",
   "BANNER": "الشريط",
   "Show or hide the titles and score": "إظهار العناوين والنتيجة أو إخفاؤها",
-  "Show or hide the toolbar": "إظهار شريط الأدوات أو إخفاؤه"
+  "Show or hide the toolbar": "إظهار شريط الأدوات أو إخفاؤه",
+  "Flying": "الطيران",
+  "Sound": "الصوت",
+  "View": "العرض",
+  "Game": "اللعبة",
+  "Show or hide the banner": "إظهار الشريط أو إخفاؤه"
 }

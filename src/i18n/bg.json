@@ -58,5 +58,10 @@
   "MENU": "МЕНЮ",
   "BANNER": "БАНЕР",
   "Show or hide the titles and score": "Показване или скриване на заглавията и резултата",
-  "Show or hide the toolbar": "Показване или скриване на лентата с инструменти"
+  "Show or hide the toolbar": "Показване или скриване на лентата с инструменти",
+  "Flying": "Полет",
+  "Sound": "Звук",
+  "View": "Изглед",
+  "Game": "Игра",
+  "Show or hide the banner": "Показване или скриване на банера"
 }

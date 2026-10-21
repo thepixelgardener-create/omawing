@@ -58,5 +58,10 @@
   "MENU": "메뉴",
   "BANNER": "배너",
   "Show or hide the titles and score": "제목과 점수 표시 또는 숨기기",
-  "Show or hide the toolbar": "도구 모음 표시 또는 숨기기"
+  "Show or hide the toolbar": "도구 모음 표시 또는 숨기기",
+  "Flying": "비행",
+  "Sound": "사운드",
+  "View": "보기",
+  "Game": "게임",
+  "Show or hide the banner": "배너 표시 또는 숨기기"
 }

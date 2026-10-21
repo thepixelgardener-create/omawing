@@ -58,5 +58,10 @@
   "MENU": "MENU",
   "BANNER": "BANNER",
   "Show or hide the titles and score": "Zobrazit nebo skrýt nadpisy a skóre",
-  "Show or hide the toolbar": "Zobrazit nebo skrýt panel nástrojů"
+  "Show or hide the toolbar": "Zobrazit nebo skrýt panel nástrojů",
+  "Flying": "Let",
+  "Sound": "Zvuk",
+  "View": "Zobrazení",
+  "Game": "Hra",
+  "Show or hide the banner": "Zobrazit nebo skrýt banner"
 }

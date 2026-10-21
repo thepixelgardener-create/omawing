@@ -58,5 +58,10 @@
   "MENU": "MENU",
   "BANNER": "BANER",
   "Show or hide the titles and score": "Pokaż lub ukryj tytuły i wynik",
-  "Show or hide the toolbar": "Pokaż lub ukryj pasek narzędzi"
+  "Show or hide the toolbar": "Pokaż lub ukryj pasek narzędzi",
+  "Flying": "Lot",
+  "Sound": "Dźwięk",
+  "View": "Widok",
+  "Game": "Gra",
+  "Show or hide the banner": "Pokaż lub ukryj baner"
 }

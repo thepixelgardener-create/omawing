@@ -58,5 +58,10 @@
   "MENU": "IZVĒLNE",
   "BANNER": "BANERIS",
   "Show or hide the titles and score": "Rādīt vai paslēpt virsrakstus un rezultātu",
-  "Show or hide the toolbar": "Rādīt vai paslēpt rīkjoslu"
+  "Show or hide the toolbar": "Rādīt vai paslēpt rīkjoslu",
+  "Flying": "Lidošana",
+  "Sound": "Skaņa",
+  "View": "Skats",
+  "Game": "Spēle",
+  "Show or hide the banner": "Rādīt vai paslēpt baneri"
 }

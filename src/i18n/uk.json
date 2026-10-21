@@ -58,5 +58,10 @@
   "MENU": "МЕНЮ",
   "BANNER": "БАНЕР",
   "Show or hide the titles and score": "Показати або сховати заголовки й рахунок",
-  "Show or hide the toolbar": "Показати або сховати панель інструментів"
+  "Show or hide the toolbar": "Показати або сховати панель інструментів",
+  "Flying": "Політ",
+  "Sound": "Звук",
+  "View": "Вигляд",
+  "Game": "Гра",
+  "Show or hide the banner": "Показати або сховати банер"
 }

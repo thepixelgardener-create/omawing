@@ -58,5 +58,10 @@
   "MENU": "IZBORNIK",
   "BANNER": "NATPIS",
   "Show or hide the titles and score": "Prikaži ili sakrij naslove i rezultat",
-  "Show or hide the toolbar": "Prikaži ili sakrij alatnu traku"
+  "Show or hide the toolbar": "Prikaži ili sakrij alatnu traku",
+  "Flying": "Letenje",
+  "Sound": "Zvuk",
+  "View": "Prikaz",
+  "Game": "Igra",
+  "Show or hide the banner": "Prikaži ili sakrij natpis"
 }

@@ -58,5 +58,10 @@
   "MENU": "MENU",
   "BANNER": "FAIXA",
   "Show or hide the titles and score": "Mostrar ou ocultar os títulos e a pontuação",
-  "Show or hide the toolbar": "Mostrar ou ocultar a barra de ferramentas"
+  "Show or hide the toolbar": "Mostrar ou ocultar a barra de ferramentas",
+  "Flying": "Voo",
+  "Sound": "Som",
+  "View": "Vista",
+  "Game": "Jogo",
+  "Show or hide the banner": "Mostrar ou ocultar a faixa"
 }

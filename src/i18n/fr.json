@@ -58,5 +58,10 @@
   "MENU": "MENU",
   "BANNER": "BANNIÈRE",
   "Show or hide the titles and score": "Afficher ou masquer les titres et le score",
-  "Show or hide the toolbar": "Afficher ou masquer la barre d'outils"
+  "Show or hide the toolbar": "Afficher ou masquer la barre d'outils",
+  "Flying": "Vol",
+  "Sound": "Son",
+  "View": "Affichage",
+  "Game": "Jeu",
+  "Show or hide the banner": "Afficher ou masquer la bannière"
 }

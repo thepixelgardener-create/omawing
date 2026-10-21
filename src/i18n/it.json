@@ -58,5 +58,10 @@
   "MENU": "MENU",
   "BANNER": "BANNER",
   "Show or hide the titles and score": "Mostra o nascondi titoli e punteggio",
-  "Show or hide the toolbar": "Mostra o nascondi la barra degli strumenti"
+  "Show or hide the toolbar": "Mostra o nascondi la barra degli strumenti",
+  "Flying": "Volo",
+  "Sound": "Audio",
+  "View": "Vista",
+  "Game": "Gioco",
+  "Show or hide the banner": "Mostra o nascondi il banner"
 }

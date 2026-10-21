@@ -58,5 +58,10 @@
   "MENU": "МЕНЮ",
   "BANNER": "БЕГУЩАЯ СТРОКА",
   "Show or hide the titles and score": "Показать или скрыть заголовки и счёт",
-  "Show or hide the toolbar": "Показать или скрыть панель инструментов"
+  "Show or hide the toolbar": "Показать или скрыть панель инструментов",
+  "Flying": "Полёт",
+  "Sound": "Звук",
+  "View": "Вид",
+  "Game": "Игра",
+  "Show or hide the banner": "Показать или скрыть бегущую строку"
 }

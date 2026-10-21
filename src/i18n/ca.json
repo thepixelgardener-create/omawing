@@ -58,5 +58,10 @@
   "MENU": "MENÚ",
   "BANNER": "BÀNER",
   "Show or hide the titles and score": "Mostra o amaga els títols i la puntuació",
-  "Show or hide the toolbar": "Mostra o amaga la barra d'eines"
+  "Show or hide the toolbar": "Mostra o amaga la barra d'eines",
+  "Flying": "Vol",
+  "Sound": "So",
+  "View": "Vista",
+  "Game": "Joc",
+  "Show or hide the banner": "Mostra o amaga el bàner"
 }

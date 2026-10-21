@@ -58,5 +58,10 @@
   "MENU": "MENU",
   "BANNER": "BANNER",
   "Show or hide the titles and score": "Vis eller skjul titler og point",
-  "Show or hide the toolbar": "Vis eller skjul værktøjslinjen"
+  "Show or hide the toolbar": "Vis eller skjul værktøjslinjen",
+  "Flying": "Flyvning",
+  "Sound": "Lyd",
+  "View": "Visning",
+  "Game": "Spil",
+  "Show or hide the banner": "Vis eller skjul banneret"
 }

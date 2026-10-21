@@ -58,5 +58,10 @@
   "MENU": "VALMYND",
   "BANNER": "BORÐI",
   "Show or hide the titles and score": "Sýna eða fela titla og stig",
-  "Show or hide the toolbar": "Sýna eða fela tækjastikuna"
+  "Show or hide the toolbar": "Sýna eða fela tækjastikuna",
+  "Flying": "Flug",
+  "Sound": "Hljóð",
+  "View": "Útlit",
+  "Game": "Leikur",
+  "Show or hide the banner": "Sýna eða fela borðann"
 }

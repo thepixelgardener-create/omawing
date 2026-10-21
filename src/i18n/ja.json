@@ -58,5 +58,10 @@
   "MENU": "メニュー",
   "BANNER": "バナー",
   "Show or hide the titles and score": "タイトルとスコアの表示/非表示",
-  "Show or hide the toolbar": "ツールバーの表示/非表示"
+  "Show or hide the toolbar": "ツールバーの表示/非表示",
+  "Flying": "飛行",
+  "Sound": "サウンド",
+  "View": "表示",
+  "Game": "ゲーム",
+  "Show or hide the banner": "バナーの表示/非表示"
 }

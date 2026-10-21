@@ -58,5 +58,10 @@
   "MENU": "VALIKKO",
   "BANNER": "BANNERI",
   "Show or hide the titles and score": "Näytä tai piilota otsikot ja pisteet",
-  "Show or hide the toolbar": "Näytä tai piilota työkalurivi"
+  "Show or hide the toolbar": "Näytä tai piilota työkalurivi",
+  "Flying": "Lentäminen",
+  "Sound": "Ääni",
+  "View": "Näkymä",
+  "Game": "Peli",
+  "Show or hide the banner": "Näytä tai piilota banneri"
 }

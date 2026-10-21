@@ -58,5 +58,10 @@
   "MENU": "MENYU",
   "BANNER": "BANNER",
   "Show or hide the titles and score": "Sarlavhalar va hisobni ko‘rsatish yoki yashirish",
-  "Show or hide the toolbar": "Asboblar panelini ko‘rsatish yoki yashirish"
+  "Show or hide the toolbar": "Asboblar panelini ko‘rsatish yoki yashirish",
+  "Flying": "Parvoz",
+  "Sound": "Ovoz",
+  "View": "Ko‘rinish",
+  "Game": "O‘yin",
+  "Show or hide the banner": "Bannerni ko‘rsatish yoki yashirish"
 }

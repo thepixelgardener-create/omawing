@@ -58,5 +58,10 @@
   "MENU": "選單",
   "BANNER": "橫幅",
   "Show or hide the titles and score": "顯示或隱藏標題和分數",
-  "Show or hide the toolbar": "顯示或隱藏工具列"
+  "Show or hide the toolbar": "顯示或隱藏工具列",
+  "Flying": "飛行",
+  "Sound": "聲音",
+  "View": "檢視",
+  "Game": "遊戲",
+  "Show or hide the banner": "顯示或隱藏橫幅"
 }

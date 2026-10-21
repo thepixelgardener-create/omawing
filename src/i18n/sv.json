@@ -58,5 +58,10 @@
   "MENU": "MENY",
   "BANNER": "BANDEROLL",
   "Show or hide the titles and score": "Visa eller dölj rubriker och poäng",
-  "Show or hide the toolbar": "Visa eller dölj verktygsfältet"
+  "Show or hide the toolbar": "Visa eller dölj verktygsfältet",
+  "Flying": "Flygning",
+  "Sound": "Ljud",
+  "View": "Visning",
+  "Game": "Spel",
+  "Show or hide the banner": "Visa eller dölj banderollen"
 }
