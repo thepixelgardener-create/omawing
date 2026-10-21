@@ -267,9 +267,9 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
             const double shape = clampTo(0.78 * broad + 0.17 * shoulder + 0.05 * detail, 0, 1);
             return mix(r.low, r.high, shape) + r.roughness * noise(x, 110, 130, 0);
         };
-        // Two-pixel world samples preserve the small rocky/wooded edge
-        // without adding individual trees or expensive scenery meshes.
-        const int samples = int(std::ceil(period / 2));
+        // Two-unit samples keep the small rocky, wooded edges of the near
+        // ranges; the far ones, softened by haze, need only half as many.
+        const int samples = int(std::ceil(period / (layer < 2 ? 4 : 2)));
         const double detailStep = period / samples;
         static std::array<std::vector<double>, 4> profiles;
         auto &profile = profiles[layer];
@@ -317,25 +317,30 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
             p.fillPath(forest, withAlpha(rgb(blend(rock, air, r.haze * 0.65)), view.valley));
         }
 
-        // A few quiet faces suggest volume in the remote peaks. Clip them
-        // to their own range; the nearer ranges naturally cover their feet.
+        // A few quiet faces suggest volume in the remote peaks. Each corner
+        // is kept just under the range's outline, so a face never shows
+        // against the sky; clipping to the outline instead costs the GPU a
+        // stencil pass over the whole range every frame.
         if (layer < 2) {
-            p.save();
-            p.setClipPath(path, Qt::IntersectClip);
+            auto outline = [&](double x) {
+                const double u = x / detailStep;
+                const int i = int(std::floor(u));
+                auto at = [&](int k) { return valleyHeight(k * detailStep, profile[((k % samples) + samples) % samples]); };
+                return base - mix(at(i), at(i + 1), u - i);
+            };
+            auto inside = [&](double x, double y) { return QPointF(x - scroll, std::max(y, outline(x) + 0.8)); };
             const int start = int(std::floor(scroll / step)) - 1;
             for (int j = start; j < start + int(std::ceil(W / step)) + 3; ++j) {
                 const double x = j * step, h = valleyHeight(x, height(x));
                 if (h < valleyHeight(x - step * 0.4, height(x - step * 0.4)) || h < valleyHeight(x + step * 0.4, height(x + step * 0.4))) continue;
-                const double px = x - scroll, py = base - h;
-                QPainterPath facet(QPointF(px, py));
-                facet.lineTo(px + step * 0.12, py + h * 0.45);
-                facet.lineTo(px + step * 0.52, base + 10);
-                facet.lineTo(px + step * 0.28, base + 10);
-                facet.lineTo(px + step * 0.04, py + h * 0.5);
-                facet.closeSubpath();
-                p.fillPath(facet, withAlpha(rgb(air), layer == 0 ? 0.16 : 0.10));
+                const double py = base - h;
+                const QPointF facet[] = {inside(x, py), inside(x + step * 0.12, py + h * 0.45),
+                                         inside(x + step * 0.52, base + 10), inside(x + step * 0.28, base + 10),
+                                         inside(x + step * 0.04, py + h * 0.5)};
+                p.setPen(Qt::NoPen);
+                p.setBrush(withAlpha(rgb(air), layer == 0 ? 0.16 : 0.10));
+                p.drawPolygon(facet, 5);
             }
-            p.restore();
         }
     }
 }
