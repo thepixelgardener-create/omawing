@@ -444,7 +444,7 @@ void Overlay::paintRadar(QPainter &p) {
     p.setPen(Qt::NoPen);
 
     const QColor pyramid = rgb(blend(v.palette.mid, {255, 255, 255}, 0.35));
-    const QColor crystal = rgb(blend(v.palette.crystal, {255, 255, 255}, 0.25 + 0.5 * v.look.beat));
+    const QColor crystal = rgb(blend(v.palette.crystal, {255, 255, 255}, 0.25 + 0.2 * v.look.beat));
     for (const Obstacle &o : World::scenery(ship.x, ship.z, 4, time)) {
         const QPointF at = place(o.x, o.z);
         if (!inside(at, 3))
@@ -503,7 +503,7 @@ void Overlay::paintRadar(QPainter &p) {
     p.drawPolygon(chevron, 4);
 
     p.setBrush(Qt::NoBrush);
-    p.setPen(QPen(withAlpha(rgb(v.palette.accent), 0.45 + 0.45 * v.look.beat), 1.2));
+    p.setPen(QPen(withAlpha(rgb(v.palette.accent), 0.45 + 0.2 * v.look.beat), 1.2));
     p.drawEllipse(centre, Radius, Radius);
     p.restore();
 }

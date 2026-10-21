@@ -158,12 +158,7 @@ void Backend::tick(double seconds) {
         if (cues & Flight::BoostStarted) m_audio.play(Audio::Boost);
         // The picture moves with the music: a kick makes the crystals swell.
         const BeatTracker::Pulse pulse = m_audio.pulse();
-        if (pulse.beat)
-            m_beat = 1;
-        m_beat *= std::exp(-dt * 5);
-        m_level += (pulse.level - m_level) * (1 - std::exp(-dt * 12));
-        m_look.beat = m_beat;
-        m_look.level = m_level;
+        updatePulse(dt, pulse.beat, pulse.level);
         // A wreck that has finished falling ends the run, and the autopilot
         // takes over again.
         if (m_flight.game.over())
@@ -178,6 +173,24 @@ void Backend::tick(double seconds) {
         m_elapsed = 0;
         emit fpsChanged();
     }
+}
+
+// The beat as the picture shows it: a swell, not a flash. Each kick sets a
+// target that the crystals rise to over about a tenth of a second and fall
+// from slowly, and kicks closer than MinBeatGap apart are let pass, so it
+// never pulses more than about twice a second, well under the three flashes
+// a second that photosensitivity guidelines warn about.
+void Backend::updatePulse(double dt, bool beat, double level) {
+    m_sinceBeat += dt;
+    if (beat && m_sinceBeat >= MinBeatGap) {
+        m_beatTarget = 1;
+        m_sinceBeat = 0;
+    }
+    m_beatTarget *= std::exp(-dt * 3);
+    m_beat += (m_beatTarget - m_beat) * (1 - std::exp(-dt * 22));
+    m_level += (level - m_level) * (1 - std::exp(-dt * 6));
+    m_look.beat = m_beat;
+    m_look.level = m_level;
 }
 
 void Backend::setPaused(bool paused) {

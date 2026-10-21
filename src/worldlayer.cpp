@@ -78,7 +78,7 @@ void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, 
         }
         depth /= indices.size();
         const Vec &source = colors[i % colors.size()];
-        const double brightness = options.emissive ? 1 : 0.5 + 0.5 * std::max(0.0, dot(n, light()));
+        const double brightness = options.emissive ? 1 : mix(0.5 + 0.5 * std::max(0.0, dot(n, light())), 1, options.lift);
         const QColor fill = options.wire ? QColor() : rgb(blend(scaled(source, brightness), m_view->palette.floor, m_view->fog(depth)));
         const QColor stroke = options.wire ? rgb(blend(source, m_view->palette.floor, m_view->fog(depth)))
                             : options.glow ? QColor()
@@ -142,11 +142,12 @@ void WorldLayer::buildScenery() {
                  act.wirePyramids ? std::vector<Vec>{m_view->palette.accent, m_view->palette.crystal} : std::vector<Vec>{m_view->palette.mid, m_view->palette.crystal},
                  {.wire = act.wirePyramids, .radius = 9});
         else
-            // The crystals swell and light up with the music's kicks, and
-            // breathe a little with its loudness.
+            // The crystals swell and brighten softly with the music's kicks,
+            // and breathe a little with its loudness. Every change is gentle
+            // and gradual: a glow, never a flash.
             mesh(crystal, {o.x, o.y, o.z}, {o.spin, 0, 0},
-                 {blend(m_view->palette.crystal, {255, 255, 255}, 0.45 * beat), blend(m_view->palette.accent, {255, 255, 255}, 0.3 * beat)},
-                 {.wire = act.wireCrystals, .emissive = beat > 0.35, .radius = 6, .scale = 1 + 0.05 * level + 0.24 * beat});
+                 {blend(m_view->palette.crystal, {255, 255, 255}, 0.2 * beat), blend(m_view->palette.accent, {255, 255, 255}, 0.12 * beat)},
+                 {.wire = act.wireCrystals, .radius = 6, .scale = 1 + 0.03 * level + 0.14 * beat, .lift = 0.35 * beat});
     }
     // Rings already flown through are gone; the rest stand along the course
     // in both directions.

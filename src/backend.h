@@ -29,6 +29,8 @@ class Backend : public QObject {
     Q_PROPERTY(ScoreBoard *scoreBoard READ scoreBoardObject CONSTANT)
 
 public:
+    // The shortest time between pulses the picture shows, in seconds.
+    static constexpr double MinBeatGap = 0.45;
     // Scores and preferences live in an INI file, by default
     // ~/.config/omawing/omawing.conf.
     explicit Backend(QObject *parent = nullptr, const QString &settingsFile = {});
@@ -63,6 +65,8 @@ public:
     Scene::Hud hud() const;
     Scene::Look look() const { return m_look; }
     void setTheme(const QHash<QString, QString> &colors, const QString &name);
+    // Turns the music's kicks into the gentle swell the picture shows.
+    void updatePulse(double dt, bool beat, double level);
 
     // Called every frame with the seconds since the last one.
     // With the display's refresh rate, steps snap to whole refreshes, so motion
@@ -118,7 +122,7 @@ private:
     int m_frames = 0, m_fps = 0;
     double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0;
     double m_musicVolume = 0.8, m_effectsVolume = 0.8;
-    double m_beat = 0, m_level = 0;   // The music's pulse, for the picture.
+    double m_beat = 0, m_beatTarget = 0, m_level = 0, m_sinceBeat = 10;   // The music's pulse, for the picture.
     double m_titles = 1;              // The titles fade in and out with the interface.
     QTimer m_saveVolume;
 };

@@ -8,9 +8,9 @@ scroller, and a three-track MP3 soundtrack with arcade sound effects. Nine
 scenes form a 216-second autopilot loop; press any flight key to take the controls and chase a high score.
 
 A small sun sits low between the hills inside rings of soft light, with a
-pale crescent moon and a small full one higher up, a flock of birds drifting
-across, and banks of cloud. Three mountain layers and three cloud layers
-move at different speeds as you turn.
+pale crescent moon and a small full one higher up, and a flock of birds
+drifting across. Three mountain layers and two cloud layers move at
+different speeds as you turn.
 The camera follows farther behind the ship and looks ahead toward the horizon.
 The wings flex on springs, sweep back under boost, and shake after impacts. Twin
 exhaust trails glow and fade with soft, transparent particles.
@@ -85,7 +85,11 @@ and the rim and the crystals flash on the music's beat.
 
 While music plays, Omawing listens to it: a copy of the decoded audio goes
 through a small beat tracker (the bass through a 120 Hz low-pass, compared
-with its recent average). On each kick the crystals swell and light up. With the music off, the
+with its recent average). On each kick the crystals swell and brighten softly. The pulse is shaped
+to be gentle: it rises over about a tenth of a second and fades slowly,
+never pulses more than about twice a second, and never flashes, keeping
+well clear of the three flashes a second that photosensitivity guidelines
+warn about. With the music off, the
 scenery is still.
 
 Every ring you fly through flashes and throws out a ring of glitter, and its

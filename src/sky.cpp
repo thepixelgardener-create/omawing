@@ -159,28 +159,19 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
     const double W = view.width, time = view.flight->time;
     const View::Act &act = view.style();
 
-    // Billowing banks of cloud, round on top and flat underneath, lit from
-    // the horizon; and thin streaks higher up. Each layer slides at its own
-    // speed with the camera and drifts slowly in the wind.
     struct Clouds {
-        double turn, slide, wind, low, high, size, opacity;
+        double turn, slide, wind, low, high, opacity;
         int count;
-        bool streaks;
     };
-    static const Clouds clouds[] = {
-        {1.3, 1.2, 3, 50, 110, 0.7, 0.42, 7, false},   // Small banks low over the far hills.
-        {2.2, 3.4, 6, 110, 210, 1.9, 0.34, 6, false},  // Big banks higher up, near.
-        {1.8, 2.4, 11, 200, 300, 1, 0.16, 7, true},    // Streaks.
-    };
-    for (int layer = 0; layer < 3; ++layer) {
+    static const Clouds clouds[] = {{1.4, 1.5, 5, 70, 130, 0.2, 9}, {2.4, 3.6, 13, 130, 240, 0.28, 8}};
+    for (int layer = 0; layer < 2; ++layer) {
         const Clouds &c = clouds[layer];
         const double period = 2 * M_PI * View::Focal * c.turn;
         const double scroll = view.camera.yaw * View::Focal * c.turn + view.camera.drift * c.slide + time * c.wind;
-        const QColor light = rgb(blend(view.palette.horizon, hex("#fff3e6"), 0.35 + layer * 0.1));
-        const QColor shade = rgb(blend(view.palette.mid, view.palette.horizon, 0.55));
-        p.setOpacity(c.opacity * (act.dimSun ? 0.5 : 1));
+        p.setOpacity(c.opacity * (act.dimSun ? 0.45 : 1));
+        const QColor color = rgb(blend(view.palette.horizon, hex("#fff3e0"), 0.25 + layer * 0.2));
         for (int i = 0; i < c.count; ++i) {
-            const double width = (90 + hash(i, layer + 30) * 160) * c.size;
+            const double width = 80 + hash(i, layer + 30) * 170, height = 6 + hash(i, layer + 40) * 8;
             const double y = horizon - mix(c.low, c.high, hash(i, layer + 50));
             double x = std::fmod((i + hash(i, layer + 20) * 0.6) / c.count * period - scroll, period);
             if (x < 0)
@@ -189,30 +180,11 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
                 if (at + width < 0 || at > W)
                     continue;
                 QPainterPath cloud;
+                cloud.addRoundedRect(QRectF(at, y, width, height), height / 2, height / 2);
+                cloud.addRoundedRect(QRectF(at + width * 0.18, y - height * 0.7, width * 0.42, height * 1.2), height * 0.6,
+                                     height * 0.6);
                 cloud.setFillRule(Qt::WindingFill);
-                double top = y;
-                if (c.streaks) {
-                    const double h = 2 + hash(i, layer + 40) * 3;
-                    cloud.addRoundedRect(QRectF(at, y, width, h), h / 2, h / 2);
-                    cloud.addRoundedRect(QRectF(at + width * 0.3, y + h * 1.8, width * 0.55, h * 0.8), h / 2, h / 2);
-                    top = y - h;
-                } else {
-                    // A row of puffs on a flat base; the middle ones tallest.
-                    const int puffs = 5 + int(hash(i, layer + 60) * 3);
-                    const double base = 10 * c.size;
-                    cloud.addRoundedRect(QRectF(at, y - base, width, base), base / 2, base / 2);
-                    for (int k = 0; k < puffs; ++k) {
-                        const double u = (k + 0.5) / puffs, swell = std::sin(u * M_PI);
-                        const double r = (8 + 16 * swell * (0.7 + 0.6 * hash(i * 7 + k, layer + 70))) * c.size;
-                        const QPointF centre(at + u * width, y - base * 0.6 - r * 0.55);
-                        cloud.addEllipse(centre, r, r);
-                        top = std::min(top, centre.y() - r);
-                    }
-                }
-                QLinearGradient tone(0, top, 0, y);
-                tone.setColorAt(0, light);
-                tone.setColorAt(1, shade);
-                p.fillPath(cloud, tone);
+                p.fillPath(cloud, color);
             }
         }
     }

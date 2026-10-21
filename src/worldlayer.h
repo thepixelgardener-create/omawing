@@ -26,7 +26,8 @@ private:
     struct MeshOptions {
         bool wire = false, emissive = false, ship = false, glow = false;
         QColor stroke;
-        double radius = 8, opacity = 1, scale = 1;
+        // lift brightens shading towards fully lit, 0 to 1, smoothly.
+        double radius = 8, opacity = 1, scale = 1, lift = 0;
     };
 
     void face(const std::vector<Vec> &points, const QColor &fill, const QColor &stroke, double opacity, bool ship,

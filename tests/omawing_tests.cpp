@@ -320,6 +320,30 @@ private slots:
         QVERIFY(count(Particle::Glitter) >= 60);
     }
 
+    void beatPulseIsGentleAndNeverFlashes()
+    {
+        QTemporaryDir dir;
+        Backend backend(nullptr, dir.filePath("omawing.conf"));
+        // Kicks four times a second, faster than any song here, for ten seconds.
+        const double dt = 1.0 / 60;
+        double previous = 0, biggestStep = 0;
+        int swells = 0;
+        bool rising = false;
+        for (int frame = 0; frame < 600; ++frame) {
+            backend.updatePulse(dt, frame % 15 == 0, 0.5);
+            const double beat = backend.look().beat;
+            biggestStep = std::max(biggestStep, std::abs(beat - previous));
+            if (beat > previous + 1e-6 && !rising) ++swells;
+            rising = beat > previous + 1e-6;
+            previous = beat;
+        }
+        // At most one swell per MinBeatGap: about two a second, never three.
+        QVERIFY2(swells <= int(10 / Backend::MinBeatGap) + 1, qPrintable(QString::number(swells)));
+        QVERIFY(swells >= 15);
+        // And it rises over several frames instead of jumping.
+        QVERIFY2(biggestStep < 0.35, qPrintable(QString::number(biggestStep)));
+    }
+
     void switchingThemeShowsItsScene()
     {
         QTemporaryDir dir;
