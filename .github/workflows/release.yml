@@ -28,7 +28,11 @@ jobs:
       - name: Install build dependencies
         run: pacman -Syu --noconfirm --needed git github-cli qt6-base qt6-declarative qt6-wayland qt6-multimedia
 
+      # The recipe lives on main: it holds the checksum of the tagged source,
+      # which can only be written in after the tag exists.
       - uses: actions/checkout@v5
+        with:
+          ref: main
 
       - name: Check the recipe builds this tag
         run: |

@@ -15,7 +15,7 @@
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     app.setApplicationName("omawing");
-    app.setApplicationVersion("0.3.0");
+    app.setApplicationVersion("0.4.0");
 
     // Matches the window to omawing.desktop, so the compositor (Wayland app_id)
     // and the launcher pick up the installed icon.
