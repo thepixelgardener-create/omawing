@@ -52,8 +52,11 @@
   "Music and effects volume": "இசை மற்றும் விளைவுகளின் ஒலியளவு",
   "The music files are missing.": "இசைக் கோப்புகள் இல்லை.",
   "Flying into the future": "எதிர்காலத்தை நோக்கிப் பறக்கிறோம்",
-  "Show or hide the titles and toolbar": "தலைப்புகளையும் கருவிப்பட்டியையும் காட்டு அல்லது மறை",
-  "Titles and toolbar hidden. Press U to show them.": "தலைப்புகளும் கருவிப்பட்டியும் மறைக்கப்பட்டுள்ளன. காட்ட U-ஐ அழுத்தவும்.",
   "Left button": "இடது பொத்தான்",
-  "Right drag": "வலது பொத்தானால் இழுக்கவும்"
+  "Right drag": "வலது பொத்தானால் இழுக்கவும்",
+  "TITLES": "தலைப்புகள்",
+  "MENU": "பட்டி",
+  "BANNER": "பதாகை",
+  "Show or hide the titles and score": "தலைப்புகளையும் மதிப்பெண்ணையும் காட்டு அல்லது மறை",
+  "Show or hide the toolbar": "கருவிப்பட்டியைக் காட்டு அல்லது மறை"
 }

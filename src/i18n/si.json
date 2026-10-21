@@ -52,8 +52,11 @@
   "Music and effects volume": "සංගීතයේ සහ ප්‍රයෝගවල ශබ්ද මට්ටම",
   "The music files are missing.": "සංගීත ගොනු නොමැත.",
   "Flying into the future": "අනාගතයට පියාසර කරමින්",
-  "Show or hide the titles and toolbar": "මාතෘකා සහ මෙවලම් තීරුව පෙන්වන්න හෝ සඟවන්න",
-  "Titles and toolbar hidden. Press U to show them.": "මාතෘකා සහ මෙවලම් තීරුව සඟවා ඇත. ඒවා පෙන්වීමට U ඔබන්න.",
   "Left button": "වම් බොත්තම",
-  "Right drag": "දකුණු බොත්තමෙන් අදින්න"
+  "Right drag": "දකුණු බොත්තමෙන් අදින්න",
+  "TITLES": "මාතෘකා",
+  "MENU": "මෙනුව",
+  "BANNER": "බැනරය",
+  "Show or hide the titles and score": "මාතෘකා සහ ලකුණු පෙන්වන්න හෝ සඟවන්න",
+  "Show or hide the toolbar": "මෙවලම් තීරුව පෙන්වන්න හෝ සඟවන්න"
 }

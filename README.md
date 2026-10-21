@@ -34,7 +34,8 @@ an SVG-in-the-browser demo; the renderer is a port of that code.
 | M | Turn music on or off |
 | E | Turn sound effects on or off |
 | V | Music and effects volume |
-| U | Show or hide the titles, score, and toolbar (the radar stays) |
+| U | Show or hide the titles and score (the radar stays) |
+| L | Show or hide the toolbar |
 | P | Next music track |
 | B | Show or hide the Omarchy slogan banner |
 | H | Open the local high-score board |
@@ -72,6 +73,15 @@ read from `src/audio`); the short effects are compiled into the executable.
 Qt's FFmpeg backend copies a compiled-in track to a temporary file to stream
 it and never removes the copy, so the music stays on disk. `bin/generate-effects`
 rebuilds the four original WAV cues without touching the soundtrack.
+
+## A clear view
+
+Three switches hide parts of the screen: **U** the titles and score at the
+top, **L** the toolbar at the bottom, and **B** the scrolling banner. Their
+keys show as lit or dim keycaps at the bottom right for a few seconds at
+startup, whenever one is pressed, and whenever the mouse moves, so the way
+back is always on screen when you need it. The radar, gauges, and status
+line stay.
 
 ## Radar
 

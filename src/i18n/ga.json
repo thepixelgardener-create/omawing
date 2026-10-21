@@ -52,8 +52,11 @@
   "Music and effects volume": "Airde an cheoil agus na maisíochtaí",
   "The music files are missing.": "Tá na comhaid cheoil ar iarraidh.",
   "Flying into the future": "Ag eitilt isteach sa todhchaí",
-  "Show or hide the titles and toolbar": "Taispeáin nó folaigh na teidil agus an barra uirlisí",
-  "Titles and toolbar hidden. Press U to show them.": "Tá na teidil agus an barra uirlisí i bhfolach. Brúigh U chun iad a thaispeáint.",
   "Left button": "Cnaipe clé",
-  "Right drag": "Tarraing leis an gcnaipe deas"
+  "Right drag": "Tarraing leis an gcnaipe deas",
+  "TITLES": "TEIDIL",
+  "MENU": "ROGHCHLÁR",
+  "BANNER": "MEIRGE",
+  "Show or hide the titles and score": "Taispeáin nó folaigh na teidil agus an scór",
+  "Show or hide the toolbar": "Taispeáin nó folaigh an barra uirlisí"
 }

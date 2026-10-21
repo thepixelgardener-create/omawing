@@ -52,8 +52,11 @@
   "Music and effects volume": "ระดับเสียงเพลงและเอฟเฟกต์",
   "The music files are missing.": "ไม่พบไฟล์เพลง",
   "Flying into the future": "บินสู่อนาคต",
-  "Show or hide the titles and toolbar": "แสดงหรือซ่อนชื่อและแถบเครื่องมือ",
-  "Titles and toolbar hidden. Press U to show them.": "ซ่อนชื่อและแถบเครื่องมือแล้ว กด U เพื่อแสดง",
   "Left button": "ปุ่มซ้าย",
-  "Right drag": "ลากด้วยปุ่มขวา"
+  "Right drag": "ลากด้วยปุ่มขวา",
+  "TITLES": "ชื่อ",
+  "MENU": "เมนู",
+  "BANNER": "แบนเนอร์",
+  "Show or hide the titles and score": "แสดงหรือซ่อนชื่อและคะแนน",
+  "Show or hide the toolbar": "แสดงหรือซ่อนแถบเครื่องมือ"
 }

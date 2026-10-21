@@ -52,8 +52,11 @@
   "Music and effects volume": "Volumul muzicii și al efectelor",
   "The music files are missing.": "Lipsesc fișierele muzicale.",
   "Flying into the future": "Zburăm spre viitor",
-  "Show or hide the titles and toolbar": "Afișează sau ascunde titlurile și bara de instrumente",
-  "Titles and toolbar hidden. Press U to show them.": "Titlurile și bara de instrumente sunt ascunse. Apăsați U pentru a le afișa.",
   "Left button": "Butonul stâng",
-  "Right drag": "Trageți cu butonul drept"
+  "Right drag": "Trageți cu butonul drept",
+  "TITLES": "TITLURI",
+  "MENU": "MENIU",
+  "BANNER": "BANNER",
+  "Show or hide the titles and score": "Afișează sau ascunde titlurile și scorul",
+  "Show or hide the toolbar": "Afișează sau ascunde bara de instrumente"
 }

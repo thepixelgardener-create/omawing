@@ -52,8 +52,11 @@
   "Music and effects volume": "Volym för musik och effekter",
   "The music files are missing.": "Musikfilerna saknas.",
   "Flying into the future": "Vi flyger in i framtiden",
-  "Show or hide the titles and toolbar": "Visa eller dölj rubriker och verktygsfält",
-  "Titles and toolbar hidden. Press U to show them.": "Rubriker och verktygsfält är dolda. Tryck på U för att visa dem.",
   "Left button": "Vänster knapp",
-  "Right drag": "Dra med höger knapp"
+  "Right drag": "Dra med höger knapp",
+  "TITLES": "RUBRIKER",
+  "MENU": "MENY",
+  "BANNER": "BANDEROLL",
+  "Show or hide the titles and score": "Visa eller dölj rubriker och poäng",
+  "Show or hide the toolbar": "Visa eller dölj verktygsfältet"
 }

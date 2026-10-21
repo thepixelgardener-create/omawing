@@ -52,8 +52,11 @@
   "Music and effects volume": "Сила на звука за музика и ефекти",
   "The music files are missing.": "Музикалните файлове липсват.",
   "Flying into the future": "Летим към бъдещето",
-  "Show or hide the titles and toolbar": "Показване или скриване на заглавията и лентата с инструменти",
-  "Titles and toolbar hidden. Press U to show them.": "Заглавията и лентата с инструменти са скрити. Натиснете U, за да ги покажете.",
   "Left button": "Ляв бутон",
-  "Right drag": "Плъзгане с десен бутон"
+  "Right drag": "Плъзгане с десен бутон",
+  "TITLES": "ЗАГЛАВИЯ",
+  "MENU": "МЕНЮ",
+  "BANNER": "БАНЕР",
+  "Show or hide the titles and score": "Показване или скриване на заглавията и резултата",
+  "Show or hide the toolbar": "Показване или скриване на лентата с инструменти"
 }

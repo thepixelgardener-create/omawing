@@ -352,6 +352,7 @@ void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
     drawEnd(p, W - 30, b + 453, hud.status);
 
     paintRadar(p);
+    paintSwitches(p, hud);
 
     // A big chrome message across the middle when the hull gives out.
     if (!hud.alert.isEmpty() && std::fmod(time, 0.6) < 0.42) {
@@ -505,6 +506,63 @@ void Overlay::paintRadar(QPainter &p) {
     p.setBrush(Qt::NoBrush);
     p.setPen(QPen(withAlpha(rgb(v.palette.accent), 0.45 + 0.2 * v.look.beat), 1.2));
     p.drawEllipse(centre, Radius, Radius);
+    p.restore();
+}
+
+// The three view switches as keycaps, bottom right above the status line:
+// U for the titles, L for the toolbar, B for the banner. A lit key is on, a
+// dim hollow one off. They fade in for a moment at startup, when one is
+// pressed, and when the pointer moves, so the way back is never a mystery.
+void Overlay::paintSwitches(QPainter &p, const SceneHud &hud) {
+    const SceneLook &look = m_view->look;
+    if (look.switches <= 0.01 || hud.titlesSwitch.isEmpty())
+        return;
+    struct Switch {
+        QString key, label;
+        bool on;
+    };
+    const Switch switches[] = {{"U", hud.titlesSwitch, look.titlesOn},
+                               {"L", hud.toolbarSwitch, look.toolbarOn},
+                               {"B", hud.bannerSwitch, look.banner}};
+    const double cap = 15, gap = 18, y = m_view->height - View::BaseHeight + 418;
+    const QFont keyFont = monoFont(10, 0, QFont::Bold);
+    const QColor accent = rgb(blend(m_view->palette.accent, {255, 255, 255}, 0.2)), dim("#8c7b98");
+    double x = m_view->width - 30;
+    p.save();
+    p.setOpacity(look.switches);
+    // A soft dark backing keeps them readable over any scenery.
+    double width = 0;
+    for (const Switch &s : switches)
+        width += QFontMetricsF(hudFont(9, 1.8, s.label)).horizontalAdvance(s.label) + 6 + cap + gap;
+    width -= gap;
+    p.setPen(Qt::NoPen);
+    p.setBrush(withAlpha("#0b0b1c", 0.6));
+    p.drawRoundedRect(QRectF(x - width - 8, y - 5, width + 16, cap + 10), 6, 6);
+    // Laid out from the right edge leftwards.
+    for (int i = 2; i >= 0; --i) {
+        const Switch &s = switches[i];
+        const QFont labelFont = hudFont(9, 1.8, s.label);
+        const double labelWidth = QFontMetricsF(labelFont).horizontalAdvance(s.label);
+        p.setFont(labelFont);
+        p.setPen(s.on ? QColor("#ffe2b3") : dim);
+        p.drawText(QPointF(x - labelWidth, y + cap / 2 + 3.5), s.label);
+        x -= labelWidth + 6 + cap;
+        const QRectF key(x, y, cap, cap);
+        if (s.on) {
+            p.setPen(Qt::NoPen);
+            p.setBrush(accent);
+            p.drawRoundedRect(key, 3, 3);
+            p.setPen(QColor("#14122a"));
+        } else {
+            p.setBrush(Qt::NoBrush);
+            p.setPen(QPen(dim, 1));
+            p.drawRoundedRect(key.adjusted(0.5, 0.5, -0.5, -0.5), 3, 3);
+            p.setPen(dim);
+        }
+        p.setFont(keyFont);
+        p.drawText(key, Qt::AlignCenter, s.key);
+        x -= gap;
+    }
     p.restore();
 }
 

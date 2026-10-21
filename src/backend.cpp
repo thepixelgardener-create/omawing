@@ -46,14 +46,16 @@ Backend::~Backend() {
 void Backend::loadSettings() {
     QSettings settings(m_settingsFile, QSettings::IniFormat);
     m_banner = settings.value("banner", true).toBool();
-    m_interface = settings.value("interface", true).toBool();
-    m_titles = m_interface ? 1 : 0;
-    m_look.titles = m_titles;
+    // "interface" switched both, before titles and toolbar had their own.
+    const bool both = settings.value("interface", true).toBool();
+    m_titlesOn = settings.value("titles", both).toBool();
+    m_toolbar = settings.value("toolbar", both).toBool();
+    m_titles = m_titlesOn ? 1 : 0;
+    updateLook();
     m_musicWanted = settings.value("music", false).toBool();
     m_effectsWanted = settings.value("effects", false).toBool();
     m_musicVolume = std::clamp(settings.value("musicVolume", 0.8).toDouble(), 0.0, 1.0);
     m_effectsVolume = std::clamp(settings.value("effectsVolume", 0.8).toDouble(), 0.0, 1.0);
-    m_look.banner = m_banner;
 }
 
 bool Backend::store(std::initializer_list<std::pair<const char *, QVariant>> values) {
@@ -104,6 +106,9 @@ Scene::Hud Backend::hud() const {
         hud.best = tr("BEST %1").arg(digits(locale, top));
     if (m_flight.game.wrecked >= 0)
         hud.alert = tr("HULL BREACHED");
+    hud.titlesSwitch = tr("TITLES");
+    hud.toolbarSwitch = tr("MENU");
+    hud.bannerSwitch = tr("BANNER");
     return hud;
 }
 
@@ -139,11 +144,18 @@ void Backend::tick(double seconds) {
         dt = snapped + payback;
     }
     m_lastStep = dt;
-    // The titles fade with the interface, paused or not.
-    const double titles = m_interface ? 1 : 0;
-    if (m_titles != titles) {
-        m_titles = std::abs(titles - m_titles) < 0.01 ? titles : m_titles + (titles - m_titles) * (1 - std::exp(-dt * 8));
-        m_look.titles = m_titles;
+    // The titles fade with their switch, and the switch keys fade in for a
+    // moment after a change, paused or not.
+    const double titles = m_titlesOn ? 1 : 0;
+    m_switchesFor = std::max(0.0, m_switchesFor - seconds);
+    const double switches = m_switchesFor > 0 ? 1 : 0;
+    if (m_titles != titles || m_switches != switches) {
+        auto ease = [dt](double from, double to) {
+            return std::abs(to - from) < 0.01 ? to : from + (to - from) * (1 - std::exp(-dt * 8));
+        };
+        m_titles = ease(m_titles, titles);
+        m_switches = ease(m_switches, switches);
+        updateLook();
         if (m_paused)
             emit frameChanged();
     }
@@ -272,16 +284,37 @@ void Backend::toggleEffects() {
     emit changed();
 }
 
-void Backend::toggleInterface() {
-    m_interface = !m_interface;
-    store({{"interface", m_interface}});
+void Backend::toggleTitles() {
+    m_titlesOn = !m_titlesOn;
+    store({{"titles", m_titlesOn}});
+    showSwitches(3);
     emit changed();
+}
+
+void Backend::toggleToolbar() {
+    m_toolbar = !m_toolbar;
+    store({{"toolbar", m_toolbar}});
+    showSwitches(3);
+    emit changed();
+}
+
+void Backend::showSwitches(double seconds) {
+    m_switchesFor = std::max(m_switchesFor, seconds);
+    updateLook();
+}
+
+void Backend::updateLook() {
+    m_look.banner = m_banner;
+    m_look.titles = m_titles;
+    m_look.switches = m_switches;
+    m_look.titlesOn = m_titlesOn;
+    m_look.toolbarOn = m_toolbar;
 }
 
 void Backend::toggleBanner() {
     m_banner = !m_banner;
-    m_look.banner = m_banner;
     store({{"banner", m_banner}});
+    showSwitches(3);
     emit changed();
     emit frameChanged();
 }

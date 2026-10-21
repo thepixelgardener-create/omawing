@@ -52,8 +52,11 @@
   "Music and effects volume": "Müzik ve efekt ses düzeyi",
   "The music files are missing.": "Müzik dosyaları eksik.",
   "Flying into the future": "Geleceğe uçuyoruz",
-  "Show or hide the titles and toolbar": "Başlıkları ve araç çubuğunu göster veya gizle",
-  "Titles and toolbar hidden. Press U to show them.": "Başlıklar ve araç çubuğu gizlendi. Göstermek için U'ya basın.",
   "Left button": "Sol düğme",
-  "Right drag": "Sağ düğmeyle sürükle"
+  "Right drag": "Sağ düğmeyle sürükle",
+  "TITLES": "BAŞLIKLAR",
+  "MENU": "MENÜ",
+  "BANNER": "AFİŞ",
+  "Show or hide the titles and score": "Başlıkları ve skoru göster veya gizle",
+  "Show or hide the toolbar": "Araç çubuğunu göster veya gizle"
 }

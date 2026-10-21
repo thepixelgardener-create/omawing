@@ -52,8 +52,11 @@
   "Music and effects volume": "Volum de la música i els efectes",
   "The music files are missing.": "Falten els fitxers de música.",
   "Flying into the future": "Volant cap al futur",
-  "Show or hide the titles and toolbar": "Mostra o amaga els títols i la barra d'eines",
-  "Titles and toolbar hidden. Press U to show them.": "Títols i barra d'eines amagats. Premeu U per mostrar-los.",
   "Left button": "Botó esquerre",
-  "Right drag": "Arrossegar amb el botó dret"
+  "Right drag": "Arrossegar amb el botó dret",
+  "TITLES": "TÍTOLS",
+  "MENU": "MENÚ",
+  "BANNER": "BÀNER",
+  "Show or hide the titles and score": "Mostra o amaga els títols i la puntuació",
+  "Show or hide the toolbar": "Mostra o amaga la barra d'eines"
 }

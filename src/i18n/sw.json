@@ -52,8 +52,11 @@
   "Music and effects volume": "Kiwango cha sauti ya muziki na madoido",
   "The music files are missing.": "Faili za muziki hazipo.",
   "Flying into the future": "Tukiruka kuelekea siku zijazo",
-  "Show or hide the titles and toolbar": "Onyesha au ficha vichwa na upau wa zana",
-  "Titles and toolbar hidden. Press U to show them.": "Vichwa na upau wa zana vimefichwa. Bonyeza U kuvionyesha.",
   "Left button": "Kitufe cha kushoto",
-  "Right drag": "Buruta kwa kitufe cha kulia"
+  "Right drag": "Buruta kwa kitufe cha kulia",
+  "TITLES": "VICHWA",
+  "MENU": "MENYU",
+  "BANNER": "BANA",
+  "Show or hide the titles and score": "Onyesha au ficha vichwa na alama",
+  "Show or hide the toolbar": "Onyesha au ficha upau wa zana"
 }

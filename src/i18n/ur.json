@@ -52,8 +52,11 @@
   "Music and effects volume": "موسیقی اور اثرات کی آواز",
   "The music files are missing.": "موسیقی کی فائلیں موجود نہیں ہیں۔",
   "Flying into the future": "مستقبل کی طرف پرواز",
-  "Show or hide the titles and toolbar": "عنوانات اور ٹول بار دکھائیں یا چھپائیں",
-  "Titles and toolbar hidden. Press U to show them.": "عنوانات اور ٹول بار چھپے ہوئے ہیں۔ دکھانے کے لیے U دبائیں۔",
   "Left button": "بایاں بٹن",
-  "Right drag": "دائیں بٹن سے گھسیٹیں"
+  "Right drag": "دائیں بٹن سے گھسیٹیں",
+  "TITLES": "عنوانات",
+  "MENU": "مینو",
+  "BANNER": "بینر",
+  "Show or hide the titles and score": "عنوانات اور اسکور دکھائیں یا چھپائیں",
+  "Show or hide the toolbar": "ٹول بار دکھائیں یا چھپائیں"
 }

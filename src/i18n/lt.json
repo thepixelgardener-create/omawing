@@ -52,8 +52,11 @@
   "Music and effects volume": "Muzikos ir efektų garsumas",
   "The music files are missing.": "Trūksta muzikos failų.",
   "Flying into the future": "Skrendame į ateitį",
-  "Show or hide the titles and toolbar": "Rodyti arba slėpti pavadinimus ir įrankių juostą",
-  "Titles and toolbar hidden. Press U to show them.": "Pavadinimai ir įrankių juosta paslėpti. Paspauskite U, kad juos parodytumėte.",
   "Left button": "Kairysis mygtukas",
-  "Right drag": "Tempimas dešiniuoju mygtuku"
+  "Right drag": "Tempimas dešiniuoju mygtuku",
+  "TITLES": "PAVADINIMAI",
+  "MENU": "MENIU",
+  "BANNER": "REKLAMJUOSTĖ",
+  "Show or hide the titles and score": "Rodyti arba slėpti pavadinimus ir rezultatą",
+  "Show or hide the toolbar": "Rodyti arba slėpti įrankių juostą"
 }

@@ -52,8 +52,11 @@
   "Music and effects volume": "Јачина музике и ефеката",
   "The music files are missing.": "Недостају музичке датотеке.",
   "Flying into the future": "Летимо у будућност",
-  "Show or hide the titles and toolbar": "Прикажи или сакриј наслове и траку са алаткама",
-  "Titles and toolbar hidden. Press U to show them.": "Наслови и трака са алаткама су скривени. Притисните U да их прикажете.",
   "Left button": "Леви тастер",
-  "Right drag": "Превлачење десним тастером"
+  "Right drag": "Превлачење десним тастером",
+  "TITLES": "НАСЛОВИ",
+  "MENU": "МЕНИ",
+  "BANNER": "БАНЕР",
+  "Show or hide the titles and score": "Прикажи или сакриј наслове и резултат",
+  "Show or hide the toolbar": "Прикажи или сакриј траку са алаткама"
 }

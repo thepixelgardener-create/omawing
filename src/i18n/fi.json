@@ -52,8 +52,11 @@
   "Music and effects volume": "Musiikin ja efektien äänenvoimakkuus",
   "The music files are missing.": "Musiikkitiedostot puuttuvat.",
   "Flying into the future": "Lennämme tulevaisuuteen",
-  "Show or hide the titles and toolbar": "Näytä tai piilota otsikot ja työkalurivi",
-  "Titles and toolbar hidden. Press U to show them.": "Otsikot ja työkalurivi piilotettu. Näytä ne painamalla U.",
   "Left button": "Vasen painike",
-  "Right drag": "Vedä oikealla painikkeella"
+  "Right drag": "Vedä oikealla painikkeella",
+  "TITLES": "OTSIKOT",
+  "MENU": "VALIKKO",
+  "BANNER": "BANNERI",
+  "Show or hide the titles and score": "Näytä tai piilota otsikot ja pisteet",
+  "Show or hide the toolbar": "Näytä tai piilota työkalurivi"
 }

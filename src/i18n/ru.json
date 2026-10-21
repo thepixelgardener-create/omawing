@@ -52,8 +52,11 @@
   "Music and effects volume": "Громкость музыки и эффектов",
   "The music files are missing.": "Файлы музыки отсутствуют.",
   "Flying into the future": "Летим в будущее",
-  "Show or hide the titles and toolbar": "Показать или скрыть заголовки и панель инструментов",
-  "Titles and toolbar hidden. Press U to show them.": "Заголовки и панель инструментов скрыты. Нажмите U, чтобы показать их.",
   "Left button": "Левая кнопка",
-  "Right drag": "Перетаскивание правой кнопкой"
+  "Right drag": "Перетаскивание правой кнопкой",
+  "TITLES": "ЗАГОЛОВКИ",
+  "MENU": "МЕНЮ",
+  "BANNER": "БЕГУЩАЯ СТРОКА",
+  "Show or hide the titles and score": "Показать или скрыть заголовки и счёт",
+  "Show or hide the toolbar": "Показать или скрыть панель инструментов"
 }

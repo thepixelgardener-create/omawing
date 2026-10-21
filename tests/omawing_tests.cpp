@@ -170,9 +170,13 @@ private slots:
         backend.tick(0.02);
         backend.setPaused(true);
         const double time = backend.flight().time;
+        // While paused only fades redraw (the switch keys show for a few
+        // seconds at startup); once they settle, nothing does.
+        for (int i = 0; i < 400; ++i)
+            backend.tick(0.02);
+        QCOMPARE(backend.flight().time, time);
         QSignalSpy frames(&backend, &Backend::frameChanged);
         backend.tick(0.02);
-        QCOMPARE(backend.flight().time, time);
         QCOMPARE(frames.count(), 0);
         // Keys don't take over from the autopilot while paused.
         QVERIFY(backend.keyDown(Qt::Key_D));
@@ -645,20 +649,22 @@ private slots:
         capture("volume");
         QTest::keyClick(window, Qt::Key_Escape);
         QTRY_VERIFY(!panel->property("visible").toBool());
-        // U switches the toolbar (and the titles) off, even while the pointer is moving, and
+        // L switches the toolbar off and U the titles, even while the pointer is moving, and
         // fades it away; a second U brings it back.
         auto bar = window->findChild<QObject *>("toolbar");
         QVERIFY(bar);
         window->setProperty("pointerAwake", true);
         QTRY_VERIFY(bar->property("shown").toBool());
+        QTest::keyClick(window, Qt::Key_L);
         QTest::keyClick(window, Qt::Key_U);
-        QVERIFY(!backend.interfaceShown());
+        QVERIFY(!backend.toolbarShown() && !backend.titlesShown());
         QVERIFY(!bar->property("shown").toBool());
         QTRY_VERIFY(!bar->property("visible").toBool());
         // The titles at the top fade out with it, even while paused.
         QTRY_COMPARE(backend.look().titles, 0.0);
+        QTest::keyClick(window, Qt::Key_L);
         QTest::keyClick(window, Qt::Key_U);
-        QVERIFY(backend.interfaceShown());
+        QVERIFY(backend.toolbarShown() && backend.titlesShown());
         QTRY_COMPARE(bar->property("opacity").toDouble(), 1.0);
         QTRY_COMPARE(backend.look().titles, 1.0);
         window->setProperty("pointerAwake", false);

@@ -52,8 +52,11 @@
   "Music and effects volume": "Hlasitosť hudby a efektov",
   "The music files are missing.": "Chýbajú hudobné súbory.",
   "Flying into the future": "Letíme do budúcnosti",
-  "Show or hide the titles and toolbar": "Zobraziť alebo skryť nadpisy a panel nástrojov",
-  "Titles and toolbar hidden. Press U to show them.": "Nadpisy a panel nástrojov sú skryté. Zobrazíte ich klávesom U.",
   "Left button": "Ľavé tlačidlo",
-  "Right drag": "Ťahanie pravým tlačidlom"
+  "Right drag": "Ťahanie pravým tlačidlom",
+  "TITLES": "NADPISY",
+  "MENU": "PONUKA",
+  "BANNER": "BANNER",
+  "Show or hide the titles and score": "Zobraziť alebo skryť nadpisy a skóre",
+  "Show or hide the toolbar": "Zobraziť alebo skryť panel nástrojov"
 }

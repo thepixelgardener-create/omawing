@@ -20,6 +20,8 @@
 struct SceneHud {
     QString status, mode, thrust, altitude, subtitle;
     QString hull, score, points, best, alert;
+    // The names of the three view switches (U, L, B).
+    QString titlesSwitch, toolbarSwitch, bannerSwitch;
 };
 
 // How the app wants the frame dressed: the scroller on or off, and the
@@ -32,6 +34,9 @@ struct SceneLook {
     double beat = 0, level = 0;
     // How much of the titles at the top shows, 0 to 1, as they fade.
     double titles = 1;
+    // The switch keys at the bottom right: how much they show, and what is on.
+    double switches = 0;
+    bool titlesOn = true, toolbarOn = true;
 };
 
 // One thing to draw in the world, in virtual units, sorted by depth.

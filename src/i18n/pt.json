@@ -52,8 +52,11 @@
   "Music and effects volume": "Volume da música e dos efeitos",
   "The music files are missing.": "Os ficheiros de música estão em falta.",
   "Flying into the future": "A voar rumo ao futuro",
-  "Show or hide the titles and toolbar": "Mostrar ou ocultar os títulos e a barra de ferramentas",
-  "Titles and toolbar hidden. Press U to show them.": "Títulos e barra de ferramentas ocultos. Prima U para os mostrar.",
   "Left button": "Botão esquerdo",
-  "Right drag": "Arrastar com o botão direito"
+  "Right drag": "Arrastar com o botão direito",
+  "TITLES": "TÍTULOS",
+  "MENU": "MENU",
+  "BANNER": "FAIXA",
+  "Show or hide the titles and score": "Mostrar ou ocultar os títulos e a pontuação",
+  "Show or hide the toolbar": "Mostrar ou ocultar a barra de ferramentas"
 }

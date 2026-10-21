@@ -52,8 +52,11 @@
   "Music and effects volume": "Гучність музики та ефектів",
   "The music files are missing.": "Музичні файли відсутні.",
   "Flying into the future": "Летимо в майбутнє",
-  "Show or hide the titles and toolbar": "Показати або сховати заголовки й панель інструментів",
-  "Titles and toolbar hidden. Press U to show them.": "Заголовки й панель інструментів приховано. Натисніть U, щоб показати їх.",
   "Left button": "Ліва кнопка",
-  "Right drag": "Перетягування правою кнопкою"
+  "Right drag": "Перетягування правою кнопкою",
+  "TITLES": "ЗАГОЛОВКИ",
+  "MENU": "МЕНЮ",
+  "BANNER": "БАНЕР",
+  "Show or hide the titles and score": "Показати або сховати заголовки й рахунок",
+  "Show or hide the toolbar": "Показати або сховати панель інструментів"
 }

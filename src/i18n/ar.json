@@ -52,8 +52,11 @@
   "Music and effects volume": "مستوى صوت الموسيقى والمؤثرات",
   "The music files are missing.": "ملفات الموسيقى مفقودة.",
   "Flying into the future": "نحلّق نحو المستقبل",
-  "Show or hide the titles and toolbar": "إظهار العناوين وشريط الأدوات أو إخفاؤها",
-  "Titles and toolbar hidden. Press U to show them.": "العناوين وشريط الأدوات مخفية. اضغط U لإظهارها.",
   "Left button": "الزر الأيسر",
-  "Right drag": "السحب بالزر الأيمن"
+  "Right drag": "السحب بالزر الأيمن",
+  "TITLES": "العناوين",
+  "MENU": "القائمة",
+  "BANNER": "الشريط",
+  "Show or hide the titles and score": "إظهار العناوين والنتيجة أو إخفاؤها",
+  "Show or hide the toolbar": "إظهار شريط الأدوات أو إخفاؤه"
 }

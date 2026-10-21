@@ -52,8 +52,11 @@
   "Music and effects volume": "بلندی صدای موسیقی و جلوه‌ها",
   "The music files are missing.": "فایل‌های موسیقی پیدا نشد.",
   "Flying into the future": "پرواز به سوی آینده",
-  "Show or hide the titles and toolbar": "نمایش یا پنهان کردن عنوان‌ها و نوار ابزار",
-  "Titles and toolbar hidden. Press U to show them.": "عنوان‌ها و نوار ابزار پنهان است. برای نمایش U را فشار دهید.",
   "Left button": "دکمهٔ چپ",
-  "Right drag": "کشیدن با دکمهٔ راست"
+  "Right drag": "کشیدن با دکمهٔ راست",
+  "TITLES": "عنوان‌ها",
+  "MENU": "منو",
+  "BANNER": "بنر",
+  "Show or hide the titles and score": "نمایش یا پنهان کردن عنوان‌ها و امتیاز",
+  "Show or hide the toolbar": "نمایش یا پنهان کردن نوار ابزار"
 }

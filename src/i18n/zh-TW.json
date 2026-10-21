@@ -52,8 +52,11 @@
   "Music and effects volume": "音樂和音效音量",
   "The music files are missing.": "缺少音樂檔案。",
   "Flying into the future": "飛向未來",
-  "Show or hide the titles and toolbar": "顯示或隱藏標題和工具列",
-  "Titles and toolbar hidden. Press U to show them.": "標題和工具列已隱藏。按 U 鍵顯示。",
   "Left button": "左鍵",
-  "Right drag": "右鍵拖曳"
+  "Right drag": "右鍵拖曳",
+  "TITLES": "標題",
+  "MENU": "選單",
+  "BANNER": "橫幅",
+  "Show or hide the titles and score": "顯示或隱藏標題和分數",
+  "Show or hide the toolbar": "顯示或隱藏工具列"
 }

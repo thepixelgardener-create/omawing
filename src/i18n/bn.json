@@ -52,8 +52,11 @@
   "Music and effects volume": "সংগীত ও ইফেক্টের ভলিউম",
   "The music files are missing.": "সংগীতের ফাইলগুলো পাওয়া যাচ্ছে না।",
   "Flying into the future": "ভবিষ্যতের দিকে উড়ে চলা",
-  "Show or hide the titles and toolbar": "শিরোনাম ও টুলবার দেখান বা লুকান",
-  "Titles and toolbar hidden. Press U to show them.": "শিরোনাম ও টুলবার লুকানো। দেখাতে U চাপুন।",
   "Left button": "বাঁ বোতাম",
-  "Right drag": "ডান বোতামে টানুন"
+  "Right drag": "ডান বোতামে টানুন",
+  "TITLES": "শিরোনাম",
+  "MENU": "মেনু",
+  "BANNER": "ব্যানার",
+  "Show or hide the titles and score": "শিরোনাম ও স্কোর দেখান বা লুকান",
+  "Show or hide the toolbar": "টুলবার দেখান বা লুকান"
 }

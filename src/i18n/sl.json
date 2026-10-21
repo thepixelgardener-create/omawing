@@ -52,8 +52,11 @@
   "Music and effects volume": "Glasnost glasbe in učinkov",
   "The music files are missing.": "Glasbene datoteke manjkajo.",
   "Flying into the future": "Letimo v prihodnost",
-  "Show or hide the titles and toolbar": "Prikaži ali skrij naslove in orodno vrstico",
-  "Titles and toolbar hidden. Press U to show them.": "Naslovi in orodna vrstica so skriti. Pritisnite U, da jih prikažete.",
   "Left button": "Levi gumb",
-  "Right drag": "Vlečenje z desnim gumbom"
+  "Right drag": "Vlečenje z desnim gumbom",
+  "TITLES": "NASLOVI",
+  "MENU": "MENI",
+  "BANNER": "PASICA",
+  "Show or hide the titles and score": "Prikaži ali skrij naslove in rezultat",
+  "Show or hide the toolbar": "Prikaži ali skrij orodno vrstico"
 }

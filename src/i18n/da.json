@@ -52,8 +52,11 @@
   "Music and effects volume": "Lydstyrke for musik og effekter",
   "The music files are missing.": "Musikfilerne mangler.",
   "Flying into the future": "Vi flyver ind i fremtiden",
-  "Show or hide the titles and toolbar": "Vis eller skjul titler og værktøjslinje",
-  "Titles and toolbar hidden. Press U to show them.": "Titler og værktøjslinje er skjult. Tryk på U for at vise dem.",
   "Left button": "Venstre knap",
-  "Right drag": "Træk med højre knap"
+  "Right drag": "Træk med højre knap",
+  "TITLES": "TITLER",
+  "MENU": "MENU",
+  "BANNER": "BANNER",
+  "Show or hide the titles and score": "Vis eller skjul titler og point",
+  "Show or hide the toolbar": "Vis eller skjul værktøjslinjen"
 }

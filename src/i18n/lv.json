@@ -52,8 +52,11 @@
   "Music and effects volume": "Mūzikas un efektu skaļums",
   "The music files are missing.": "Trūkst mūzikas failu.",
   "Flying into the future": "Lidojam nākotnē",
-  "Show or hide the titles and toolbar": "Rādīt vai paslēpt virsrakstus un rīkjoslu",
-  "Titles and toolbar hidden. Press U to show them.": "Virsraksti un rīkjosla ir paslēpti. Nospiediet U, lai tos parādītu.",
   "Left button": "Kreisā poga",
-  "Right drag": "Vilkšana ar labo pogu"
+  "Right drag": "Vilkšana ar labo pogu",
+  "TITLES": "VIRSRAKSTI",
+  "MENU": "IZVĒLNE",
+  "BANNER": "BANERIS",
+  "Show or hide the titles and score": "Rādīt vai paslēpt virsrakstus un rezultātu",
+  "Show or hide the toolbar": "Rādīt vai paslēpt rīkjoslu"
 }

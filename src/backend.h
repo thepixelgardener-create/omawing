@@ -22,7 +22,8 @@ class Backend : public QObject {
     Q_PROPERTY(double effectsVolume READ effectsVolume WRITE setEffectsVolume NOTIFY volumeChanged)
     Q_PROPERTY(QString trackTitle READ trackTitle NOTIFY changed)
     Q_PROPERTY(bool banner READ banner NOTIFY changed)
-    Q_PROPERTY(bool interfaceShown READ interfaceShown NOTIFY changed)
+    Q_PROPERTY(bool titlesShown READ titlesShown NOTIFY changed)
+    Q_PROPERTY(bool toolbarShown READ toolbarShown NOTIFY changed)
     Q_PROPERTY(QString soundError READ soundError NOTIFY changed)
     Q_PROPERTY(QString settingsError READ settingsError NOTIFY changed)
     Q_PROPERTY(int fps READ fps NOTIFY fpsChanged)
@@ -46,9 +47,11 @@ public:
     void setMusicVolume(double volume);
     void setEffectsVolume(double volume);
     bool banner() const { return m_banner; }
-    // Whether the toolbar and everything at the top but the radar (titles
-    // and score) may appear; the keys work either way.
-    bool interfaceShown() const { return m_interface; }
+    // Three switches for a clear view: the titles and score at the top (U),
+    // the toolbar at the bottom (L), and the banner (B). The radar, gauges,
+    // and keys stay whatever they are set to.
+    bool titlesShown() const { return m_titlesOn; }
+    bool toolbarShown() const { return m_toolbar; }
     QString trackTitle() const { return m_audio.trackTitle(); }
     QString soundError() const { return m_audio.error(); }
     // A failed save of preferences or of the score board, or empty.
@@ -85,7 +88,10 @@ public:
     Q_INVOKABLE void toggleEffects();
     Q_INVOKABLE void nextTrack() { m_audio.nextTrack(); }
     Q_INVOKABLE void toggleBanner();
-    Q_INVOKABLE void toggleInterface();
+    Q_INVOKABLE void toggleTitles();
+    Q_INVOKABLE void toggleToolbar();
+    // The pointer moved: the switches show for a moment, as a reminder.
+    Q_INVOKABLE void wake() { showSwitches(2.5); }
 
     // Flight keys take Qt key codes; they return whether the key steers.
     Q_INVOKABLE bool keyDown(int key);
@@ -107,6 +113,8 @@ signals:
 
 private:
     void syncSound();
+    void showSwitches(double seconds);
+    void updateLook();
     void applyVolume();
     void saveVolume();
     // Ends the run in progress and offers its score to the board.
@@ -122,11 +130,12 @@ private:
     QString m_settingsFile, m_settingsError;
     Scene::Look m_look;
     ScoreBoard m_board;
-    bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true, m_interface = true, m_musicThroughPause = false;
+    bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true, m_titlesOn = true, m_toolbar = true, m_musicThroughPause = false;
     int m_frames = 0, m_fps = 0;
     double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0;
     double m_musicVolume = 0.8, m_effectsVolume = 0.8;
     double m_beat = 0, m_beatTarget = 0, m_level = 0, m_sinceBeat = 10;   // The music's pulse, for the picture.
-    double m_titles = 1;              // The titles fade in and out with the interface.
+    double m_titles = 1;              // The titles fade in and out with their switch.
+    double m_switchesFor = 5, m_switches = 0;   // How long the switch keys show, and how much.
     QTimer m_saveVolume;
 };

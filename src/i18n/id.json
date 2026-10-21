@@ -52,8 +52,11 @@
   "Music and effects volume": "Volume musik dan efek",
   "The music files are missing.": "File musik tidak ditemukan.",
   "Flying into the future": "Terbang menuju masa depan",
-  "Show or hide the titles and toolbar": "Tampilkan atau sembunyikan judul dan bilah alat",
-  "Titles and toolbar hidden. Press U to show them.": "Judul dan bilah alat disembunyikan. Tekan U untuk menampilkannya.",
   "Left button": "Tombol kiri",
-  "Right drag": "Seret dengan tombol kanan"
+  "Right drag": "Seret dengan tombol kanan",
+  "TITLES": "JUDUL",
+  "MENU": "MENU",
+  "BANNER": "SPANDUK",
+  "Show or hide the titles and score": "Tampilkan atau sembunyikan judul dan skor",
+  "Show or hide the toolbar": "Tampilkan atau sembunyikan bilah alat"
 }

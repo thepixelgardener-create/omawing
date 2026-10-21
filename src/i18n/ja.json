@@ -52,8 +52,11 @@
   "Music and effects volume": "音楽と効果音の音量",
   "The music files are missing.": "音楽ファイルが見つかりません。",
   "Flying into the future": "未来へ飛び立とう",
-  "Show or hide the titles and toolbar": "タイトルとツールバーの表示/非表示",
-  "Titles and toolbar hidden. Press U to show them.": "タイトルとツールバーを非表示にしました。U キーで表示します。",
   "Left button": "左ボタン",
-  "Right drag": "右ボタンでドラッグ"
+  "Right drag": "右ボタンでドラッグ",
+  "TITLES": "タイトル",
+  "MENU": "メニュー",
+  "BANNER": "バナー",
+  "Show or hide the titles and score": "タイトルとスコアの表示/非表示",
+  "Show or hide the toolbar": "ツールバーの表示/非表示"
 }

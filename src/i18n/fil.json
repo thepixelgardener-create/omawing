@@ -52,8 +52,11 @@
   "Music and effects volume": "Volume ng musika at mga effect",
   "The music files are missing.": "Nawawala ang mga music file.",
   "Flying into the future": "Lumilipad patungo sa hinaharap",
-  "Show or hide the titles and toolbar": "Ipakita o itago ang mga pamagat at toolbar",
-  "Titles and toolbar hidden. Press U to show them.": "Nakatago ang mga pamagat at toolbar. Pindutin ang U para ipakita.",
   "Left button": "Kaliwang button",
-  "Right drag": "I-drag gamit ang kanang button"
+  "Right drag": "I-drag gamit ang kanang button",
+  "TITLES": "PAMAGAT",
+  "MENU": "MENU",
+  "BANNER": "BANNER",
+  "Show or hide the titles and score": "Ipakita o itago ang mga pamagat at iskor",
+  "Show or hide the toolbar": "Ipakita o itago ang toolbar"
 }
