@@ -208,16 +208,15 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
     }
 
     struct Ridge {
-        double turn, slide, sink, spacing, low, high, haze;
-        bool rounded;
+        double turn, slide, sink, spacing, low, high, haze, roughness;
     };
     static const Ridge ridges[] = {
-        {1.0, 0.18, 0.08, 38, 48, 115, 0.86, false}, // Distant pale-blue peaks.
-        {1.15, 0.75, 0.3, 55, 32, 82, 0.65, false},
-        {1.35, 2.1, 0.8, 72, 16, 52, 0.36, false},
-        {1.65, 4.2, 1.4, 94, 8, 29, 0.10, true},   // Dark, broad foothills.
+        {1.0, 0.18, 0.08, 160, 28, 138, 0.84, 0.35},
+        {1.15, 0.75, 0.3, 185, 18, 100, 0.62, 0.6},
+        {1.35, 2.1, 0.8, 145, 12, 68, 0.34, 1.1},
+        {1.65, 4.2, 1.4, 180, 8, 55, 0.12, 1.6},
     };
-    const Vec rock = blend(view.palette.floor, view.palette.mid, 0.3);
+    const Vec rock = blend(blend(view.palette.floor, view.palette.mid, 0.3), hex("#183e60"), 0.6);
     const Vec air = view.atmosphere();
     for (int layer = 0; layer < 4; ++layer) {
         const Ridge &r = ridges[layer];
@@ -225,34 +224,68 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
         const int count = std::max(8, int(std::lround(period / r.spacing)));
         const double step = period / count;
         const double scroll = view.camera.yaw * View::Focal * r.turn + view.camera.drift * r.slide;
-        // Flying higher reveals the valleys. Near hills move more quickly
-        // across the view, while the remote peaks barely shift sideways.
         const double base = horizon + std::max(0.0, view.camera.y - 2) * r.sink;
-        const int first = int(std::floor(scroll / step)) - 1, points = int(std::ceil(W / step)) + 3;
-        auto peak = [&](int g) {
-            const int index = ((g % count) + count) % count;
-            // Broad shoulders break up the repeated triangular silhouette.
-            const double shape = 0.65 * hash(index, 60 + layer) + 0.35 * hash(index / 3, 80 + layer);
-            return QPointF(g * step - scroll, base - mix(r.low, r.high, shape));
+        // Periodic noise at several scales makes broad massifs, secondary
+        // shoulders and fine broken ridgelines. All detail is anchored to
+        // the panorama, so it travels with the mountains without shimmering.
+        auto noise = [&](double x, int frequency, int seed, double softness) {
+            const double u = x / period * count * frequency;
+            const int cell = int(std::floor(u)), cells = count * frequency;
+            auto sample = [&](int i) { return hash((i % cells + cells) % cells, seed + layer * 11); };
+            const double t = u - cell;
+            return mix(sample(cell), sample(cell + 1), mix(t, smooth(t), softness));
         };
-        QPainterPath path(QPointF(first * step - scroll, base + 40));
-        path.lineTo(peak(first));
-        for (int j = 1; j <= points; ++j) {
-            const QPointF here = peak(first + j);
-            if (r.rounded) {
-                const QPointF before = peak(first + j - 1);
-                path.quadTo(before, (before + here) / 2);
-            } else {
-                path.lineTo(here);
-            }
+        auto height = [&](double x) {
+            const double broad = noise(x, 1, 60, layer < 2 ? 0.15 : 0.75);
+            const double shoulder = noise(x, 3, 80, 0.75);
+            const double detail = noise(x, 9, 100, 0.4);
+            const double shape = clampTo(0.78 * broad + 0.17 * shoulder + 0.05 * detail, 0, 1);
+            return mix(r.low, r.high, shape) + r.roughness * noise(x, 110, 130, 0);
+        };
+        // Two-pixel world samples preserve the small rocky/wooded edge
+        // without adding individual trees or expensive scenery meshes.
+        const int samples = int(std::ceil(period / 2));
+        const double detailStep = period / samples;
+        static std::array<std::vector<double>, 4> profiles;
+        auto &profile = profiles[layer];
+        if (profile.empty()) {
+            profile.reserve(samples);
+            for (int i = 0; i < samples; ++i) profile.push_back(height(i * detailStep));
         }
-        path.lineTo((first + points) * step - scroll, base + 40);
+        const int first = int(std::floor(scroll / detailStep)) - 1;
+        const int points = int(std::ceil(W / detailStep)) + 3;
+        QPainterPath path(QPointF(first * detailStep - scroll, base + 40));
+        for (int j = 0; j <= points; ++j) {
+            const double x = (first + j) * detailStep;
+            const int index = ((first + j) % samples + samples) % samples;
+            path.lineTo(x - scroll, base - profile[index]);
+        }
+        path.lineTo((first + points) * detailStep - scroll, base + 40);
         path.closeSubpath();
-        // Haze pools in each valley, separating overlapping silhouettes.
-        // Far ridges lose contrast and saturation, not just opacity.
         QLinearGradient mist(0, base - r.high, 0, base);
         mist.setColorAt(0, rgb(blend(rock, air, r.haze)));
         mist.setColorAt(1, rgb(blend(rock, air, std::min(0.97, r.haze + 0.18))));
         p.fillPath(path, mist);
+
+        // A few quiet faces suggest volume in the remote peaks. Clip them
+        // to their own range; the nearer ranges naturally cover their feet.
+        if (layer < 2) {
+            p.save();
+            p.setClipPath(path, Qt::IntersectClip);
+            const int start = int(std::floor(scroll / step)) - 1;
+            for (int j = start; j < start + int(std::ceil(W / step)) + 3; ++j) {
+                const double x = j * step, h = height(x);
+                if (h < height(x - step * 0.4) || h < height(x + step * 0.4)) continue;
+                const double px = x - scroll, py = base - h;
+                QPainterPath facet(QPointF(px, py));
+                facet.lineTo(px + step * 0.12, py + h * 0.45);
+                facet.lineTo(px + step * 0.52, base + 10);
+                facet.lineTo(px + step * 0.28, base + 10);
+                facet.lineTo(px + step * 0.04, py + h * 0.5);
+                facet.closeSubpath();
+                p.fillPath(facet, withAlpha(rgb(air), layer == 0 ? 0.16 : 0.10));
+            }
+            p.restore();
+        }
     }
 }
