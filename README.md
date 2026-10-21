@@ -69,6 +69,15 @@ Qt's FFmpeg backend copies a compiled-in track to a temporary file to stream
 it and never removes the copy, so the music stays on disk. `bin/generate-effects`
 rebuilds the four original WAV cues without touching the soundtrack.
 
+## Radar
+
+A round radar on the right shows the 60 units around the ship from above,
+turned so your heading always points up: pyramids as triangles, crystals as
+diamonds, the beach ball as a red dot, and the rings you haven't flown
+through yet as bars, with the next one ahead in a brighter, thicker line. A
+sweep turns once every second and a half, and the rim and the crystals flash
+on the music's beat.
+
 ## Moving with the music
 
 While music plays, Omawing listens to it: a copy of the decoded audio goes
@@ -191,7 +200,7 @@ GPU finish), so its timings differ from the CPU paint timings in `OMAWING_STATS`
 | `src/sky.{h,cpp}` | Sky, copper bars, stars, sun, clouds, parallax hills, and the ground's gradient. |
 | `src/ground.{h,cpp}` | The checkerboard, grid lines, and the ship's shadow. |
 | `src/worldlayer.{h,cpp}` | Scenery, rings, the ship, and particles, sorted far to near. |
-| `src/overlay.{h,cpp}` | Speed lines, ring points, scanlines, title, HUD, and the sine scroller. |
+| `src/overlay.{h,cpp}` | Speed lines, ring points, scanlines, title, HUD, radar, and the sine scroller. |
 | `src/shipshape.h` | The hull and wing geometry, shared by the ship and its shadow. |
 | `src/scoreboard.{h,cpp}` | The saved top ten, as a list model for QML. |
 | `src/audio.{h,cpp}` | The MP3 playlist and gameplay effects, through Qt Multimedia. |

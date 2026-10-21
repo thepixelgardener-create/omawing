@@ -2,6 +2,7 @@
 
 #include <QFontDatabase>
 #include <QFontMetricsF>
+#include <QConicalGradient>
 #include <QLocale>
 #include <QLinearGradient>
 #include <QPainter>
@@ -283,6 +284,8 @@ void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
     p.setFont(hudFont(11, 1, hud.status));
     drawEnd(p, W - 30, b + 453, hud.status);
 
+    paintRadar(p);
+
     // A big chrome message across the middle when the hull gives out.
     if (!hud.alert.isEmpty() && std::fmod(time, 0.6) < 0.42) {
         QPainterPath text;
@@ -317,3 +320,110 @@ void Overlay::paint(QPainter &p, const View &view, const SceneHud &hud) {
     }
     p.restore();
 }
+
+// A round radar on the right, under the scene name: the ship in the middle,
+// heading up, and what stands within Range around it. Pyramids are
+// triangles, crystals diamonds, the ball a dot, and rings short bars, seen
+// from above; the next ring ahead pulses. A sweep turns once a second and a
+// half, and the rim brightens on the music's beat.
+void Overlay::paintRadar(QPainter &p) {
+    constexpr double Radius = 56, Range = 60;
+    const View &v = *m_view;
+    const Flight &flight = *v.flight;
+    const Ship &ship = flight.ship;
+    const QPointF centre(v.width - 30 - Radius, 92 + Radius);
+    const double c = std::cos(ship.yaw), s = std::sin(ship.yaw), time = flight.time;
+    // World to radar: relative to the ship, turned so its heading points up.
+    auto place = [&](double x, double z) {
+        const double dx = x - ship.x, dz = z - ship.z;
+        const double right = dx * c - dz * s, ahead = dx * s + dz * c;
+        return QPointF(centre.x() + right / Range * Radius, centre.y() - ahead / Range * Radius);
+    };
+    auto inside = [&](const QPointF &at, double margin) { return QLineF(centre, at).length() <= Radius - margin; };
+
+    p.save();
+    p.setPen(Qt::NoPen);
+    p.setBrush(withAlpha("#0b0b1c", 0.62));
+    p.drawEllipse(centre, Radius, Radius);
+    p.setBrush(Qt::NoBrush);
+    p.setPen(QPen(withAlpha(rgb(v.palette.accent), 0.18), 0.8));
+    p.drawEllipse(centre, Radius / 3, Radius / 3);
+    p.drawEllipse(centre, Radius * 2 / 3, Radius * 2 / 3);
+    p.drawLine(centre - QPointF(Radius, 0), centre + QPointF(Radius, 0));
+    p.drawLine(centre - QPointF(0, Radius), centre + QPointF(0, Radius));
+
+    // The sweep: a bright edge with a fading wedge behind it.
+    const double sweep = std::fmod(time * 240, 360);
+    QConicalGradient wedge(centre, -sweep);
+    wedge.setColorAt(0, withAlpha(rgb(v.palette.accent), 0.32));
+    wedge.setColorAt(0.18, withAlpha(rgb(v.palette.accent), 0));
+    wedge.setColorAt(1, withAlpha(rgb(v.palette.accent), 0));
+    p.setPen(Qt::NoPen);
+    p.setBrush(wedge);
+    p.drawEllipse(centre, Radius - 1, Radius - 1);
+
+    const QColor pyramid = withAlpha(rgb(blend(v.palette.mid, {255, 255, 255}, 0.35)), 0.85);
+    const QColor crystal = rgb(blend(v.palette.crystal, {255, 255, 255}, 0.25 + 0.5 * v.look.beat));
+    for (const Obstacle &o : World::scenery(ship.x, ship.z, 4, time)) {
+        const QPointF at = place(o.x, o.z);
+        if (!inside(at, 3))
+            continue;
+        p.setBrush(o.kind == Obstacle::Pyramid ? pyramid : crystal);
+        if (o.kind == Obstacle::Pyramid) {
+            const double r = World::PyramidHalf / Range * Radius;
+            const QPointF triangle[] = {at + QPointF(0, -r), at + QPointF(r, r * 0.8), at + QPointF(-r, r * 0.8)};
+            p.drawConvexPolygon(triangle, 3);
+        } else {
+            const double r = 2.3;
+            const QPointF diamond[] = {at + QPointF(0, -r), at + QPointF(r, 0), at + QPointF(0, r), at + QPointF(-r, 0)};
+            p.drawConvexPolygon(diamond, 4);
+        }
+    }
+    const Obstacle ball = World::ball(ship.z, time);
+    const QPointF ballAt = place(ball.x, ball.z);
+    if (inside(ballAt, 3)) {
+        p.setBrush(QColor("#db4c70"));
+        p.drawEllipse(ballAt, 2.4, 2.4);
+    }
+
+    // Rings stand across the course; from above they are bars. The nearest
+    // one still ahead of the ship pulses.
+    const int first = int(std::floor((ship.z - Range - 24) / World::RingSpacing));
+    const int last = int(std::ceil((ship.z + Range - 24) / World::RingSpacing));
+    int next = 0;
+    double nearest = 1e9;
+    for (int i = first; i <= last; ++i) {
+        const Ring r = World::ring(i);
+        const double ahead = (r.x - ship.x) * s + (r.z - ship.z) * c;
+        if (!flight.game.collected.count(i) && ahead > 0 && ahead < nearest) {
+            nearest = ahead;
+            next = i;
+        }
+    }
+    for (int i = first; i <= last; ++i) {
+        const Ring r = World::ring(i);
+        if (flight.game.collected.count(i))
+            continue;
+        const QPointF a = place(r.x - World::RingRadius, r.z), b = place(r.x + World::RingRadius, r.z);
+        if (!inside((a + b) / 2, 4))
+            continue;
+        const bool highlight = i == next && nearest < 1e9;
+        const double glow = highlight ? 0.85 + 0.15 * std::sin(time * 8) : 0.8;
+        p.setPen(QPen(withAlpha(rgb(highlight ? blend(v.palette.crystal, {255, 255, 255}, 0.2) : v.palette.accent), glow),
+                      highlight ? 3.6 : 2.2, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(a, b);
+    }
+
+    // The ship, always pointing up.
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor("#f4f0ff"));
+    const QPointF chevron[] = {centre + QPointF(0, -4.5), centre + QPointF(3.4, 3.5), centre + QPointF(0, 1.8),
+                               centre + QPointF(-3.4, 3.5)};
+    p.drawPolygon(chevron, 4);
+
+    p.setBrush(Qt::NoBrush);
+    p.setPen(QPen(withAlpha(rgb(v.palette.accent), 0.45 + 0.45 * v.look.beat), 1.2));
+    p.drawEllipse(centre, Radius, Radius);
+    p.restore();
+}
+

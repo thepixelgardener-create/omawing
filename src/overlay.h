@@ -32,6 +32,7 @@ private:
     void blitScaled(QPainter &p, const Sprite &sprite, const QPointF &anchor, double scale) const;
     const Sprite &glyph(QChar c);
     void prepareGlyphs();
+    void paintRadar(QPainter &p);
 
     const View *m_view = nullptr;
     double m_pixelsPerUnit = 0, m_preparedWidth = 0, m_preparedHeight = 0;
