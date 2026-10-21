@@ -344,6 +344,45 @@ private slots:
         QVERIFY2(biggestStep < 0.35, qPrintable(QString::number(biggestStep)));
     }
 
+    void leftMouseButtonBoosts()
+    {
+        QTemporaryDir dir;
+        Backend backend(nullptr, dir.filePath("omawing.conf"));
+        backend.mouseBoost(true);
+        QVERIFY(!backend.demo());
+        backend.flight().advance(2);
+        QVERIFY(backend.flight().ship.speed > 25);
+        backend.mouseBoost(false);
+        backend.flight().advance(3);
+        QVERIFY(backend.flight().ship.speed < 15);
+        // Shift and the button are separate: letting go of one keeps the other.
+        backend.keyDown(Qt::Key_Shift);
+        backend.mouseBoost(true);
+        backend.mouseBoost(false);
+        backend.flight().advance(2);
+        QVERIFY(backend.flight().ship.speed > 25);
+    }
+
+    void musicPlaysOnWhileTheBoardIsOpen()
+    {
+        QTemporaryDir dir;
+        Backend backend(nullptr, dir.filePath("omawing.conf"));
+        backend.setMusicVolume(0);
+        backend.toggleMusic();
+        if (!backend.soundError().isEmpty())
+            QSKIP("No audio output here.");
+        QVERIFY(backend.audio().musicPlaying());
+        backend.setPaused(true, true);   // The score board.
+        QVERIFY(backend.audio().musicPlaying());
+        QVERIFY(!backend.audio().effectsPlaying());
+        backend.setPaused(true);         // Space.
+        QVERIFY(!backend.audio().musicPlaying());
+        backend.setPaused(false);
+        QVERIFY(backend.audio().musicPlaying());
+        if (const auto player = backend.audio().findChild<QMediaPlayer *>())
+            QTRY_VERIFY_WITH_TIMEOUT(player->mediaStatus() != QMediaPlayer::LoadingMedia, 10000);
+    }
+
     void switchingThemeShowsItsScene()
     {
         QTemporaryDir dir;

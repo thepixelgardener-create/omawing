@@ -21,7 +21,6 @@
   "Steer": "Diriger",
   "Climb or descend": "Monter ou descendre",
   "Boost": "Boost",
-  "Drag": "Glisser",
   "Steer with the mouse": "Diriger avec la souris",
   "Pause or play": "Pause ou lecture",
   "Take control or watch the demo": "Prendre les commandes ou regarder la démo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Les fichiers de musique sont introuvables.",
   "Flying into the future": "Cap sur le futur",
   "Show or hide the titles and toolbar": "Afficher ou masquer les titres et la barre d'outils",
-  "Titles and toolbar hidden. Press U to show them.": "Titres et barre d'outils masqués. Appuyez sur U pour les afficher."
+  "Titles and toolbar hidden. Press U to show them.": "Titres et barre d'outils masqués. Appuyez sur U pour les afficher.",
+  "Left button": "Bouton gauche",
+  "Right drag": "Glisser avec le bouton droit"
 }

@@ -21,7 +21,6 @@
   "Steer": "Pilota",
   "Climb or descend": "Puja o baixa",
   "Boost": "Turbo",
-  "Drag": "Arrossega",
   "Steer with the mouse": "Pilota amb el ratolí",
   "Pause or play": "Pausa o reprodueix",
   "Take control or watch the demo": "Pren el control o mira la demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Falten els fitxers de música.",
   "Flying into the future": "Volant cap al futur",
   "Show or hide the titles and toolbar": "Mostra o amaga els títols i la barra d'eines",
-  "Titles and toolbar hidden. Press U to show them.": "Títols i barra d'eines amagats. Premeu U per mostrar-los."
+  "Titles and toolbar hidden. Press U to show them.": "Títols i barra d'eines amagats. Premeu U per mostrar-los.",
+  "Left button": "Botó esquerre",
+  "Right drag": "Arrossegar amb el botó dret"
 }

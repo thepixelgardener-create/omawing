@@ -21,7 +21,6 @@
   "Steer": "Управление",
   "Climb or descend": "Изкачване или спускане",
   "Boost": "Ускорение",
-  "Drag": "Плъзгане",
   "Steer with the mouse": "Управление с мишката",
   "Pause or play": "Пауза или пускане",
   "Take control or watch the demo": "Поеми управлението или гледай демото",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Музикалните файлове липсват.",
   "Flying into the future": "Летим към бъдещето",
   "Show or hide the titles and toolbar": "Показване или скриване на заглавията и лентата с инструменти",
-  "Titles and toolbar hidden. Press U to show them.": "Заглавията и лентата с инструменти са скрити. Натиснете U, за да ги покажете."
+  "Titles and toolbar hidden. Press U to show them.": "Заглавията и лентата с инструменти са скрити. Натиснете U, за да ги покажете.",
+  "Left button": "Ляв бутон",
+  "Right drag": "Плъзгане с десен бутон"
 }

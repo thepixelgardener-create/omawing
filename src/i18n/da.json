@@ -21,7 +21,6 @@
   "Steer": "Styr",
   "Climb or descend": "Stig eller dyk",
   "Boost": "Boost",
-  "Drag": "Træk",
   "Steer with the mouse": "Styr med musen",
   "Pause or play": "Pause eller afspil",
   "Take control or watch the demo": "Tag styringen eller se demoen",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Musikfilerne mangler.",
   "Flying into the future": "Vi flyver ind i fremtiden",
   "Show or hide the titles and toolbar": "Vis eller skjul titler og værktøjslinje",
-  "Titles and toolbar hidden. Press U to show them.": "Titler og værktøjslinje er skjult. Tryk på U for at vise dem."
+  "Titles and toolbar hidden. Press U to show them.": "Titler og værktøjslinje er skjult. Tryk på U for at vise dem.",
+  "Left button": "Venstre knap",
+  "Right drag": "Træk med højre knap"
 }

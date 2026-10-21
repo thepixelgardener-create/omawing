@@ -21,7 +21,6 @@
   "Steer": "سمت دیں",
   "Climb or descend": "اوپر یا نیچے جائیں",
   "Boost": "بوسٹ",
-  "Drag": "گھسیٹیں",
   "Steer with the mouse": "ماؤس سے سمت دیں",
   "Pause or play": "روکیں یا چلائیں",
   "Take control or watch the demo": "کنٹرول سنبھالیں یا ڈیمو دیکھیں",
@@ -54,5 +53,7 @@
   "The music files are missing.": "موسیقی کی فائلیں موجود نہیں ہیں۔",
   "Flying into the future": "مستقبل کی طرف پرواز",
   "Show or hide the titles and toolbar": "عنوانات اور ٹول بار دکھائیں یا چھپائیں",
-  "Titles and toolbar hidden. Press U to show them.": "عنوانات اور ٹول بار چھپے ہوئے ہیں۔ دکھانے کے لیے U دبائیں۔"
+  "Titles and toolbar hidden. Press U to show them.": "عنوانات اور ٹول بار چھپے ہوئے ہیں۔ دکھانے کے لیے U دبائیں۔",
+  "Left button": "بایاں بٹن",
+  "Right drag": "دائیں بٹن سے گھسیٹیں"
 }

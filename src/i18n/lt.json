@@ -21,7 +21,6 @@
   "Steer": "Vairuoti",
   "Climb or descend": "Kilti arba leistis",
   "Boost": "Greitinimas",
-  "Drag": "Tempti",
   "Steer with the mouse": "Vairuoti pele",
   "Pause or play": "Pauzė arba groti",
   "Take control or watch the demo": "Perimti valdymą arba žiūrėti demonstraciją",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Trūksta muzikos failų.",
   "Flying into the future": "Skrendame į ateitį",
   "Show or hide the titles and toolbar": "Rodyti arba slėpti pavadinimus ir įrankių juostą",
-  "Titles and toolbar hidden. Press U to show them.": "Pavadinimai ir įrankių juosta paslėpti. Paspauskite U, kad juos parodytumėte."
+  "Titles and toolbar hidden. Press U to show them.": "Pavadinimai ir įrankių juosta paslėpti. Paspauskite U, kad juos parodytumėte.",
+  "Left button": "Kairysis mygtukas",
+  "Right drag": "Tempimas dešiniuoju mygtuku"
 }

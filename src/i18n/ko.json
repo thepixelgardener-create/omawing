@@ -21,7 +21,6 @@
   "Steer": "방향 전환",
   "Climb or descend": "상승 또는 하강",
   "Boost": "부스트",
-  "Drag": "드래그",
   "Steer with the mouse": "마우스로 조종",
   "Pause or play": "일시 정지 또는 재생",
   "Take control or watch the demo": "직접 조종 또는 데모 보기",
@@ -54,5 +53,7 @@
   "The music files are missing.": "음악 파일이 없습니다.",
   "Flying into the future": "미래로 날아가다",
   "Show or hide the titles and toolbar": "제목과 도구 모음 표시 또는 숨기기",
-  "Titles and toolbar hidden. Press U to show them.": "제목과 도구 모음이 숨겨졌습니다. U 키를 누르면 표시됩니다."
+  "Titles and toolbar hidden. Press U to show them.": "제목과 도구 모음이 숨겨졌습니다. U 키를 누르면 표시됩니다.",
+  "Left button": "왼쪽 버튼",
+  "Right drag": "오른쪽 버튼으로 드래그"
 }

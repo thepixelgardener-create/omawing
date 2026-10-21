@@ -21,7 +21,6 @@
   "Steer": "Yön ver",
   "Climb or descend": "Tırman veya alçal",
   "Boost": "Takviye",
-  "Drag": "Sürükle",
   "Steer with the mouse": "Fareyle yön ver",
   "Pause or play": "Duraklat veya oynat",
   "Take control or watch the demo": "Kontrolü al veya demoyu izle",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Müzik dosyaları eksik.",
   "Flying into the future": "Geleceğe uçuyoruz",
   "Show or hide the titles and toolbar": "Başlıkları ve araç çubuğunu göster veya gizle",
-  "Titles and toolbar hidden. Press U to show them.": "Başlıklar ve araç çubuğu gizlendi. Göstermek için U'ya basın."
+  "Titles and toolbar hidden. Press U to show them.": "Başlıklar ve araç çubuğu gizlendi. Göstermek için U'ya basın.",
+  "Left button": "Sol düğme",
+  "Right drag": "Sağ düğmeyle sürükle"
 }

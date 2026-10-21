@@ -21,7 +21,6 @@
   "Steer": "Kormányzás",
   "Climb or descend": "Emelkedés vagy süllyedés",
   "Boost": "Boost",
-  "Drag": "Húzás",
   "Steer with the mouse": "Kormányzás egérrel",
   "Pause or play": "Szünet vagy lejátszás",
   "Take control or watch the demo": "Irányítás átvétele vagy a demó nézése",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Hiányoznak a zenefájlok.",
   "Flying into the future": "Repülés a jövőbe",
   "Show or hide the titles and toolbar": "Címek és eszköztár megjelenítése vagy elrejtése",
-  "Titles and toolbar hidden. Press U to show them.": "A címek és az eszköztár rejtve vannak. Az U billentyűvel jelenítheti meg őket."
+  "Titles and toolbar hidden. Press U to show them.": "A címek és az eszköztár rejtve vannak. Az U billentyűvel jelenítheti meg őket.",
+  "Left button": "Bal gomb",
+  "Right drag": "Húzás jobb gombbal"
 }

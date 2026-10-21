@@ -21,7 +21,6 @@
   "Steer": "Krmari",
   "Climb or descend": "Dviganje ali spuščanje",
   "Boost": "Pospešek",
-  "Drag": "Vleci",
   "Steer with the mouse": "Krmari z miško",
   "Pause or play": "Premor ali predvajanje",
   "Take control or watch the demo": "Prevzemi krmilo ali glej demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Glasbene datoteke manjkajo.",
   "Flying into the future": "Letimo v prihodnost",
   "Show or hide the titles and toolbar": "Prikaži ali skrij naslove in orodno vrstico",
-  "Titles and toolbar hidden. Press U to show them.": "Naslovi in orodna vrstica so skriti. Pritisnite U, da jih prikažete."
+  "Titles and toolbar hidden. Press U to show them.": "Naslovi in orodna vrstica so skriti. Pritisnite U, da jih prikažete.",
+  "Left button": "Levi gumb",
+  "Right drag": "Vlečenje z desnim gumbom"
 }

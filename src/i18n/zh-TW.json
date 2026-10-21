@@ -21,7 +21,6 @@
   "Steer": "轉向",
   "Climb or descend": "爬升或下降",
   "Boost": "加速",
-  "Drag": "拖曳",
   "Steer with the mouse": "用滑鼠轉向",
   "Pause or play": "暫停或播放",
   "Take control or watch the demo": "接手操控或觀看示範",
@@ -54,5 +53,7 @@
   "The music files are missing.": "缺少音樂檔案。",
   "Flying into the future": "飛向未來",
   "Show or hide the titles and toolbar": "顯示或隱藏標題和工具列",
-  "Titles and toolbar hidden. Press U to show them.": "標題和工具列已隱藏。按 U 鍵顯示。"
+  "Titles and toolbar hidden. Press U to show them.": "標題和工具列已隱藏。按 U 鍵顯示。",
+  "Left button": "左鍵",
+  "Right drag": "右鍵拖曳"
 }

@@ -21,7 +21,6 @@
   "Steer": "Stūrēt",
   "Climb or descend": "Celties vai nolaisties",
   "Boost": "Paātrinājums",
-  "Drag": "Vilkt",
   "Steer with the mouse": "Stūrēt ar peli",
   "Pause or play": "Pauze vai atskaņot",
   "Take control or watch the demo": "Pārņemt vadību vai skatīties demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Trūkst mūzikas failu.",
   "Flying into the future": "Lidojam nākotnē",
   "Show or hide the titles and toolbar": "Rādīt vai paslēpt virsrakstus un rīkjoslu",
-  "Titles and toolbar hidden. Press U to show them.": "Virsraksti un rīkjosla ir paslēpti. Nospiediet U, lai tos parādītu."
+  "Titles and toolbar hidden. Press U to show them.": "Virsraksti un rīkjosla ir paslēpti. Nospiediet U, lai tos parādītu.",
+  "Left button": "Kreisā poga",
+  "Right drag": "Vilkšana ar labo pogu"
 }

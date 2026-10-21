@@ -21,7 +21,6 @@
   "Steer": "Upravljaj",
   "Climb or descend": "Penji se ili spuštaj",
   "Boost": "Pojačanje",
-  "Drag": "Povuci",
   "Steer with the mouse": "Upravljaj mišem",
   "Pause or play": "Pauza ili reprodukcija",
   "Take control or watch the demo": "Preuzmi upravljanje ili gledaj demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Nedostaju glazbene datoteke.",
   "Flying into the future": "Letimo u budućnost",
   "Show or hide the titles and toolbar": "Prikaži ili sakrij naslove i alatnu traku",
-  "Titles and toolbar hidden. Press U to show them.": "Naslovi i alatna traka su skriveni. Pritisnite U da ih prikažete."
+  "Titles and toolbar hidden. Press U to show them.": "Naslovi i alatna traka su skriveni. Pritisnite U da ih prikažete.",
+  "Left button": "Lijeva tipka",
+  "Right drag": "Povlačenje desnom tipkom"
 }

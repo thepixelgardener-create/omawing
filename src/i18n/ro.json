@@ -21,7 +21,6 @@
   "Steer": "Pilotează",
   "Climb or descend": "Urcă sau coboară",
   "Boost": "Boost",
-  "Drag": "Trage",
   "Steer with the mouse": "Pilotează cu mouse-ul",
   "Pause or play": "Pauză sau redare",
   "Take control or watch the demo": "Preia controlul sau urmărește demo-ul",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Lipsesc fișierele muzicale.",
   "Flying into the future": "Zburăm spre viitor",
   "Show or hide the titles and toolbar": "Afișează sau ascunde titlurile și bara de instrumente",
-  "Titles and toolbar hidden. Press U to show them.": "Titlurile și bara de instrumente sunt ascunse. Apăsați U pentru a le afișa."
+  "Titles and toolbar hidden. Press U to show them.": "Titlurile și bara de instrumente sunt ascunse. Apăsați U pentru a le afișa.",
+  "Left button": "Butonul stâng",
+  "Right drag": "Trageți cu butonul drept"
 }

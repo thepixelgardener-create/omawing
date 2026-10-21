@@ -21,7 +21,6 @@
   "Steer": "旋回",
   "Climb or descend": "上昇・下降",
   "Boost": "ブースト",
-  "Drag": "ドラッグ",
   "Steer with the mouse": "マウスで操縦",
   "Pause or play": "一時停止・再生",
   "Take control or watch the demo": "操縦する・デモを見る",
@@ -54,5 +53,7 @@
   "The music files are missing.": "音楽ファイルが見つかりません。",
   "Flying into the future": "未来へ飛び立とう",
   "Show or hide the titles and toolbar": "タイトルとツールバーの表示/非表示",
-  "Titles and toolbar hidden. Press U to show them.": "タイトルとツールバーを非表示にしました。U キーで表示します。"
+  "Titles and toolbar hidden. Press U to show them.": "タイトルとツールバーを非表示にしました。U キーで表示します。",
+  "Left button": "左ボタン",
+  "Right drag": "右ボタンでドラッグ"
 }

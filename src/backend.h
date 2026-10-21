@@ -74,7 +74,9 @@ public:
     Q_INVOKABLE void tick(double seconds);
     void setRefreshRate(double hertz) { m_refreshRate = hertz; }
     Q_INVOKABLE void togglePause() { setPaused(!m_paused); }
-    Q_INVOKABLE void setPaused(bool paused);
+    // Pausing silences the music too, unless keepMusic: the score board
+    // stops the flight but lets the music play on.
+    Q_INVOKABLE void setPaused(bool paused, bool keepMusic = false);
     Q_INVOKABLE void toggleDemo() { setDemo(!m_flight.demo); }
     Q_INVOKABLE void setDemo(bool demo);
     Q_INVOKABLE void nextScene();
@@ -88,6 +90,8 @@ public:
     // Flight keys take Qt key codes; they return whether the key steers.
     Q_INVOKABLE bool keyDown(int key);
     Q_INVOKABLE bool keyUp(int key);
+    // Holding the left mouse button boosts, and takes the controls.
+    Q_INVOKABLE void mouseBoost(bool down);
     Q_INVOKABLE void stickStart();
     Q_INVOKABLE void stickMove(double x, double y);
     Q_INVOKABLE void stickEnd();
@@ -118,7 +122,7 @@ private:
     QString m_settingsFile, m_settingsError;
     Scene::Look m_look;
     ScoreBoard m_board;
-    bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true, m_interface = true;
+    bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true, m_interface = true, m_musicThroughPause = false;
     int m_frames = 0, m_fps = 0;
     double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0;
     double m_musicVolume = 0.8, m_effectsVolume = 0.8;

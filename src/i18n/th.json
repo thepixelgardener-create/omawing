@@ -21,7 +21,6 @@
   "Steer": "บังคับทิศทาง",
   "Climb or descend": "ไต่ระดับหรือลดระดับ",
   "Boost": "บูสต์",
-  "Drag": "ลาก",
   "Steer with the mouse": "บังคับทิศทางด้วยเมาส์",
   "Pause or play": "หยุดชั่วคราวหรือเล่น",
   "Take control or watch the demo": "ควบคุมเองหรือดูเดโม",
@@ -54,5 +53,7 @@
   "The music files are missing.": "ไม่พบไฟล์เพลง",
   "Flying into the future": "บินสู่อนาคต",
   "Show or hide the titles and toolbar": "แสดงหรือซ่อนชื่อและแถบเครื่องมือ",
-  "Titles and toolbar hidden. Press U to show them.": "ซ่อนชื่อและแถบเครื่องมือแล้ว กด U เพื่อแสดง"
+  "Titles and toolbar hidden. Press U to show them.": "ซ่อนชื่อและแถบเครื่องมือแล้ว กด U เพื่อแสดง",
+  "Left button": "ปุ่มซ้าย",
+  "Right drag": "ลากด้วยปุ่มขวา"
 }

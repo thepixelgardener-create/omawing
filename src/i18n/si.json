@@ -21,7 +21,6 @@
   "Steer": "හසුරුවන්න",
   "Climb or descend": "නඟින්න හෝ බසින්න",
   "Boost": "බූස්ට්",
-  "Drag": "අදින්න",
   "Steer with the mouse": "මූසිකයෙන් හසුරුවන්න",
   "Pause or play": "විරාමය හෝ වාදනය",
   "Take control or watch the demo": "පාලනය ගන්න හෝ ඩෙමෝව නරඹන්න",
@@ -54,5 +53,7 @@
   "The music files are missing.": "සංගීත ගොනු නොමැත.",
   "Flying into the future": "අනාගතයට පියාසර කරමින්",
   "Show or hide the titles and toolbar": "මාතෘකා සහ මෙවලම් තීරුව පෙන්වන්න හෝ සඟවන්න",
-  "Titles and toolbar hidden. Press U to show them.": "මාතෘකා සහ මෙවලම් තීරුව සඟවා ඇත. ඒවා පෙන්වීමට U ඔබන්න."
+  "Titles and toolbar hidden. Press U to show them.": "මාතෘකා සහ මෙවලම් තීරුව සඟවා ඇත. ඒවා පෙන්වීමට U ඔබන්න.",
+  "Left button": "වම් බොත්තම",
+  "Right drag": "දකුණු බොත්තමෙන් අදින්න"
 }

@@ -21,7 +21,6 @@
   "Steer": "Поворот",
   "Climb or descend": "Набір висоти або зниження",
   "Boost": "Форсаж",
-  "Drag": "Перетягування",
   "Steer with the mouse": "Керування мишею",
   "Pause or play": "Пауза або відтворення",
   "Take control or watch the demo": "Взяти керування або дивитися демо",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Музичні файли відсутні.",
   "Flying into the future": "Летимо в майбутнє",
   "Show or hide the titles and toolbar": "Показати або сховати заголовки й панель інструментів",
-  "Titles and toolbar hidden. Press U to show them.": "Заголовки й панель інструментів приховано. Натисніть U, щоб показати їх."
+  "Titles and toolbar hidden. Press U to show them.": "Заголовки й панель інструментів приховано. Натисніть U, щоб показати їх.",
+  "Left button": "Ліва кнопка",
+  "Right drag": "Перетягування правою кнопкою"
 }

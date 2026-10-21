@@ -21,7 +21,6 @@
   "Steer": "Boshqarish",
   "Climb or descend": "Ko‘tarilish yoki pasayish",
   "Boost": "Kuchaytirish",
-  "Drag": "Sudrash",
   "Steer with the mouse": "Sichqoncha bilan boshqarish",
   "Pause or play": "Pauza yoki ijro",
   "Take control or watch the demo": "Boshqaruvni olish yoki demoni tomosha qilish",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Musiqa fayllari topilmadi.",
   "Flying into the future": "Kelajak sari parvoz",
   "Show or hide the titles and toolbar": "Sarlavhalar va asboblar panelini ko‘rsatish yoki yashirish",
-  "Titles and toolbar hidden. Press U to show them.": "Sarlavhalar va asboblar paneli yashirildi. Ko‘rsatish uchun U tugmasini bosing."
+  "Titles and toolbar hidden. Press U to show them.": "Sarlavhalar va asboblar paneli yashirildi. Ko‘rsatish uchun U tugmasini bosing.",
+  "Left button": "Chap tugma",
+  "Right drag": "O‘ng tugma bilan sudrash"
 }

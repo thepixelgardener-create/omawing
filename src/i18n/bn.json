@@ -21,7 +21,6 @@
   "Steer": "দিক দিন",
   "Climb or descend": "উপরে ওঠা বা নিচে নামা",
   "Boost": "বুস্ট",
-  "Drag": "টানুন",
   "Steer with the mouse": "মাউস দিয়ে দিক দিন",
   "Pause or play": "বিরতি বা চালান",
   "Take control or watch the demo": "নিয়ন্ত্রণ নিন বা ডেমো দেখুন",
@@ -54,5 +53,7 @@
   "The music files are missing.": "সংগীতের ফাইলগুলো পাওয়া যাচ্ছে না।",
   "Flying into the future": "ভবিষ্যতের দিকে উড়ে চলা",
   "Show or hide the titles and toolbar": "শিরোনাম ও টুলবার দেখান বা লুকান",
-  "Titles and toolbar hidden. Press U to show them.": "শিরোনাম ও টুলবার লুকানো। দেখাতে U চাপুন।"
+  "Titles and toolbar hidden. Press U to show them.": "শিরোনাম ও টুলবার লুকানো। দেখাতে U চাপুন।",
+  "Left button": "বাঁ বোতাম",
+  "Right drag": "ডান বোতামে টানুন"
 }

@@ -64,7 +64,8 @@ public:
     static constexpr double CruiseSpeed = 13, BoostSpeed = 27;
     static constexpr int MaxParticles = 700;
 
-    enum Key { Left = 1, Right = 2, Climb = 4, Descend = 8, Boost = 16 };
+    // Boost comes from Shift, MouseBoost from the left mouse button; either boosts.
+    enum Key { Left = 1, Right = 2, Climb = 4, Descend = 8, Boost = 16, MouseBoost = 32 };
 
     enum Event { RingPassed = 1, Impact = 2, Wreck = 4, BoostStarted = 8 };
     // The cues of the last step (or advance), for the sound effects.

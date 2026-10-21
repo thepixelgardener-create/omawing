@@ -26,7 +26,8 @@ an SVG-in-the-browser demo; the renderer is a port of that code.
 | A D / ← → | Steer |
 | W S / ↑ ↓ | Climb or descend |
 | Shift | Boost |
-| Drag | Steer with the mouse |
+| Left mouse button | Boost |
+| Right drag | Steer with the mouse |
 | Space | Pause or play |
 | T | Take control or watch the demo |
 | N | Next scene |

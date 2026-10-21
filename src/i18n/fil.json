@@ -21,7 +21,6 @@
   "Steer": "Ipihit",
   "Climb or descend": "Umakyat o bumaba",
   "Boost": "Boost",
-  "Drag": "I-drag",
   "Steer with the mouse": "Ipihit gamit ang mouse",
   "Pause or play": "I-pause o i-play",
   "Take control or watch the demo": "Kunin ang kontrol o panoorin ang demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Nawawala ang mga music file.",
   "Flying into the future": "Lumilipad patungo sa hinaharap",
   "Show or hide the titles and toolbar": "Ipakita o itago ang mga pamagat at toolbar",
-  "Titles and toolbar hidden. Press U to show them.": "Nakatago ang mga pamagat at toolbar. Pindutin ang U para ipakita."
+  "Titles and toolbar hidden. Press U to show them.": "Nakatago ang mga pamagat at toolbar. Pindutin ang U para ipakita.",
+  "Left button": "Kaliwang button",
+  "Right drag": "I-drag gamit ang kanang button"
 }

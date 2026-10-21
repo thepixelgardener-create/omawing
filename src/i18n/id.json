@@ -21,7 +21,6 @@
   "Steer": "Kemudikan",
   "Climb or descend": "Naik atau turun",
   "Boost": "Boost",
-  "Drag": "Seret",
   "Steer with the mouse": "Kemudikan dengan mouse",
   "Pause or play": "Jeda atau putar",
   "Take control or watch the demo": "Ambil kendali atau tonton demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "File musik tidak ditemukan.",
   "Flying into the future": "Terbang menuju masa depan",
   "Show or hide the titles and toolbar": "Tampilkan atau sembunyikan judul dan bilah alat",
-  "Titles and toolbar hidden. Press U to show them.": "Judul dan bilah alat disembunyikan. Tekan U untuk menampilkannya."
+  "Titles and toolbar hidden. Press U to show them.": "Judul dan bilah alat disembunyikan. Tekan U untuk menampilkannya.",
+  "Left button": "Tombol kiri",
+  "Right drag": "Seret dengan tombol kanan"
 }

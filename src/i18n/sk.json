@@ -21,7 +21,6 @@
   "Steer": "Riadiť",
   "Climb or descend": "Stúpať alebo klesať",
   "Boost": "Prídavný ťah",
-  "Drag": "Ťahanie",
   "Steer with the mouse": "Riadiť myšou",
   "Pause or play": "Pozastaviť alebo prehrať",
   "Take control or watch the demo": "Prevziať riadenie alebo sledovať demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Chýbajú hudobné súbory.",
   "Flying into the future": "Letíme do budúcnosti",
   "Show or hide the titles and toolbar": "Zobraziť alebo skryť nadpisy a panel nástrojov",
-  "Titles and toolbar hidden. Press U to show them.": "Nadpisy a panel nástrojov sú skryté. Zobrazíte ich klávesom U."
+  "Titles and toolbar hidden. Press U to show them.": "Nadpisy a panel nástrojov sú skryté. Zobrazíte ich klávesom U.",
+  "Left button": "Ľavé tlačidlo",
+  "Right drag": "Ťahanie pravým tlačidlom"
 }

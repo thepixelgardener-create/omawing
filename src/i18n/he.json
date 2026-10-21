@@ -21,7 +21,6 @@
   "Steer": "היגוי",
   "Climb or descend": "טיפוס או ירידה",
   "Boost": "האצה",
-  "Drag": "גרירה",
   "Steer with the mouse": "היגוי בעכבר",
   "Pause or play": "השהה או הפעל",
   "Take control or watch the demo": "קח שליטה או צפה בהדגמה",
@@ -54,5 +53,7 @@
   "The music files are missing.": "קובצי המוזיקה חסרים.",
   "Flying into the future": "טסים אל העתיד",
   "Show or hide the titles and toolbar": "הצגה או הסתרה של הכותרות וסרגל הכלים",
-  "Titles and toolbar hidden. Press U to show them.": "הכותרות וסרגל הכלים מוסתרים. הקישו U כדי להציג אותם."
+  "Titles and toolbar hidden. Press U to show them.": "הכותרות וסרגל הכלים מוסתרים. הקישו U כדי להציג אותם.",
+  "Left button": "לחצן שמאלי",
+  "Right drag": "גרירה בלחצן הימני"
 }

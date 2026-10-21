@@ -193,8 +193,9 @@ void Backend::updatePulse(double dt, bool beat, double level) {
     m_look.level = m_level;
 }
 
-void Backend::setPaused(bool paused) {
+void Backend::setPaused(bool paused, bool keepMusic) {
     m_paused = paused;
+    m_musicThroughPause = paused && keepMusic;
     m_flight.clearInput();
     syncSound();
     emit changed();
@@ -287,7 +288,7 @@ void Backend::toggleBanner() {
 
 void Backend::syncSound() {
     const bool audible = !m_paused && !m_hidden;
-    m_audio.setRunning(m_musicWanted && audible, m_effectsWanted && audible);
+    m_audio.setRunning(m_musicWanted && !m_hidden && (!m_paused || m_musicThroughPause), m_effectsWanted && audible);
 }
 
 void Backend::setHidden(bool hidden) {
@@ -325,6 +326,18 @@ bool Backend::keyUp(int key) {
     if (flag)
         m_flight.release(Flight::Key(flag));
     return flag;
+}
+
+void Backend::mouseBoost(bool down) {
+    if (!down) {
+        m_flight.release(Flight::MouseBoost);
+        return;
+    }
+    if (m_paused)
+        return;
+    if (m_flight.demo)
+        setDemo(false);
+    m_flight.press(Flight::MouseBoost);
 }
 
 void Backend::stickStart() {

@@ -29,7 +29,8 @@ ApplicationWindow {
     function showScores() {
         if (board.visible) return
         board.wasPaused = backend.paused
-        backend.setPaused(true)
+        // The flight waits while the board is open; the music plays on.
+        backend.setPaused(true, true)
         player.text = backend.scoreBoard.playerName
         board.open()
         if (backend.scoreBoard.pendingScore > 0) player.forceActiveFocus()
@@ -103,15 +104,34 @@ ApplicationWindow {
             id: drag
             anchors.fill: parent
             hoverEnabled: true
+            // Hold the left button to boost; drag with the right one to steer.
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
             property point origin
-            onPressed: mouse => { view.forceActiveFocus(); origin = Qt.point(mouse.x, mouse.y); backend.stickStart() }
+            property bool steering: false
+            onPressed: mouse => {
+                view.forceActiveFocus()
+                if (mouse.button === Qt.LeftButton) {
+                    backend.mouseBoost(true)
+                } else {
+                    steering = true
+                    origin = Qt.point(mouse.x, mouse.y)
+                    backend.stickStart()
+                }
+            }
             onPositionChanged: mouse => {
                 win.wake()
                 // Dragging a sixth of the window's width is full stick.
-                if (pressed) backend.stickMove((mouse.x - origin.x) / (width * 0.16), (mouse.y - origin.y) / (width * 0.16))
+                if (steering) backend.stickMove((mouse.x - origin.x) / (width * 0.16), (mouse.y - origin.y) / (width * 0.16))
             }
-            onReleased: backend.stickEnd()
-            onCanceled: backend.stickEnd()
+            onReleased: mouse => {
+                if (mouse.button === Qt.LeftButton) {
+                    backend.mouseBoost(false)
+                } else {
+                    steering = false
+                    backend.stickEnd()
+                }
+            }
+            onCanceled: { backend.mouseBoost(false); steering = false; backend.stickEnd() }
         }
     }
 
@@ -294,7 +314,8 @@ ApplicationWindow {
                                     ["A D  ← →", qsTr("Steer")],
                                     ["W S  ↑ ↓", qsTr("Climb or descend")],
                                     ["Shift", qsTr("Boost")],
-                                    [qsTr("Drag"), qsTr("Steer with the mouse")],
+                                    [qsTr("Left button"), qsTr("Boost")],
+                                    [qsTr("Right drag"), qsTr("Steer with the mouse")],
                                     ["Space", qsTr("Pause or play")],
                                     ["T", qsTr("Take control or watch the demo")],
                                     ["N", qsTr("Next scene")],

@@ -21,7 +21,6 @@
   "Steer": "Stýra",
   "Climb or descend": "Hækka eða lækka flugið",
   "Boost": "Boost",
-  "Drag": "Draga",
   "Steer with the mouse": "Stýra með músinni",
   "Pause or play": "Hlé eða spila",
   "Take control or watch the demo": "Taka stjórnina eða horfa á demóið",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Tónlistarskrárnar vantar.",
   "Flying into the future": "Flogið inn í framtíðina",
   "Show or hide the titles and toolbar": "Sýna eða fela titla og tækjastiku",
-  "Titles and toolbar hidden. Press U to show them.": "Titlar og tækjastika eru falin. Ýttu á U til að sýna þau."
+  "Titles and toolbar hidden. Press U to show them.": "Titlar og tækjastika eru falin. Ýttu á U til að sýna þau.",
+  "Left button": "Vinstri hnappur",
+  "Right drag": "Draga með hægri hnappi"
 }

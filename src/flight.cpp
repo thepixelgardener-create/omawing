@@ -74,7 +74,7 @@ void Flight::step(double dt) {
             steering = m_stickX;
             climb = -m_stickY;
         }
-        boost = holding(Boost);
+        boost = holding(Boost) || holding(MouseBoost);
     }
     if (boost && !m_boosting) events |= BoostStarted;
     m_boosting = boost;

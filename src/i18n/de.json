@@ -21,7 +21,6 @@
   "Steer": "Lenken",
   "Climb or descend": "Steigen oder sinken",
   "Boost": "Boost",
-  "Drag": "Ziehen",
   "Steer with the mouse": "Mit der Maus lenken",
   "Pause or play": "Pause oder abspielen",
   "Take control or watch the demo": "Steuer übernehmen oder Demo ansehen",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Die Musikdateien fehlen.",
   "Flying into the future": "Flug in die Zukunft",
   "Show or hide the titles and toolbar": "Titel und Werkzeugleiste ein- oder ausblenden",
-  "Titles and toolbar hidden. Press U to show them.": "Titel und Werkzeugleiste ausgeblendet. Mit U wieder einblenden."
+  "Titles and toolbar hidden. Press U to show them.": "Titel und Werkzeugleiste ausgeblendet. Mit U wieder einblenden.",
+  "Left button": "Linke Maustaste",
+  "Right drag": "Mit rechter Maustaste ziehen"
 }

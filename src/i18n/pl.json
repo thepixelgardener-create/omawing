@@ -21,7 +21,6 @@
   "Steer": "Steruj",
   "Climb or descend": "Wznoś się lub opadaj",
   "Boost": "Dopalacz",
-  "Drag": "Przeciągnij",
   "Steer with the mouse": "Steruj myszą",
   "Pause or play": "Pauza lub odtwarzanie",
   "Take control or watch the demo": "Przejmij stery lub oglądaj demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Brakuje plików muzycznych.",
   "Flying into the future": "Lecimy w przyszłość",
   "Show or hide the titles and toolbar": "Pokaż lub ukryj tytuły i pasek narzędzi",
-  "Titles and toolbar hidden. Press U to show them.": "Tytuły i pasek narzędzi ukryte. Naciśnij U, aby je pokazać."
+  "Titles and toolbar hidden. Press U to show them.": "Tytuły i pasek narzędzi ukryte. Naciśnij U, aby je pokazać.",
+  "Left button": "Lewy przycisk",
+  "Right drag": "Przeciąganie prawym przyciskiem"
 }

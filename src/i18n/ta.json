@@ -21,7 +21,6 @@
   "Steer": "திசைதிருப்பு",
   "Climb or descend": "ஏறு அல்லது இறங்கு",
   "Boost": "பூஸ்ட்",
-  "Drag": "இழு",
   "Steer with the mouse": "சுட்டியால் திசைதிருப்பு",
   "Pause or play": "இடைநிறுத்து அல்லது இயக்கு",
   "Take control or watch the demo": "கட்டுப்பாட்டை எடுங்கள் அல்லது டெமோவைப் பாருங்கள்",
@@ -54,5 +53,7 @@
   "The music files are missing.": "இசைக் கோப்புகள் இல்லை.",
   "Flying into the future": "எதிர்காலத்தை நோக்கிப் பறக்கிறோம்",
   "Show or hide the titles and toolbar": "தலைப்புகளையும் கருவிப்பட்டியையும் காட்டு அல்லது மறை",
-  "Titles and toolbar hidden. Press U to show them.": "தலைப்புகளும் கருவிப்பட்டியும் மறைக்கப்பட்டுள்ளன. காட்ட U-ஐ அழுத்தவும்."
+  "Titles and toolbar hidden. Press U to show them.": "தலைப்புகளும் கருவிப்பட்டியும் மறைக்கப்பட்டுள்ளன. காட்ட U-ஐ அழுத்தவும்.",
+  "Left button": "இடது பொத்தான்",
+  "Right drag": "வலது பொத்தானால் இழுக்கவும்"
 }

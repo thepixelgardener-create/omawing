@@ -21,7 +21,6 @@
   "Steer": "هدایت",
   "Climb or descend": "اوج گرفتن یا پایین آمدن",
   "Boost": "تقویت",
-  "Drag": "کشیدن",
   "Steer with the mouse": "هدایت با ماوس",
   "Pause or play": "مکث یا پخش",
   "Take control or watch the demo": "کنترل را به دست بگیرید یا دمو را تماشا کنید",
@@ -54,5 +53,7 @@
   "The music files are missing.": "فایل‌های موسیقی پیدا نشد.",
   "Flying into the future": "پرواز به سوی آینده",
   "Show or hide the titles and toolbar": "نمایش یا پنهان کردن عنوان‌ها و نوار ابزار",
-  "Titles and toolbar hidden. Press U to show them.": "عنوان‌ها و نوار ابزار پنهان است. برای نمایش U را فشار دهید."
+  "Titles and toolbar hidden. Press U to show them.": "عنوان‌ها و نوار ابزار پنهان است. برای نمایش U را فشار دهید.",
+  "Left button": "دکمهٔ چپ",
+  "Right drag": "کشیدن با دکمهٔ راست"
 }

@@ -21,7 +21,6 @@
   "Steer": "Στροφή",
   "Climb or descend": "Άνοδος ή κάθοδος",
   "Boost": "Ενίσχυση",
-  "Drag": "Σύρσιμο",
   "Steer with the mouse": "Στροφή με το ποντίκι",
   "Pause or play": "Παύση ή αναπαραγωγή",
   "Take control or watch the demo": "Πάρτε τον έλεγχο ή δείτε το demo",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Λείπουν τα αρχεία μουσικής.",
   "Flying into the future": "Πετώντας προς το μέλλον",
   "Show or hide the titles and toolbar": "Εμφάνιση ή απόκρυψη τίτλων και γραμμής εργαλείων",
-  "Titles and toolbar hidden. Press U to show them.": "Οι τίτλοι και η γραμμή εργαλείων είναι κρυφά. Πατήστε U για εμφάνιση."
+  "Titles and toolbar hidden. Press U to show them.": "Οι τίτλοι και η γραμμή εργαλείων είναι κρυφά. Πατήστε U για εμφάνιση.",
+  "Left button": "Αριστερό κουμπί",
+  "Right drag": "Σύρσιμο με δεξί κουμπί"
 }

@@ -21,7 +21,6 @@
   "Steer": "Elekeza",
   "Climb or descend": "Panda au shuka",
   "Boost": "Nguvu za ziada",
-  "Drag": "Buruta",
   "Steer with the mouse": "Elekeza kwa kipanya",
   "Pause or play": "Sitisha au cheza",
   "Take control or watch the demo": "Chukua udhibiti au tazama onyesho",
@@ -54,5 +53,7 @@
   "The music files are missing.": "Faili za muziki hazipo.",
   "Flying into the future": "Tukiruka kuelekea siku zijazo",
   "Show or hide the titles and toolbar": "Onyesha au ficha vichwa na upau wa zana",
-  "Titles and toolbar hidden. Press U to show them.": "Vichwa na upau wa zana vimefichwa. Bonyeza U kuvionyesha."
+  "Titles and toolbar hidden. Press U to show them.": "Vichwa na upau wa zana vimefichwa. Bonyeza U kuvionyesha.",
+  "Left button": "Kitufe cha kushoto",
+  "Right drag": "Buruta kwa kitufe cha kulia"
 }
