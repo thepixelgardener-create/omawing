@@ -23,7 +23,14 @@ struct Popup {
 class Game {
 public:
     static constexpr double FullHull = 100, WreckTime = 2.5;
-    static constexpr int MaxMultiplier = 8;
+    static constexpr int MaxMultiplier = 8, RingPoints = 100;
+    // Hull lost to each thing hit, and won back by each ring flown through.
+    static constexpr double RimDamage = 12, PyramidDamage = 34, BallDamage = 25, CrystalDamage = 20, RingRepair = 3;
+    // After a hit, how long nothing else can hurt; and how long points float.
+    static constexpr double HurtTime = 1.4, PopupTime = 1.4;
+    // How close to the middle of a ring counts: inside RingRadius - RingMargin
+    // scores, within RingMargin of the rim hits it.
+    static constexpr double RingMargin = 0.75;
 
     double hull = FullHull;
     int score = 0, multiplier = 1, ringsFlown = 0;
