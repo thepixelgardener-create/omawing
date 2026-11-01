@@ -225,17 +225,21 @@ void Backend::updatePulse(double dt, bool beat, double level) {
 void Backend::setPaused(bool paused, bool keepMusic) {
     m_paused = paused;
     m_musicThroughPause = paused && keepMusic;
-    m_flight.clearInput();
+    clearInput();
     syncSound();
     emit changed();
     emit frameChanged();
 }
 
 void Backend::setDemo(bool demo) {
-    if (demo && !m_flight.demo)
+    if (demo == m_flight.demo)
+        return;
+    if (demo)
         endRun();
     m_flight.demo = demo;
-    m_flight.clearInput();
+    // Keys held for the autopilot's handover (or a run that just ended)
+    // don't carry over into the other mode.
+    clearInput();
     emit changed();
     emit frameChanged();
 }
@@ -249,6 +253,7 @@ void Backend::nextScene() {
 void Backend::restart() {
     endRun();
     m_flight.reset();
+    clearInput();
     emit changed();
     emit frameChanged();
 }
@@ -365,17 +370,22 @@ bool Backend::keyDown(int key) {
     if (m_paused)
         return true;
     // Any flight key takes over from the autopilot.
-    if (m_flight.demo)
-        setDemo(false);
+    setDemo(false);
+    m_keysDown.insert(key);
     m_flight.press(Flight::Key(flag));
     return true;
 }
 
+// A and Left both steer left: letting go of one keeps turning while the
+// other is still held.
 bool Backend::keyUp(int key) {
     const int flag = flightKey(key);
-    if (flag)
+    if (!flag)
+        return false;
+    m_keysDown.remove(key);
+    if (std::none_of(m_keysDown.cbegin(), m_keysDown.cend(), [flag](int held) { return flightKey(held) == flag; }))
         m_flight.release(Flight::Key(flag));
-    return flag;
+    return true;
 }
 
 void Backend::mouseBoost(bool down) {
@@ -385,8 +395,7 @@ void Backend::mouseBoost(bool down) {
     }
     if (m_paused)
         return;
-    if (m_flight.demo)
-        setDemo(false);
+    setDemo(false);
     m_flight.press(Flight::MouseBoost);
 }
 
@@ -404,4 +413,7 @@ void Backend::stickMove(double x, double y) {
 
 void Backend::stickEnd() { m_flight.setStick(false); }
 
-void Backend::clearInput() { m_flight.clearInput(); }
+void Backend::clearInput() {
+    m_keysDown.clear();
+    m_flight.clearInput();
+}

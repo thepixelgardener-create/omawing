@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QHash>
+#include <QSet>
 #include <QObject>
 #include <QSettings>
 #include <QTimer>
@@ -101,6 +102,8 @@ public:
     Q_INVOKABLE void stickStart();
     Q_INVOKABLE void stickMove(double x, double y);
     Q_INVOKABLE void stickEnd();
+    // Lets go of every key, button, and drag: for when focus moves away and
+    // their releases would go elsewhere.
     Q_INVOKABLE void clearInput();
     Q_INVOKABLE void zoom(double steps);
     Q_INVOKABLE void resetZoom();
@@ -141,4 +144,6 @@ private:
     double m_titles = 1;              // The titles fade in and out with their switch.
     double m_switchesFor = 5, m_switches = 0;   // How long the switch keys show, and how much.
     QTimer m_saveVolume;
+    // The flight keys held down, by Qt key code; several keys share a flag.
+    QSet<int> m_keysDown;
 };
