@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 
+#include "ground.h"
 #include "overlay.h"
 #include "view.h"
 #include "worldlayer.h"
@@ -50,6 +51,7 @@ public:
 
 private:
     View m_view;
+    Ground m_ground;
     WorldLayer m_world;
     Overlay m_overlay;
 };

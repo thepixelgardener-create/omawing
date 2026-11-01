@@ -60,9 +60,19 @@ const View::Act &View::actAt(int act) {
 }
 
 View::Palette View::paletteOf(int act) const {
-    std::array<Vec, 8> c;
-    for (int i = 0; i < 8; ++i)
-        c[i] = act == ThemeAct && look.theme[i].isValid() ? vecOf(look.theme[i]) : hex(actAt(act).colors[i]);
+    // The acts' own colours, parsed once.
+    static const auto builtIn = [] {
+        std::array<std::array<Vec, 8>, Flight::Acts> all;
+        for (int a = 0; a < Flight::Acts; ++a)
+            for (int i = 0; i < 8; ++i)
+                all[a][i] = hex(actAt(a).colors[i]);
+        return all;
+    }();
+    std::array<Vec, 8> c = builtIn[std::clamp(act, 0, Flight::Acts - 1)];
+    if (act == ThemeAct)
+        for (int i = 0; i < 8; ++i)
+            if (look.theme[i].isValid())
+                c[i] = vecOf(look.theme[i]);
     return {c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]};
 }
 
@@ -83,6 +93,11 @@ void View::begin(const Flight &frame, const QSizeF &size, const SceneLook &wante
                blend(previous.accent, next.accent, t), blend(previous.crystal, next.crystal, t)};
 
     valley = mix((act + Flight::Acts - 1) % Flight::Acts == 4 ? 1.0 : 0.0, act == 4 ? 1.0 : 0.0, t);
+
+    // Keep a trace of each act's sky, but scattered blue light dominates
+    // in the distance. This also blends smoothly during scene transitions.
+    static const Vec skyBlue = hex("#8ab9e2"), mirageViolet = hex("#9868a5");
+    m_atmosphere = blend(blend(palette.horizon, skyBlue, 0.68), mirageViolet, valley);
 
     // A hit shakes the camera, hard at first and dying away.
     camera = frame.camera;
@@ -112,6 +127,12 @@ QPointF View::project(const Vec &p) const {
 // Clips against the near plane and the four sides of the view, so nothing
 // projects behind the camera or to coordinates far outside the window.
 std::vector<Vec> View::clip(std::vector<Vec> polygon) const {
+    std::vector<Vec> scratch;
+    clipInPlace(polygon, scratch);
+    return polygon;
+}
+
+void View::clipInPlace(std::vector<Vec> &polygon, std::vector<Vec> &out) const {
     const double sx = width / (2 * Focal), sy = height / (2 * Focal);
     auto distance = [&](int plane, const Vec &p) {
         switch (plane) {
@@ -122,8 +143,8 @@ std::vector<Vec> View::clip(std::vector<Vec> polygon) const {
         default: return -p[1] + p[2] * sy;
         }
     };
-    // Most polygons are entirely inside or outside. Only allocate clipping
-    // buffers for the few that actually cross a frustum plane.
+    // Most polygons are entirely inside or outside. Only the few that cross
+    // a frustum plane are clipped.
     unsigned outsideAny = 0, outsideAll = 31;
     for (const Vec &p : polygon) {
         unsigned code = 0;
@@ -132,10 +153,12 @@ std::vector<Vec> View::clip(std::vector<Vec> polygon) const {
         outsideAny |= code;
         outsideAll &= code;
     }
-    if (outsideAll) return {};
-    if (!outsideAny) return polygon;
-    std::vector<Vec> out;
-    out.reserve(polygon.size() + 5);
+    if (outsideAll) {
+        polygon.clear();
+        return;
+    }
+    if (!outsideAny)
+        return;
     for (int plane = 0; plane < 5 && !polygon.empty(); ++plane) {
         if (!(outsideAny & (1u << plane))) continue;
         out.clear();
@@ -149,7 +172,6 @@ std::vector<Vec> View::clip(std::vector<Vec> polygon) const {
         }
         polygon.swap(out);
     }
-    return polygon;
 }
 
 QPolygonF View::polygonOf(const std::vector<Vec> &points) const {
@@ -169,12 +191,15 @@ double View::fadeIn(double distance) const { return smooth(clampTo((Far - distan
 // Detail falls off steadily with distance: full contrast while a tile is
 // at least FullSize tall, none once it is down to GoneSize, and a smooth
 // slope between them on a logarithmic scale, so there is no edge.
-namespace { constexpr double FullSize = 24, GoneSize = 1.5; }
+namespace {
+constexpr double FullSize = 24, GoneSize = 1.5;
+const double ContrastRange = std::log(FullSize / GoneSize);
+}
 
 double View::contrast(double depth) const {
     const double h = std::max(1.0, camera.y), d = std::max(1.0, depth);
     const double size = Focal * h * Tile / (d * d);
-    return smooth(clampTo(std::log(size / GoneSize) / std::log(FullSize / GoneSize), 0, 1));
+    return smooth(clampTo(std::log(size / GoneSize) / ContrastRange, 0, 1));
 }
 
 double View::floorReach() const { return std::min(700.0, std::sqrt(Focal * std::max(1.0, camera.y) * Tile / GoneSize)); }
@@ -193,10 +218,4 @@ Vec View::floorLight(double depth) const {
 Vec View::floorDark(double depth) const {
     const Vec average = blend(palette.tileA, palette.tileB, 0.5);
     return blend(blend(average, palette.tileB, contrast(depth)), atmosphere(), floorAir(*this, depth));
-}
-
-Vec View::atmosphere() const {
-    // Keep a trace of each act's sky, but scattered blue light dominates
-    // in the distance. This also blends smoothly during scene transitions.
-    return blend(blend(palette.horizon, draw::hex("#8ab9e2"), 0.68), draw::hex("#9868a5"), valley);
 }

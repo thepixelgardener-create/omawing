@@ -6,7 +6,6 @@
 #include <QPainter>
 #include <algorithm>
 
-#include "ground.h"
 #include "sky.h"
 
 using namespace geo;
@@ -49,7 +48,7 @@ int Scene::paint(QPainter &painter, const Flight &flight, const QSizeF &size, co
     painter.setClipRect(QRectF(0, 0, m_view.width, m_view.height));
     m_overlay.prepare(m_view, painter.worldTransform().m11());
     Sky::paint(painter, m_view);
-    Ground::paint(painter, m_view);
+    m_ground.paint(painter, m_view);
     m_world.build(m_view);
     m_world.paint(painter);
     m_overlay.paint(painter, m_view, hud);

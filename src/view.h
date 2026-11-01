@@ -103,6 +103,9 @@ public:
     QPointF project(const Vec &p) const;
     // Clips against the near plane and the four sides of the view.
     std::vector<Vec> clip(std::vector<Vec> polygon) const;
+    // The same, in place: `polygon` becomes what is left of it, and `scratch`
+    // is working space, kept by the caller so a frame doesn't allocate.
+    void clipInPlace(std::vector<Vec> &polygon, std::vector<Vec> &scratch) const;
     QPolygonF polygonOf(const std::vector<Vec> &points) const;
     // Aerial perspective: how far a thing at this depth has drifted towards
     // the colour of the air, 0 up close and at most a third at Far. A tint,
@@ -123,9 +126,11 @@ public:
     double floorReach() const;
     static constexpr double Tile = 12;
     // Shared atmospheric light keeps scenery and the ground joined at infinity.
-    Vec atmosphere() const;
+    // Worked out once per frame, in begin().
+    const Vec &atmosphere() const { return m_atmosphere; }
     double valley = 0; // Neon Mirage treatment, blended at scene boundaries.
 
 private:
     Palette paletteOf(int act) const;
+    Vec m_atmosphere{0, 0, 0};
 };
