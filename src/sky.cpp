@@ -47,7 +47,8 @@ void Sky::paint(QPainter &p, const View &view) {
     sky.setColorAt(0, rgb(top));
     sky.setColorAt(0.38, rgb(blend(top, mid, 0.7)));
     sky.setColorAt(0.72, rgb(blend(mid, low, 0.45)));
-    sky.setColorAt(1, rgb(blend(low, hex("#fff0dc"), 0.12)));
+    static const Vec warmGlow = hex("#fff0dc");
+    sky.setColorAt(1, rgb(blend(low, warmGlow, 0.12)));
     p.fillRect(QRectF(0, 0, W, std::max(1.0, split)), sky);
 
     // The copper bars, the Amiga's touch, as a faint shimmer near the horizon.
@@ -58,12 +59,22 @@ void Sky::paint(QPainter &p, const View &view) {
     }
     p.setOpacity(1);
 
-    // Stars in the upper sky, fading out as they near the glow.
-    const QColor starColor("#fff4e6");
-    for (int i = 0; i < 140; ++i) {
-        const double az = hash(i, 2) * 2 * M_PI, elevation = 0.12 + hash(i, 3) * 1.1, phase = hash(i, 4);
+    // Stars in the upper sky, fading out as they near the glow. Where each
+    // one sits never changes, so the field is laid out once.
+    struct Star {
+        double azimuth, elevation, phase;
+    };
+    static const auto stars = [] {
+        std::array<Star, 140> list;
+        for (int i = 0; i < int(list.size()); ++i)
+            list[i] = {hash(i, 2) * 2 * M_PI, 0.12 + hash(i, 3) * 1.1, hash(i, 4)};
+        return list;
+    }();
+    static const QColor starColor("#fff4e6");
+    for (const Star &star : stars) {
+        const double phase = star.phase;
         QPointF at;
-        if (!skyPoint(view, az, elevation, &at) || at.x() < 0 || at.x() > W || at.y() < 0)
+        if (!skyPoint(view, star.azimuth, star.elevation, &at) || at.x() < 0 || at.x() > W || at.y() < 0)
             continue;
         const double height = clampTo((horizon - 70 - at.y()) / 160, 0, 1);
         if (height <= 0)
@@ -77,7 +88,8 @@ void Sky::paint(QPainter &p, const View &view) {
 
     // A warm haze spreads along the horizon around the sun.
     const double sunAzimuth = 0.44, sunElevation = 0.1;
-    const Vec sunColor = blend(hex("#fff3dd"), view.palette.accent, 0.18);
+    static const Vec sunlight = hex("#fff3dd");
+    const Vec sunColor = blend(sunlight, view.palette.accent, 0.18);
     const Vec haloColor = blend(view.palette.accent, low, 0.35);
     const double dim = act.dimSun ? 0.35 : 1;
     QPointF sun;
@@ -166,7 +178,8 @@ void Sky::paint(QPainter &p, const View &view) {
     // One thin, fake stripe of mist on the horizon: brightest on the line
     // itself, gone a few units above and below. The only mist there is.
     if (horizon > -10 && horizon < view.height + 10) {
-        const QColor mist = rgb(blend(view.atmosphere(), hex("#fff0fa"), 0.3));
+        static const Vec haze = hex("#fff0fa");
+        const QColor mist = rgb(blend(view.atmosphere(), haze, 0.3));
         QLinearGradient line(0, horizon - 7, 0, horizon + 6);
         line.setColorAt(0, withAlpha(mist, 0));
         line.setColorAt(0.5, withAlpha(mist, 0.75));
@@ -193,7 +206,8 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
         const double period = 2 * M_PI * View::Focal * c.turn;
         const double scroll = view.camera.yaw * View::Focal * c.turn + view.camera.drift * c.slide + time * c.wind;
         p.setOpacity(c.opacity * (act.dimSun ? 0.45 : 1));
-        const QColor color = rgb(blend(view.palette.horizon, hex("#fff3e0"), 0.25 + layer * 0.2));
+        static const Vec cloudLight = hex("#fff3e0");
+        const QColor color = rgb(blend(view.palette.horizon, cloudLight, 0.25 + layer * 0.2));
         for (int i = 0; i < c.count; ++i) {
             const double width = 80 + hash(i, layer + 30) * 170, height = 6 + hash(i, layer + 40) * 8;
             const double y = horizon - mix(c.low, c.high, hash(i, layer + 50));
@@ -240,7 +254,8 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
         {1.35, 2.1, 0.8, 145, 12, 68, 0.34, 1.1},
         {1.65, 4.2, 1.4, 180, 8, 55, 0.12, 1.6},
     };
-    const Vec rock = blend(blend(blend(view.palette.floor, view.palette.mid, 0.3), hex("#183e60"), 0.6), hex("#191d49"), view.valley);
+    static const Vec slate = hex("#183e60"), mirageRock = hex("#191d49");
+    const Vec rock = blend(blend(blend(view.palette.floor, view.palette.mid, 0.3), slate, 0.6), mirageRock, view.valley);
     const Vec air = view.atmosphere();
     for (int layer = 0; layer < 4; ++layer) {
         const Ridge &r = ridges[layer];
@@ -281,6 +296,14 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
             const double walls = std::pow(std::abs(std::sin(angle)), 0.85);
             return mix(h, h * 0.85 + walls * (90 - layer * 12), view.valley);
         };
+        // The range's height anywhere, read from the profile between its
+        // samples rather than from the noise again.
+        auto profileAt = [&](double x) {
+            const double u = x / detailStep;
+            const int i = int(std::floor(u));
+            const double a = profile[((i % samples) + samples) % samples], b = profile[(((i + 1) % samples) + samples) % samples];
+            return mix(a, b, u - i);
+        };
         const int first = int(std::floor(scroll / detailStep)) - 1;
         const int points = int(std::ceil(W / detailStep)) + 3;
         QPainterPath path(QPointF(first * detailStep - scroll, base + 40));
@@ -306,7 +329,7 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
             const int treeStart = int(std::floor(scroll / spacing)) - 1;
             for (int i = treeStart; i < treeStart + int(W / spacing) + 3; ++i) {
                 const double x = i * spacing, screenX = x - scroll;
-                const double y = base - valleyHeight(x, height(x));
+                const double y = base - valleyHeight(x, profileAt(x));
                 const double size = (3 + hash(i, 170 + layer) * 5) * view.valley;
                 forest.moveTo(screenX, y - size);
                 forest.lineTo(screenX + size * 0.36, y + 1);
@@ -330,8 +353,10 @@ void Sky::paintBackdrop(QPainter &p, const View &view, double horizon) {
             auto inside = [&](double x, double y) { return QPointF(x - scroll, std::max(y, outline(x) + 0.8)); };
             const int start = int(std::floor(scroll / step)) - 1;
             for (int j = start; j < start + int(std::ceil(W / step)) + 3; ++j) {
-                const double x = j * step, h = valleyHeight(x, height(x));
-                if (h < valleyHeight(x - step * 0.4, height(x - step * 0.4)) || h < valleyHeight(x + step * 0.4, height(x + step * 0.4))) continue;
+                const double x = j * step, h = valleyHeight(x, profileAt(x));
+                if (h < valleyHeight(x - step * 0.4, profileAt(x - step * 0.4)) ||
+                    h < valleyHeight(x + step * 0.4, profileAt(x + step * 0.4)))
+                    continue;
                 const double py = base - h;
                 const QPointF facet[] = {inside(x, py), inside(x + step * 0.12, py + h * 0.45),
                                          inside(x + step * 0.52, base + 10), inside(x + step * 0.28, base + 10),

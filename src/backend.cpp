@@ -9,10 +9,18 @@
 #include <cmath>
 
 namespace {
-// Six digits, zero-padded in the reader's numerals.
-QString digits(const QLocale &locale, int value) {
-    return locale.toString(value).remove(locale.groupSeparator()).rightJustified(6, locale.zeroDigit().at(0));
+// A number padded with zeros to `width` digits, in the reader's numerals.
+// A zero may take two UTF-16 units (digits outside the BMP), so digits are
+// counted by its length rather than by characters.
+QString padded(const QLocale &locale, int value, int width) {
+    const QString zero = locale.zeroDigit();
+    QString text = locale.toString(value).remove(locale.groupSeparator());
+    const int unit = std::max<int>(1, int(zero.size()));
+    const int missing = width - int(text.size()) / unit;
+    return missing > 0 ? zero.repeated(missing) + text : text;
 }
+// Six digits, zero-padded.
+QString digits(const QLocale &locale, int value) { return padded(locale, value, 6); }
 }
 
 Backend::Backend(QObject *parent, const QString &settingsFile)
@@ -100,7 +108,7 @@ Scene::Hud Backend::hud() const {
                          : boost > 0.6 ? tr("BOOST ENGAGED")
                          : tr("YOU HAVE THE CONTROLS");
     const int second = int(std::floor(std::fmod(m_flight.time, Flight::ActLength)));
-    const QString clock = locale.toString(second).rightJustified(2, locale.zeroDigit().at(0)) + " / " + locale.toString(int(Flight::ActLength));
+    const QString clock = padded(locale, second, 2) + " / " + locale.toString(int(Flight::ActLength));
     const QString mode = (m_flight.demo ? tr("DEMO SEQUENCE") : tr("FREE FLIGHT")) + QString::fromUtf8(" · ") + clock;
     QString altitude = locale.toString(m_flight.ship.y, 'f', 1);
     if (m_flight.ship.y < 10)

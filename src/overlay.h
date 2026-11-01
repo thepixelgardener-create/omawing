@@ -30,10 +30,19 @@ private:
     void blit(QPainter &p, const Sprite &sprite, const QPointF &anchor) const;
     // Draws a sprite resized by `scale`, for text that moves in depth.
     void blitScaled(QPainter &p, const Sprite &sprite, const QPointF &anchor, double scale) const;
+    Sprite renderGlyph(QChar c) const;
     const Sprite &glyph(QChar c);
     void prepareGlyphs();
+    void paintStreaks(QPainter &p);
+    void paintPopups(QPainter &p);
+    void paintScanlines(QPainter &p);
+    void paintTitles(QPainter &p, const SceneHud &hud);
+    void paintScore(QPainter &p, const SceneHud &hud);
+    void paintGauges(QPainter &p, const SceneHud &hud);
     void paintRadar(QPainter &p);
     void paintSwitches(QPainter &p, const SceneHud &hud);
+    void paintAlert(QPainter &p, const SceneHud &hud);
+    void paintScroller(QPainter &p);
 
     const View *m_view = nullptr;
     double m_pixelsPerUnit = 0, m_preparedWidth = 0, m_preparedHeight = 0;

@@ -25,12 +25,13 @@ void FlightView::setSource(Backend *backend) {
     if (backend == m_backend)
         return;
     if (m_backend)
-        disconnect(m_backend, nullptr, this, nullptr);
+        disconnect(m_backend.data(), nullptr, this, nullptr);
     m_backend = backend;
     if (m_backend) {
-        connect(m_backend, &Backend::frameChanged, this, [this] { update(); });
+        connect(m_backend.data(), &Backend::frameChanged, this, [this] { update(); });
         // The overlay's status text changes with pause and the autopilot.
-        connect(m_backend, &Backend::changed, this, [this] { update(); });
+        connect(m_backend.data(), &Backend::changed, this, [this] { update(); });
+        connect(m_backend.data(), &QObject::destroyed, this, [this] { update(); });
     }
     emit sourceChanged();
     update();
@@ -44,43 +45,41 @@ void FlightView::paint(QPainter *painter) {
         m_backend->setRefreshRate(window()->screen()->refreshRate());
     QElapsedTimer timer;
     timer.start();
-    m_polygons = m_scene.paint(*painter, m_backend->flight(), size(), m_backend->hud(), m_backend->look());
-    m_renderMs = timer.nsecsElapsed() / 1e6;
-    emit rendered();
-    // OMAWING_STATS=1 reports frame rate and paint time once a second, for
-    // checking performance on a real display.
+    const int polygons = m_scene.paint(*painter, m_backend->flight(), size(), m_backend->hud(), m_backend->look());
     if (m_stats) {
-        // A hitch is a frame shown more than one and a half refreshes after
-        // the one before it.
-        if (m_statInterval.isValid()) {
-            const double gap = m_statInterval.nsecsElapsed() / 1e6;
-            m_statGap = std::max(m_statGap, gap);
-            if (gap > 25) {
-                m_statHitches++;
-                std::fprintf(stderr, "omawing: hitch %.1f ms between frames (paint %.1f ms, step %.1f ms)\n", gap, m_renderMs,
-                             m_backend->lastStep() * 1000);
-            }
-        }
-        m_statInterval.start();
-        m_stepLow = std::min(m_stepLow, m_backend->lastStep() * 1000);
-        m_stepHigh = std::max(m_stepHigh, m_backend->lastStep() * 1000);
-        m_statFrames++;
-        m_statTotal += m_renderMs;
-        m_statWorst = std::max(m_statWorst, m_renderMs);
-        if (!m_statClock.isValid())
-            m_statClock.start();
-        if (m_statClock.elapsed() >= 1000) {
-            std::fprintf(stderr, "omawing: %.0f fps, paint %.1f ms mean, %.1f ms worst, longest gap %.1f ms, steps %.1f-%.1f ms, %d hitches, %d polygons, %dx%d px, %s\n",
-                         m_statFrames * 1000.0 / m_statClock.elapsed(), m_statTotal / m_statFrames, m_statWorst, m_statGap,
-                         m_stepLow, m_stepHigh, m_statHitches, m_polygons,
-                         int(width() * window()->devicePixelRatio()), int(height() * window()->devicePixelRatio()),
-                         painter->paintEngine()->type() == QPaintEngine::OpenGL2 ? "gpu" : "cpu");
-            m_statFrames = 0;
-            m_statTotal = m_statWorst = m_statGap = 0;
-            m_statHitches = 0;
-            m_stepLow = 1e9;
-            m_stepHigh = 0;
-            m_statClock.restart();
+        const double ratio = window() ? window()->devicePixelRatio() : 1;
+        m_frameStats.record(timer.nsecsElapsed() / 1e6, m_backend->lastStep() * 1000, polygons,
+                            QSize(int(width() * ratio), int(height() * ratio)),
+                            painter->paintEngine()->type() == QPaintEngine::OpenGL2);
+    }
+}
+
+void FlightView::FrameStats::record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu) {
+    // A hitch is a frame shown more than one and a half refreshes after the
+    // one before it.
+    if (interval.isValid()) {
+        const double gap = interval.nsecsElapsed() / 1e6;
+        longestGap = std::max(longestGap, gap);
+        if (gap > 25) {
+            hitches++;
+            std::fprintf(stderr, "omawing: hitch %.1f ms between frames (paint %.1f ms, step %.1f ms)\n", gap, paintMs, stepMs);
         }
     }
+    interval.start();
+    stepLow = std::min(stepLow, stepMs);
+    stepHigh = std::max(stepHigh, stepMs);
+    frames++;
+    total += paintMs;
+    worst = std::max(worst, paintMs);
+    if (!clock.isValid())
+        clock.start();
+    if (clock.elapsed() < 1000)
+        return;
+    std::fprintf(stderr,
+                 "omawing: %.0f fps, paint %.1f ms mean, %.1f ms worst, longest gap %.1f ms, steps %.1f-%.1f ms, %d hitches, "
+                 "%d polygons, %dx%d px, %s\n",
+                 frames * 1000.0 / clock.elapsed(), total / frames, worst, longestGap, stepLow, stepHigh, hitches, polygons,
+                 pixels.width(), pixels.height(), gpu ? "gpu" : "cpu");
+    *this = FrameStats();
+    clock.start();
 }
