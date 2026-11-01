@@ -1,11 +1,13 @@
 #!/bin/sh
+# Builds build/omawing. Extra arguments go to qmake, such as the compiler
+# flags a package recipe passes in.
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 mkdir -p "$ROOT/build"
 cd "$ROOT/build"
 
-qmake6 "$ROOT/omawing.pro"
+qmake6 "$ROOT/omawing.pro" "$@"
 make -j"$(nproc)"
 
 echo "Built $ROOT/build/omawing"

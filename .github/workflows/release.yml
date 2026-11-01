@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag to build and upload to, such as v0.3.0
+        description: Release tag to build and upload to, such as v0.4.0
         required: true
 
 permissions:
@@ -26,7 +26,7 @@ jobs:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - name: Install build dependencies
-        run: pacman -Syu --noconfirm --needed git github-cli qt6-base qt6-declarative qt6-wayland qt6-multimedia
+        run: pacman -Syu --noconfirm --needed git github-cli qt6-base qt6-declarative qt6-wayland qt6-multimedia qt6-multimedia-ffmpeg qt6-svg
 
       # The recipe lives on main: it holds the checksum of the tagged source,
       # which can only be written in after the tag exists.
@@ -38,9 +38,16 @@ jobs:
         run: |
           version="$(sed -n 's/^pkgver=//p' aur/PKGBUILD)"
           test "v$version" = "$TAG" || { echo "aur/PKGBUILD is $version, the release is $TAG"; exit 1; }
+          # The version is written in four places; they must agree.
+          for file in pkgbuild/PKGBUILD; do
+            test "$(sed -n 's/^pkgver=//p' "$file")" = "$version" || { echo "$file is not $version"; exit 1; }
+          done
+          test "$(sed -n 's/^VERSION = //p' src/src.pri)" = "$version" || { echo "src/src.pri is not $version"; exit 1; }
+          test "$(sed -n 's/^\tpkgver = //p' aur/.SRCINFO)" = "$version" || { echo "aur/.SRCINFO is not $version"; exit 1; }
 
       # makepkg refuses to run as root, so build as an unprivileged user. The
-      # recipe downloads the tagged source and checks its SHA-256.
+      # recipe downloads the tagged source and checks its SHA-256, and its
+      # check() runs the test suite on that source before packaging.
       - name: Build
         run: |
           useradd --create-home builder

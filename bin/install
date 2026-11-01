@@ -1,7 +1,8 @@
 #!/bin/sh
+# Builds and installs the working tree as a local package. The recipe's
+# build() runs bin/build itself, with the system's compiler flags.
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-"$ROOT/bin/build"
 cd "$ROOT/pkgbuild"
 exec makepkg -fsi "$@"

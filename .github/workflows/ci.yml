@@ -1,0 +1,29 @@
+# Builds the game and runs the test suite on every push to main and every
+# pull request, in the same clean Arch Linux container the release uses.
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install build dependencies
+        run: pacman -Syu --noconfirm --needed qt6-base qt6-declarative qt6-wayland qt6-multimedia qt6-multimedia-ffmpeg qt6-svg
+
+      - uses: actions/checkout@v5
+
+      - name: Build
+        run: bin/build
+
+      # Offscreen, with no sound card: the tests that need an audio device
+      # skip themselves.
+      - name: Test
+        run: bin/test
