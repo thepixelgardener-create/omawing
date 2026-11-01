@@ -6,6 +6,7 @@
 #include <array>
 #include <deque>
 #include <memory>
+#include <vector>
 
 class QAudioBuffer;
 class QAudioBufferOutput;
@@ -24,6 +25,8 @@ public:
         bool beat = false;   // A kick drum (or anything bass-heavy) began.
     };
 
+    // Samples that start well before the last ones ended (a new track, or a
+    // seek) drop everything still queued.
     void feed(const float *mono, int frames, int sampleRate, qint64 startMicroseconds);
     Pulse take(qint64 positionMicroseconds);
     void reset();
@@ -39,6 +42,7 @@ private:
     double m_low = 0, m_average = 0, m_hopLow = 0, m_hopAll = 0;
     int m_hopFrames = 0;
     qint64 m_hopStart = -1, m_lastBeat = -1000000000;
+    qint64 m_fedUntil = -1;   // Where the last samples fed ended, or -1.
     float m_level = 0;
 };
 
@@ -91,6 +95,7 @@ private:
     std::unique_ptr<QAudioOutput> m_output;
     std::unique_ptr<QAudioBufferOutput> m_tap;
     BeatTracker m_beats;
+    std::vector<float> m_mono;   // Scratch for mixing buffers down to mono.
     std::array<std::unique_ptr<QSoundEffect>, EffectCount> m_effects;
     // The higher chimes of a chain; the first is m_effects[Ring].
     std::array<std::unique_ptr<QSoundEffect>, RingSteps - 1> m_chimes;

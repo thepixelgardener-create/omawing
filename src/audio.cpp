@@ -27,6 +27,7 @@ void BeatTracker::reset() {
     m_hopFrames = 0;
     m_hopStart = -1;
     m_lastBeat = -1000000000;
+    m_fedUntil = -1;
     m_level = 0;
 }
 
@@ -34,8 +35,14 @@ void BeatTracker::reset() {
 // its energy is compared with the recent average: a sharp rise, well above
 // it, is a beat, with at least 280 ms between beats.
 void BeatTracker::feed(const float *mono, int frames, int sampleRate, qint64 startMicroseconds) {
-    if (sampleRate <= 0)
+    if (sampleRate <= 0 || frames <= 0)
         return;
+    // Time running backwards means a new track or a seek. Anything still
+    // queued belongs to the old position (including late buffers from a
+    // track already switched away from), and would pulse out of step.
+    if (m_fedUntil >= 0 && startMicroseconds + 100000 < m_fedUntil)
+        reset();
+    m_fedUntil = startMicroseconds + qint64(frames) * 1000000 / sampleRate;
     const double a = 1 - std::exp(-2 * M_PI * 120 / sampleRate);
     for (int i = 0; i < frames; ++i) {
         if (m_hopFrames == 0)
@@ -71,8 +78,16 @@ BeatTracker::Pulse BeatTracker::take(qint64 positionMicroseconds) {
     return pulse;
 }
 
+namespace {
+// How loud each cue plays against the effects level: boost is a long
+// whoosh, so it sits lowest.
+float effectGain(int effect) { return effect == Audio::Boost ? 0.38f : effect == Audio::Ring ? 0.55f : 0.65f; }
+}
+
 Audio::Audio(QObject *parent) : QObject(parent) {}
-Audio::~Audio() = default;
+
+// The player goes first: it still points at the output and the tap.
+Audio::~Audio() { m_player.reset(); }
 
 // The soundtrack is read from files rather than compiled in: Qt's FFmpeg
 // backend copies a compiled-in track to a temporary file to play it, and
@@ -151,7 +166,7 @@ void Audio::openEffects() {
     for (int i = 0; i < EffectCount; ++i) {
         m_effects[i] = std::make_unique<QSoundEffect>(this);
         auto *effect = m_effects[i].get();
-        effect->setVolume(m_effectVolume * (i == Boost ? 0.38 : i == Ring ? 0.55 : 0.65));
+        effect->setVolume(m_effectVolume * effectGain(i));
         connect(effect, &QSoundEffect::statusChanged, this, [this, effect] {
             if (effect->status() == QSoundEffect::Error)
                 fail(tr("The audio output can't play this sound."));
@@ -160,31 +175,42 @@ void Audio::openEffects() {
     }
     for (int i = 0; i < RingSteps - 1; ++i) {
         m_chimes[i] = std::make_unique<QSoundEffect>(this);
-        m_chimes[i]->setVolume(m_effectVolume * 0.55);
+        m_chimes[i]->setVolume(m_effectVolume * effectGain(Ring));
         m_chimes[i]->setSource(ringSource(i + 2));
     }
 }
 
-// Mixes any format down to mono floats, in case the tap couldn't convert.
+namespace {
+// Averages the channels of each frame into one float, scaled to [-1, 1].
+template <typename Sample, typename Scale>
+void mixDown(const Sample *data, int frames, int channels, float *mono, Scale scale) {
+    for (int i = 0; i < frames; ++i) {
+        float sum = 0;
+        for (int c = 0; c < channels; ++c)
+            sum += scale(data[i * channels + c]);
+        mono[i] = sum / channels;
+    }
+}
+}
+
+// The tap asks for mono floats, which go straight to the tracker; any other
+// format, in case it couldn't convert, is mixed down first.
 void Audio::listen(const QAudioBuffer &buffer) {
     const QAudioFormat format = buffer.format();
     const int channels = std::max(1, format.channelCount()), frames = int(buffer.frameCount());
-    std::vector<float> mono(frames);
-    for (int i = 0; i < frames; ++i) {
-        float sum = 0;
-        for (int c = 0; c < channels; ++c) {
-            const int at = i * channels + c;
-            switch (format.sampleFormat()) {
-            case QAudioFormat::Float: sum += buffer.constData<float>()[at]; break;
-            case QAudioFormat::Int16: sum += buffer.constData<qint16>()[at] / 32768.0f; break;
-            case QAudioFormat::Int32: sum += buffer.constData<qint32>()[at] / 2147483648.0f; break;
-            case QAudioFormat::UInt8: sum += (buffer.constData<quint8>()[at] - 128) / 128.0f; break;
-            default: return;
-            }
-        }
-        mono[i] = sum / channels;
+    if (format.sampleFormat() == QAudioFormat::Float && channels == 1) {
+        m_beats.feed(buffer.constData<float>(), frames, format.sampleRate(), buffer.startTime());
+        return;
     }
-    m_beats.feed(mono.data(), frames, format.sampleRate(), buffer.startTime());
+    m_mono.resize(size_t(std::max(0, frames)));
+    switch (format.sampleFormat()) {
+    case QAudioFormat::Float: mixDown(buffer.constData<float>(), frames, channels, m_mono.data(), [](float v) { return v; }); break;
+    case QAudioFormat::Int16: mixDown(buffer.constData<qint16>(), frames, channels, m_mono.data(), [](qint16 v) { return v / 32768.0f; }); break;
+    case QAudioFormat::Int32: mixDown(buffer.constData<qint32>(), frames, channels, m_mono.data(), [](qint32 v) { return v / 2147483648.0f; }); break;
+    case QAudioFormat::UInt8: mixDown(buffer.constData<quint8>(), frames, channels, m_mono.data(), [](quint8 v) { return (v - 128) / 128.0f; }); break;
+    default: return;
+    }
+    m_beats.feed(m_mono.data(), frames, format.sampleRate(), buffer.startTime());
 }
 
 BeatTracker::Pulse Audio::pulse() {
@@ -269,7 +295,7 @@ void Audio::setVolume(float music, float effects) {
     m_effectVolume = std::clamp(effects, 0.0f, 1.0f);
     if (m_output) m_output->setVolume(m_musicVolume);
     for (int i = 0; i < EffectCount; ++i)
-        if (m_effects[i]) m_effects[i]->setVolume(m_effectVolume * (i == Boost ? 0.38 : i == Ring ? 0.55 : 0.65));
+        if (m_effects[i]) m_effects[i]->setVolume(m_effectVolume * effectGain(i));
     for (auto &chime : m_chimes)
-        if (chime) chime->setVolume(m_effectVolume * 0.55);
+        if (chime) chime->setVolume(m_effectVolume * effectGain(Ring));
 }
