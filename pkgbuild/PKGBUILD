@@ -15,8 +15,9 @@ sha256sums=()
 
 build() {
   cd "$startdir/.."
-  # Build with Arch's compiler and linker flags (hardening included).
-  ./bin/build \
+  # Build with Arch's compiler and linker flags (hardening included), in a
+  # folder of its own, so nothing from a development build is reused.
+  OMAWING_BUILD_DIR="$srcdir/build" ./bin/build \
     QMAKE_CFLAGS_RELEASE="$CFLAGS" \
     QMAKE_CXXFLAGS_RELEASE="$CXXFLAGS" \
     QMAKE_LFLAGS_RELEASE="$LDFLAGS"
@@ -24,7 +25,7 @@ build() {
 
 package() {
   cd "$startdir/.."
-  install -Dm755 build/omawing "$pkgdir/usr/bin/omawing"
+  install -Dm755 "$srcdir/build/omawing" "$pkgdir/usr/bin/omawing"
   install -Dm644 -t "$pkgdir/usr/share/omawing/music" src/audio/*.mp3
   install -Dm644 pkgbuild/omawing.desktop "$pkgdir/usr/share/applications/omawing.desktop"
   install -Dm644 pkgbuild/omawing.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/omawing.svg"
