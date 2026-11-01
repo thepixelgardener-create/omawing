@@ -9,7 +9,6 @@
   "ALT %1": "MAG. %1",
   "No audio output device was found.": "Nem található hangkimeneti eszköz.",
   "The audio output can't play this sound.": "A hangkimenet nem tudja lejátszani ezt a hangot.",
-  "Sound stopped: the audio output failed.": "A hang leállt: a hangkimenet meghibásodott.",
   "Take control": "Irányítás átvétele",
   "Watch demo": "Demó megtekintése",
   "Play": "Lejátszás",

@@ -9,7 +9,6 @@
   "ALT %1": "উচ্চতা %1",
   "No audio output device was found.": "কোনো অডিও আউটপুট ডিভাইস পাওয়া যায়নি।",
   "The audio output can't play this sound.": "অডিও আউটপুট এই শব্দটি চালাতে পারছে না।",
-  "Sound stopped: the audio output failed.": "শব্দ থেমে গেছে: অডিও আউটপুট ব্যর্থ হয়েছে।",
   "Take control": "নিয়ন্ত্রণ নিন",
   "Watch demo": "ডেমো দেখুন",
   "Play": "চালান",

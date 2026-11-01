@@ -27,15 +27,17 @@ workflow and commit that built them. Download `omawing-*.pkg.tar.zst` from the
 then check it and install it:
 
 ```sh
-gh attestation verify omawing-0.4.0-1-x86_64.pkg.tar.zst -R thepixelgardener-create/omawing
-sudo pacman -U omawing-0.4.0-1-x86_64.pkg.tar.zst
+gh attestation verify omawing-*-x86_64.pkg.tar.zst -R thepixelgardener-create/omawing
+sudo pacman -U omawing-*-x86_64.pkg.tar.zst
 ```
 
 The `aur/` directory contains the build recipe; it does not imply that the
 package is published in the AUR.
 
-To build, install a C++ compiler, `make`, `qmake6`, and the Qt 6 Base,
-Declarative, Wayland, and Multimedia development packages.
+To build, install a C++20 compiler, `make`, `qmake6`, and Qt 6.8 or newer: the
+Base, Declarative, Wayland, Multimedia (with its FFmpeg backend), and SVG
+packages. Building from the recipe also runs the test suite; `makepkg --nocheck`
+skips it.
 
 To try it without installing anything:
 

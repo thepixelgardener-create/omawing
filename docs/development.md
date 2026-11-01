@@ -2,16 +2,18 @@
 
 [Home](../README.md) · [Gallery](gallery.md) · [Playing](playing.md) · [Install](install.md) · [Development](development.md)
 
-Omawing uses C++ and Qt Quick, built with qmake6. Install Qt 6 Base,
-Declarative, Wayland, and Multimedia development packages and a C++ compiler.
+Omawing uses C++ and Qt Quick, built with qmake6. Install Qt 6.8 or newer
+(Base, Declarative, Wayland, Multimedia with its FFmpeg backend, and SVG) and a
+C++20 compiler. The build stops with a clear message on an older Qt: the beat
+tracker listens through `QAudioBufferOutput`, new in 6.8.
 The renderer projects low-poly geometry into a GPU-backed QPainter surface.
 
 ## Build and install from a clone
 
 ```sh
-bin/build      # build/omawing
+bin/build      # build/omawing; extra arguments go to qmake
 bin/test       # Qt Test, offscreen; audio checks run silently
-bin/benchmark  # GPU rendering benchmark at 1080p and 4K
+bin/benchmark  # GPU rendering benchmark at 1080p and 4K (--cpu: without OpenGL)
 bin/install    # makepkg -fsi: installs the binary, launcher entry, and icon
 ```
 
@@ -25,6 +27,20 @@ The renderer rejects invisible polygons early and uses the GPU's convex-polygon
 path for the checkerboard and meshes. It retains native resolution and the full
 nine-scene sequence. `bin/benchmark` measures complete GPU frames (including a
 GPU finish), so its timings differ from the CPU paint timings in `OMAWING_STATS`.
+Besides each scene it times a few of the heaviest moments: flying at the
+ceiling, a full sky of particles over Neon Mirage's mirror floor, a wreck, and
+a strong beat.
+
+The build uses `-Wall -Wextra` and the tree compiles without warnings. The
+sources are listed once, in `src/src.pri`, which the app, the tests, and the
+benchmark all include; the version is set there too. Every push and pull
+request is built and tested by [a workflow](../.github/workflows/ci.yml), and
+the release recipe's `check()` runs the tests on the tagged source before it is
+packaged.
+
+When releasing, the version is in `src/src.pri`, `pkgbuild/PKGBUILD`,
+`aur/PKGBUILD`, and `aur/.SRCINFO` (`aur/publish` regenerates it); the release
+workflow checks they agree.
 
 ## Source
 
@@ -46,6 +62,15 @@ GPU finish), so its timings differ from the CPU paint timings in `OMAWING_STATS`
 | `src/flightview.{h,cpp}` | The Qt Quick item that paints the scene. |
 | `src/Main.qml` | The window, toolbar, shortcut overlay, volume panel, and high-score board. |
 | `src/theme.*`, `src/translator.*` | Omarchy colours, rounding, and language. |
+| `src/main.cpp` | Starts the app: style, translator, theme, backend, and the QML window. |
+| `src/i18n/*.json` | One catalog per Omarchy language, English source text to translation. |
+| `src/audio/` | The soundtrack (MP3, installed as files) and the effects (WAV, compiled in). |
+| `src/resources.qrc` | What is compiled in: `Main.qml`, the effects, and the catalogs. |
+| `src/src.pri` | The source list, version, and compiler settings shared by every build. |
+| `tests/omawing_tests.cpp` | The Qt Test suite (`bin/test`). |
+| `tests/render_benchmark.cpp` | The frame-time benchmark (`bin/benchmark`). |
+| `bin/generate-effects` | Writes the WAV effects in `src/audio`. |
+| `pkgbuild/`, `aur/` | The local package recipe (`bin/install`) and the release recipe. |
 
 ## Limits
 

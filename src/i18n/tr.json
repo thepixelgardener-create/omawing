@@ -9,7 +9,6 @@
   "ALT %1": "İRT. %1",
   "No audio output device was found.": "Ses çıkış aygıtı bulunamadı.",
   "The audio output can't play this sound.": "Ses çıkışı bu sesi çalamıyor.",
-  "Sound stopped: the audio output failed.": "Ses durdu: ses çıkışı başarısız oldu.",
   "Take control": "Kontrolü al",
   "Watch demo": "Demoyu izle",
   "Play": "Oynat",

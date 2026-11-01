@@ -9,7 +9,6 @@
   "ALT %1": "ВИС. %1",
   "No audio output device was found.": "Пристрій виведення звуку не знайдено.",
   "The audio output can't play this sound.": "Пристрій виведення звуку не може відтворити цей звук.",
-  "Sound stopped: the audio output failed.": "Звук зупинено: збій пристрою виведення звуку.",
   "Take control": "Взяти керування",
   "Watch demo": "Дивитися демо",
   "Play": "Відтворити",

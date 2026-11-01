@@ -9,7 +9,6 @@
   "ALT %1": "KÕRGUS %1",
   "No audio output device was found.": "Heliväljundseadet ei leitud.",
   "The audio output can't play this sound.": "Heliväljund ei saa seda heli esitada.",
-  "Sound stopped: the audio output failed.": "Heli peatus: heliväljund ebaõnnestus.",
   "Take control": "Võta juhtimine üle",
   "Watch demo": "Vaata demot",
   "Play": "Esita",

@@ -9,7 +9,6 @@
   "ALT %1": "VIS. %1",
   "No audio output device was found.": "Nije pronađen nijedan zvučni izlazni uređaj.",
   "The audio output can't play this sound.": "Zvučni izlaz ne može reproducirati ovaj zvuk.",
-  "Sound stopped: the audio output failed.": "Zvuk je prekinut: zvučni izlaz je zakazao.",
   "Take control": "Preuzmi upravljanje",
   "Watch demo": "Gledaj demo",
   "Play": "Reproduciraj",

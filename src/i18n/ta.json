@@ -9,7 +9,6 @@
   "ALT %1": "உயரம் %1",
   "No audio output device was found.": "ஒலி வெளியீட்டுச் சாதனம் எதுவும் கிடைக்கவில்லை.",
   "The audio output can't play this sound.": "ஒலி வெளியீட்டால் இந்த ஒலியை இயக்க முடியாது.",
-  "Sound stopped: the audio output failed.": "ஒலி நின்றது: ஒலி வெளியீடு தோல்வியடைந்தது.",
   "Take control": "கட்டுப்பாட்டை எடுங்கள்",
   "Watch demo": "டெமோவைப் பாருங்கள்",
   "Play": "இயக்கு",

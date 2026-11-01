@@ -9,7 +9,6 @@
   "ALT %1": "AUGSTUMS %1",
   "No audio output device was found.": "Netika atrasta neviena audio izvades ierīce.",
   "The audio output can't play this sound.": "Audio izvade nevar atskaņot šo skaņu.",
-  "Sound stopped: the audio output failed.": "Skaņa apturēta: audio izvade pārstāja darboties.",
   "Take control": "Pārņemt vadību",
   "Watch demo": "Skatīties demo",
   "Play": "Atskaņot",

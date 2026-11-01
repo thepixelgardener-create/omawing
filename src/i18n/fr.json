@@ -9,7 +9,6 @@
   "ALT %1": "ALT %1",
   "No audio output device was found.": "Aucun périphérique de sortie audio n’a été trouvé.",
   "The audio output can't play this sound.": "La sortie audio ne peut pas lire ce son.",
-  "Sound stopped: the audio output failed.": "Son arrêté : la sortie audio a échoué.",
   "Take control": "Prendre les commandes",
   "Watch demo": "Regarder la démo",
   "Play": "Lecture",
