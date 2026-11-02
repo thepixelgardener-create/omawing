@@ -69,7 +69,11 @@ public:
     // The canvas is at least BaseHeight tall and MinWidth wide; Focal is the
     // projection's focal length in canvas units, and the world is drawn
     // between Near and Far.
-    static constexpr double BaseHeight = 540, MinWidth = 860, Focal = 570, Near = 0.3, Far = 220;
+    static constexpr double BaseHeight = 540, MinWidth = 860, Focal = 570, Near = 0.3, Far = 640;
+    // Out to Dense the scenery stands as thick as it does along the course;
+    // past it ever fewer pieces stand, out to Far, so the plain stays
+    // dotted with them almost to the horizon. The balls stop at Dense.
+    static constexpr double Dense = 220;
     // Scenery fades in over this last stretch before Far.
     static constexpr double FadeIn = 60;
     // The act whose colours come from the Omarchy theme.
@@ -113,7 +117,8 @@ public:
     double fog(double depth) const;
     // Use horizontal radial distance, like the range cull, so turning cannot
     // reveal an opaque object just before it crosses the distance limit.
-    double fadeIn(double distance) const;
+    // Things drawn only to a nearer limit pass it as `far`.
+    double fadeIn(double distance, double far = Far) const;
     // The checkerboard's contrast at a depth: 1 while a tile is large on
     // screen, falling to 0 as it shrinks to a fraction of a unit, where its
     // light and dark squares blend into their average. Mipmapping by hand:

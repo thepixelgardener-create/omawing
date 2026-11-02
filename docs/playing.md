@@ -88,9 +88,12 @@ Each moves at a different speed as the camera travels, with soft haze in the
 valleys. Atmospheric perspective shifts distant scenery and the checkerboard
 toward the same blue haze, reducing contrast while keeping the nearby ship crisp.
 
-Scenery is considered out to 220 units and fades in at staggered distances,
-keeping the far field sparse. Rings and beach balls have a 60-unit fade at
-the outer edge; neighboring balls stay in place as you cross course segments.
+Scenery stands thick along the course out to 220 units, then ever more
+sparsely out to 640, taking on the air's colour, so the plain stays dotted with
+pyramids and crystals almost to the horizon. The checkerboard runs out until
+its squares are about a pixel tall. Rings reach 640 units and beach balls 220,
+each with a 60-unit fade at the outer edge; neighboring balls stay in place as
+you cross course segments.
 
 Neon Mirage adds a forested mountain valley, a dark reflective grid, mirrored
 rings and scenery, and pink lights along the flight corridor. Its camera opens

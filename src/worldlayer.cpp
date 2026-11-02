@@ -13,6 +13,10 @@ using namespace geo;
 using namespace draw;
 
 namespace {
+// How much of the air's colour scenery takes on in the distance: barely
+// any along the course, rising steadily past it to over half by View::Far.
+double farAir(double away) { return 0.6 * std::pow(clampTo((away - 150) / (View::Far - 150), 0, 1), 0.8); }
+
 // The soft sprites particles are drawn with: the exhaust's cooling ramp,
 // then a spark, two glitters, and smoke.
 constexpr int ExhaustSprites = 8, SparkSprite = 8, GlitterSprite = 9, SmokeSprite = 11, FlashSprite = 12;
@@ -59,7 +63,7 @@ void WorldLayer::face(std::vector<Vec> &points, const QColor &fill, const QColor
 void WorldLayer::mesh(const Mesh &geometry, const Vec &at, const Vec &rotation, const std::vector<Vec> &colors,
                  const MeshOptions &options) {
     const double away = std::hypot(at[0] - m_view->camera.x, at[2] - m_view->camera.z);
-    const double fade = options.far > View::Far || options.ship || options.glow ? 1 : m_view->fadeIn(away);
+    const double fade = options.far > View::Far || options.ship || options.glow ? 1 : m_view->fadeIn(away, options.far);
     if (options.opacity * fade <= 0) return;
     const Vec centreCamera = m_view->toCamera(at);
     if (centreCamera[2] < -options.radius || centreCamera[2] > options.far + options.radius ||
@@ -141,7 +145,8 @@ void WorldLayer::ring(const Ring &r, double spin) {
         double depth = 0;
         for (const Vec &p : m_points)
             depth += p[2] / 4;
-        face(m_points, rgb(blend(i % 3 ? m_view->palette.accent : m_view->palette.crystal, m_view->atmosphere(), m_view->fog(depth))), QColor(),
+        face(m_points, rgb(blend(i % 3 ? m_view->palette.accent : m_view->palette.crystal, m_view->atmosphere(),
+                                 std::max(m_view->fog(depth), farAir(depth)))), QColor(),
              opacity, false);
     }
     if (!m_reflecting && m_view->valley > 0) {
@@ -222,33 +227,47 @@ void WorldLayer::buildScenery() {
     const View::Act &act = m_view->style();
     const double time = m_view->flight->time, beat = m_view->look.beat, level = m_view->look.level;
     // The scenery thins out with distance, like the floor's detail: each
-    // piece has its own distance, between Sparse and Far, at which it
-    // starts to fade in. Far off only a few stand; closer, all of them.
-    constexpr double Sparse = 100, Fade = 40;
+    // piece has its own distance at which it starts to fade in, between
+    // Sparse and Dense, so close by all of them stand and further off fewer.
+    // The Distant few with the highest chance reach on, somewhere out to
+    // Far, and dot the plain almost to the horizon.
+    constexpr double Sparse = 100, Fade = 40, Distant = 0.16;
+    const double cameraX = m_view->camera.x, cameraZ = m_view->camera.z;
+    const int cx = int(std::floor(cameraX / Cell)), cz = int(std::floor(cameraZ / Cell));
     const int reach = int(std::ceil(View::Far / Cell)) + 1;
-    forEachScenery(m_view->camera.x, m_view->camera.z, reach, time, [&](const Obstacle &o) {
-        const double away = std::hypot(o.x - m_view->camera.x, o.z - m_view->camera.z);
-        if (away > View::Far)
-            return;
-        const double chance = hash(o.cellX * 1.7 + 31, o.cellZ * 2.3 + 77);
-        const double appear = mix(Sparse, View::Far, chance * chance);
-        if (away > appear)
-            return;
-        const double shown = smooth(clampTo((appear - away) / Fade, 0, 1));
-        if (o.kind == Obstacle::Pyramid)
-            // Wireframes are drawn in the bright highlights: the sky's dark middle
-            // colour that shades solid faces vanishes against the ground.
-            mesh(pyramid, {o.x, o.y, o.z}, {0, 0, 0},
-                 colors({act.wirePyramids ? m_view->palette.accent : m_view->palette.mid, m_view->palette.crystal}),
-                 {.wire = act.wirePyramids, .radius = 9, .opacity = shown});
-        else
-            // The crystals swell and brighten softly with the music's kicks,
-            // and breathe a little with its loudness. Every change is gentle
-            // and gradual: a glow, never a flash.
-            mesh(crystal, {o.x, o.y, o.z}, {o.spin, 0, 0},
-                 colors({blend(m_view->palette.crystal, {255, 255, 255}, 0.2 * beat), blend(m_view->palette.accent, {255, 255, 255}, 0.12 * beat)}),
-                 {.wire = act.wireCrystals, .radius = 6, .opacity = shown, .scale = 1 + 0.03 * level + 0.14 * beat, .lift = 0.35 * beat});
-    });
+    for (int iz = cz - reach; iz <= cz + reach; ++iz)
+        for (int ix = cx - reach; ix <= cx + reach; ++ix) {
+            const double chance = hash(ix * 1.7 + 31, iz * 2.3 + 77);
+            const double appear = chance > 1 - Distant ? mix(View::Dense, View::Far, (chance - 1 + Distant) / Distant)
+                                                       : mix(Sparse, View::Dense, chance * chance);
+            // Most cells are passed over on their corner's distance alone; a
+            // piece stands less than a cell from it.
+            if (std::hypot(ix * Cell - cameraX, iz * Cell - cameraZ) > appear + Cell * 1.5)
+                continue;
+            const Obstacle o = piece(ix, iz, time);
+            const double away = std::hypot(o.x - cameraX, o.z - cameraZ);
+            if (away > appear)
+                continue;
+            const double shown = smooth(clampTo((appear - away) / Fade, 0, 1));
+            // Far off the pieces take on the air's colour, as the landmarks
+            // do, and settle into the distance.
+            const double air = farAir(away);
+            if (o.kind == Obstacle::Pyramid)
+                // Wireframes are drawn in the bright highlights: the sky's dark middle
+                // colour that shades solid faces vanishes against the ground.
+                mesh(pyramid, {o.x, o.y, o.z}, {0, 0, 0},
+                     colors({blend(act.wirePyramids ? m_view->palette.accent : m_view->palette.mid, m_view->atmosphere(), air),
+                             blend(m_view->palette.crystal, m_view->atmosphere(), air)}),
+                     {.wire = act.wirePyramids, .radius = 9, .opacity = shown});
+            else
+                // The crystals swell and brighten softly with the music's kicks,
+                // and breathe a little with its loudness. Every change is gentle
+                // and gradual: a glow, never a flash.
+                mesh(crystal, {o.x, o.y, o.z}, {o.spin, 0, 0},
+                     colors({blend(blend(m_view->palette.crystal, {255, 255, 255}, 0.2 * beat), m_view->atmosphere(), air),
+                             blend(blend(m_view->palette.accent, {255, 255, 255}, 0.12 * beat), m_view->atmosphere(), air)}),
+                     {.wire = act.wireCrystals, .radius = 6, .opacity = shown, .scale = 1 + 0.03 * level + 0.14 * beat, .lift = 0.35 * beat});
+        }
     // Rings already flown through are gone; the rest stand along the course
     // in both directions.
     const auto [first, last] = ringsBetween(m_view->camera.z - View::Far, m_view->camera.z + View::Far);
@@ -266,9 +285,10 @@ void WorldLayer::buildScenery() {
     const std::vector<Vec> &sphereColors = m_view->valley > 0 ? m_sphereColors : ballColors;
     // A ball belongs to its fixed world cell, not to the ship's current
     // segment. Crossing a segment boundary must not replace a visible ball.
-    for (const Obstacle &ball : World::balls(m_view->camera.z, View::Far, time))
+    // Each is over a hundred faces, so they stop at Dense.
+    for (const Obstacle &ball : World::balls(m_view->camera.z, View::Dense, time))
         mesh(sphere, {ball.x, ball.y, ball.z}, {ball.spin, 0, 0.25}, sphereColors,
-             {.wire = act.wireBall, .radius = 5});
+             {.wire = act.wireBall, .radius = 5, .far = View::Dense});
     if (act.floater)
         mesh(crystal, {-12, 8 + std::sin(time), m_view->flight->ship.z + 45}, {time * 0.7, time * 0.3, 0}, colors({m_view->palette.crystal}),
              {.wire = true, .radius = 6});

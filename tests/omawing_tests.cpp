@@ -834,6 +834,19 @@ private slots:
         }
     }
 
+    void sceneryReachesTowardsTheHorizon() {
+        Flight f;
+        View view; view.begin(f, {960, 540}, {});
+        WorldLayer world; world.build(view);
+        // A few pieces stand past the dense scenery along the course (the
+        // great landmarks start further out still).
+        int beyondDense = 0;
+        for (const auto &face : world.faces())
+            if (!face.ship && !face.glow && face.depth > View::Dense + 40 && face.depth < 300)
+                ++beyondDense;
+        QVERIFY(beyondDense > 10);
+    }
+
     void ballsStayInTheWorldAcrossShipSegments() {
         Flight f;
         f.camera.z = 80;
@@ -852,7 +865,7 @@ private slots:
         f.ship.z = 102.001;
         QCOMPARE(scenery(), before);
         for (double z : {-228.0, -8.0, 102.0, 212.0}) {
-            const auto candidates = World::balls(z, View::Far, 2);
+            const auto candidates = World::balls(z, View::Dense, 2);
             const auto collision = World::ball(z, 2);
             QVERIFY(candidates.size() >= 3 && candidates.size() <= 5);
             QVERIFY(std::any_of(candidates.begin(), candidates.end(), [&](const Obstacle &o) {
