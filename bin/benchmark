@@ -1,8 +1,12 @@
 #!/bin/sh
+# Builds and runs the frame benchmark; see tests/render_benchmark.cpp for its
+# options. Paths given to it are relative to where this is run from.
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 mkdir -p "$ROOT/build/benchmark"
-cd "$ROOT/build/benchmark"
-qmake6 "$ROOT/tests/render_benchmark.pro"
-make -s -j"$(nproc)"
-exec ./render_benchmark "$@"
+(
+    cd "$ROOT/build/benchmark"
+    qmake6 "$ROOT/tests/render_benchmark.pro" >/dev/null
+    make -s -j"$(nproc)" >/dev/null
+)
+exec "$ROOT/build/benchmark/render_benchmark" "$@"

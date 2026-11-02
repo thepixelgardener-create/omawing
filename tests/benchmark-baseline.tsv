@@ -1,0 +1,16 @@
+# The painting work of one 1920x1080 frame of each benchmark scene:
+# draw calls, the points in them, and changes of painter state.
+# Written by bin/benchmark --record; CI checks against it.
+AMBER TERMINAL	1311	8199	718
+C64 DREAMS	983	7123	660
+COPPER COAST	975	5327	656
+ICE PALACE	982	5338	734
+LAVA FIELDS	1113	5760	680
+NEON MIRAGE	1737	11088	1389
+OMARCHY	980	7091	653
+STAR RUN	1304	8178	766
+VECTOR GARDEN	1014	5407	649
+burst on the mirage	2421	13824	2072
+high altitude	1247	6300	705
+strong beat	1014	5408	648
+wreck	1575	9275	695

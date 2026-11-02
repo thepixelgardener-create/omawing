@@ -46,12 +46,18 @@ int Scene::paint(QPainter &painter, const Flight &flight, const QSizeF &size, co
     painter.setRenderHint(QPainter::Antialiasing);
     painter.scale(size.width() / m_view.width, size.width() / m_view.width);
     painter.setClipRect(QRectF(0, 0, m_view.width, m_view.height));
+    auto done = [this](const char *part) { if (m_probe) m_probe(part); };
     m_overlay.prepare(m_view, painter.worldTransform().m11());
     Sky::paint(painter, m_view);
+    done("sky");
     m_ground.paint(painter, m_view);
+    done("ground");
     m_world.build(m_view);
+    done("world build");
     m_world.paint(painter);
+    done("world");
     m_overlay.paint(painter, m_view, hud);
+    done("overlay");
     painter.restore();
     return int(m_world.faces().size());
 }

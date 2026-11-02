@@ -13,7 +13,7 @@ The renderer projects low-poly geometry into a GPU-backed QPainter surface.
 ```sh
 bin/build      # build/omawing; extra arguments go to qmake
 bin/test       # Qt Test, offscreen; audio checks run silently
-bin/benchmark  # GPU rendering benchmark at 1080p and 4K (--cpu: without OpenGL)
+bin/benchmark  # GPU frame times at 1080p and 4K (--cpu: without OpenGL; --parts: per layer)
 bin/install    # makepkg -fsi: installs the binary, launcher entry, and icon
 ```
 
@@ -29,7 +29,18 @@ nine-scene sequence. `bin/benchmark` measures complete GPU frames (including a
 GPU finish), so its timings differ from the CPU paint timings in `OMAWING_STATS`.
 Besides each scene it times a few of the heaviest moments: flying at the
 ceiling, a full sky of particles over Neon Mirage's mirror floor, a wreck, and
-a strong beat.
+a strong beat. `--parts` also times each layer (sky, ground, building the
+world, painting it, and the overlay), waiting for the GPU after each, so the
+totals come out a little higher.
+
+Timings depend on the machine; the painting work doesn't. `bin/benchmark
+--check tests/benchmark-baseline.tsv` counts the draw calls, the points in them,
+and the painter state changes of one frame of each scene, and fails if any
+scene asks for more than 3% over the recorded baseline. CI runs it on every
+push and pull request, and reports CPU frame times on the run's summary page
+for comparison. After a change that makes more work on purpose, or less,
+record a new baseline with `bin/benchmark --record tests/benchmark-baseline.tsv`
+and commit it.
 
 The build uses `-Wall -Wextra` and the tree compiles without warnings. The
 sources are listed once, in `src/src.pri`, which the app, the tests, and the
@@ -67,7 +78,8 @@ When releasing, the version is in `src/src.pri`, `pkgbuild/PKGBUILD`, and
 | `src/resources.qrc` | What is compiled in: `Main.qml`, the effects, and the catalogs. |
 | `src/src.pri` | The source list, version, and compiler settings shared by every build. |
 | `tests/omawing_tests.cpp` | The Qt Test suite (`bin/test`). |
-| `tests/render_benchmark.cpp` | The frame-time benchmark (`bin/benchmark`). |
+| `tests/render_benchmark.cpp` | The frame-time benchmark and painting-work check (`bin/benchmark`). |
+| `tests/benchmark-baseline.tsv` | The painting work each benchmark scene is held to. |
 | `bin/generate-effects` | Writes the WAV effects in `src/audio`. |
 | `pkgbuild/`, `release/` | The local package recipe (`bin/install`) and the release recipe. |
 
