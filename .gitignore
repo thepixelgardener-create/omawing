@@ -2,8 +2,8 @@
 /pkgbuild/pkg/
 /pkgbuild/src/
 *.pkg.tar.*
-/aur/*.tar.gz
-/aur/*.pkg.tar.*
-/aur/src/
-/aur/pkg/
-/aur/omawing-*/
+/release/*.tar.gz
+/release/*.pkg.tar.*
+/release/src/
+/release/pkg/
+/release/omawing-*/

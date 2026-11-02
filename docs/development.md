@@ -38,9 +38,8 @@ request is built and tested by [a workflow](../.github/workflows/ci.yml), and
 the release recipe's `check()` runs the tests on the tagged source before it is
 packaged.
 
-When releasing, the version is in `src/src.pri`, `pkgbuild/PKGBUILD`,
-`aur/PKGBUILD`, and `aur/.SRCINFO` (`aur/publish` regenerates it); the release
-workflow checks they agree.
+When releasing, the version is in `src/src.pri`, `pkgbuild/PKGBUILD`, and
+`release/PKGBUILD`; the release workflow checks they agree.
 
 ## Source
 
@@ -70,7 +69,7 @@ workflow checks they agree.
 | `tests/omawing_tests.cpp` | The Qt Test suite (`bin/test`). |
 | `tests/render_benchmark.cpp` | The frame-time benchmark (`bin/benchmark`). |
 | `bin/generate-effects` | Writes the WAV effects in `src/audio`. |
-| `pkgbuild/`, `aur/` | The local package recipe (`bin/install`) and the release recipe. |
+| `pkgbuild/`, `release/` | The local package recipe (`bin/install`) and the release recipe. |
 
 ## Limits
 

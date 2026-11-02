@@ -1,5 +1,5 @@
 # Builds the working tree as a package, for bin/install. The release recipe
-# is aur/PKGBUILD; the two describe the same package, so keep them alike.
+# is release/PKGBUILD; the two describe the same package, so keep them alike.
 pkgname=omawing
 pkgver=0.4.0
 pkgrel=1
