@@ -3,7 +3,7 @@
 // The light squares of the checkerboard, grid lines in some acts, and the
 // ship's shadow.
 
-#include <QPainterPath>
+#include <QLineF>
 #include <QPolygonF>
 #include <array>
 #include <vector>
@@ -22,9 +22,10 @@ private:
     static constexpr int Bands = 40, LineBands = 8;
     void paintShadow(QPainter &p, const View &view);
     void paintCorridor(QPainter &p, const View &view);
+    void paintLines(QPainter &p, const View &view, int side, double reach);
 
     // Kept from frame to frame, so their storage is reused.
     std::vector<Vec> m_grid, m_points, m_scratch;
     std::array<std::vector<QPolygonF>, Bands> m_tiles;
-    std::array<QPainterPath, LineBands> m_lines;
+    std::array<std::vector<QLineF>, LineBands> m_lines;
 };

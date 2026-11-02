@@ -110,6 +110,9 @@ public:
     // The same, in place: `polygon` becomes what is left of it, and `scratch`
     // is working space, kept by the caller so a frame doesn't allocate.
     void clipInPlace(std::vector<Vec> &polygon, std::vector<Vec> &scratch) const;
+    // Clips the segment from a to b to the view in place; false if none of
+    // it is in view.
+    bool clipSegment(Vec &a, Vec &b) const;
     QPolygonF polygonOf(const std::vector<Vec> &points) const;
     // Aerial perspective: how far a thing at this depth has drifted towards
     // the colour of the air, 0 up close and at most a third at Far. A tint,

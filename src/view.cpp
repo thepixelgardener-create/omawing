@@ -132,17 +132,38 @@ std::vector<Vec> View::clip(std::vector<Vec> polygon) const {
     return polygon;
 }
 
+namespace {
+// How far a camera-space point is inside one of the view's five planes (the
+// near plane and the four sides); negative outside. sx and sy are the
+// slopes of the sides.
+double planeDistance(int plane, const Vec &p, double sx, double sy) {
+    switch (plane) {
+    case 0: return p[2] - View::Near;
+    case 1: return p[0] + p[2] * sx;
+    case 2: return -p[0] + p[2] * sx;
+    case 3: return p[1] + p[2] * sy;
+    default: return -p[1] + p[2] * sy;
+    }
+}
+}
+
+bool View::clipSegment(Vec &a, Vec &b) const {
+    const double sx = width / (2 * Focal), sy = height / (2 * Focal);
+    for (int plane = 0; plane < 5; ++plane) {
+        const double da = planeDistance(plane, a, sx, sy), db = planeDistance(plane, b, sx, sy);
+        if (da < 0 && db < 0)
+            return false;
+        if (da < 0)
+            a = blend(a, b, da / (da - db));
+        else if (db < 0)
+            b = blend(a, b, da / (da - db));
+    }
+    return true;
+}
+
 void View::clipInPlace(std::vector<Vec> &polygon, std::vector<Vec> &out) const {
     const double sx = width / (2 * Focal), sy = height / (2 * Focal);
-    auto distance = [&](int plane, const Vec &p) {
-        switch (plane) {
-        case 0: return p[2] - Near;
-        case 1: return p[0] + p[2] * sx;
-        case 2: return -p[0] + p[2] * sx;
-        case 3: return p[1] + p[2] * sy;
-        default: return -p[1] + p[2] * sy;
-        }
-    };
+    auto distance = [&](int plane, const Vec &p) { return planeDistance(plane, p, sx, sy); };
     // Most polygons are entirely inside or outside. Only the few that cross
     // a frustum plane are clipped.
     unsigned outsideAny = 0, outsideAll = 31;

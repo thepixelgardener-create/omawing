@@ -60,8 +60,6 @@ void Ground::paint(QPainter &p, const View &view) {
     };
     for (auto &tiles : m_tiles)
         tiles.clear();
-    for (auto &line : m_lines)
-        line.clear();
     const double sideSlope = view.width / (2 * View::Focal) + 0.2;
     for (int j = 0; j < side - 1; ++j)
         for (int i = 0; i < side - 1; ++i) {
@@ -73,25 +71,13 @@ void Ground::paint(QPainter &p, const View &view) {
             const double edge = std::max(depth, 1.0) * sideSlope + step;
             if (std::min({a[0], b[0], c[0], d[0]}) > edge || std::max({a[0], b[0], c[0], d[0]}) < -edge)
                 continue;
-            const int parity = (((gx + gz + i + j) % 2) + 2) % 2;
-            const double contrast = view.contrast(depth);
-            if (!parity && !(gridLines && contrast > 0.02))
-                continue;
-            if (parity && contrast < 0.01 && !gridLines)
+            // Only the light squares are drawn, over the dark gradient.
+            if ((((gx + gz + i + j) % 2) + 2) % 2 == 0 || view.contrast(depth) < 0.01)
                 continue;
             m_points.assign({a, b, c, d});
             view.clipInPlace(m_points, m_scratch);
-            if (m_points.size() < 3)
-                continue;
-            const QPolygonF polygon = view.polygonOf(m_points);
-            if (parity && contrast >= 0.01)
-                m_tiles[band(depth)].push_back(polygon);
-            if (gridLines && contrast > 0.02) {
-                // Lines fade out with the squares, band by band.
-                QPainterPath &line = m_lines[std::min(LineBands - 1, int((1 - contrast) * LineBands))];
-                line.addPolygon(polygon);
-                line.closeSubpath();
-            }
+            if (m_points.size() >= 3)
+                m_tiles[band(depth)].push_back(view.polygonOf(m_points));
         }
     p.setPen(Qt::NoPen);
     for (int i = 0; i < Bands; ++i) {
@@ -101,18 +87,59 @@ void Ground::paint(QPainter &p, const View &view) {
         p.setBrush(rgb(view.floorLight(depth)));
         for (const QPolygonF &polygon : m_tiles[i]) p.drawConvexPolygon(polygon);
     }
-    const QPen linePen(rgb(blend(view.palette.accent, view.palette.tileA, 0.4)), 0.55);
-    for (int i = 0; i < LineBands; ++i) {
-        if (m_lines[i].isEmpty())
-            continue;
-        p.setOpacity(0.25 * (1 - (i + 0.5) / LineBands));
-        p.strokePath(m_lines[i], linePen);
-    }
-    p.setOpacity(1);
+    if (gridLines)
+        paintLines(p, view, side, reach);
 
     if (view.valley > 0)
         paintCorridor(p, view);
     paintShadow(p, view);
+}
+
+// Every line of the grid is straight, on the ground and on screen, so each
+// is drawn as a few long segments, one wherever its fade changes, rather than
+// edge by edge around every square: far fewer for the stroker to outline.
+void Ground::paintLines(QPainter &p, const View &view, int side, double reach) {
+    for (auto &lines : m_lines)
+        lines.clear();
+    auto corner = [&](int i, int j) -> const Vec & { return m_grid[size_t(j) * side + i]; };
+    auto add = [&](int band, Vec a, Vec b) {
+        if (band >= 0 && view.clipSegment(a, b))
+            m_lines[band].push_back(QLineF(view.project(a), view.project(b)));
+    };
+    for (int across = 0; across < 2; ++across)
+        for (int k = 0; k < side; ++k) {
+            int runBand = -1;
+            Vec runStart{0, 0, 0}, runEnd{0, 0, 0};
+            for (int e = 0; e < side - 1; ++e) {
+                const Vec &a = across ? corner(e, k) : corner(k, e), &b = across ? corner(e + 1, k) : corner(k, e + 1);
+                const double depth = (a[2] + b[2]) / 2;
+                // Lines fade out with the squares, band by band.
+                int band = -1;
+                if (depth >= -View::Tile && depth <= reach) {
+                    const double contrast = view.contrast(depth);
+                    if (contrast > 0.02)
+                        band = std::min(LineBands - 1, int((1 - contrast) * LineBands));
+                }
+                if (band != runBand) {
+                    add(runBand, runStart, runEnd);
+                    runBand = band;
+                    runStart = a;
+                }
+                runEnd = b;
+            }
+            add(runBand, runStart, runEnd);
+        }
+    QPen pen(rgb(blend(view.palette.accent, view.palette.tileA, 0.4)), 0.55);
+    pen.setCapStyle(Qt::FlatCap);
+    p.setPen(pen);
+    for (int i = 0; i < LineBands; ++i) {
+        if (m_lines[i].empty())
+            continue;
+        p.setOpacity(0.25 * (1 - (i + 0.5) / LineBands));
+        p.drawLines(m_lines[i].data(), int(m_lines[i].size()));
+    }
+    p.setOpacity(1);
+    p.setPen(Qt::NoPen);
 }
 
 void Ground::paintCorridor(QPainter &p, const View &view) {

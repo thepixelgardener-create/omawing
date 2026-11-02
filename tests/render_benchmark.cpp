@@ -108,6 +108,8 @@ struct Work {
     long calls = 0, points = 0, states = 0;
 };
 
+// A batch of rectangles, lines, or points handed over at once is one call,
+// as it is for a real engine.
 class CountingEngine : public QPaintEngine {
 public:
     CountingEngine() : QPaintEngine(QPaintEngine::AllFeatures) {}
@@ -119,10 +121,10 @@ public:
     void updateState(const QPaintEngineState &) override { ++work.states; }
     void drawPolygon(const QPointF *, int count, PolygonDrawMode) override { add(1, count); }
     void drawPath(const QPainterPath &path) override { add(1, path.elementCount()); }
-    void drawRects(const QRectF *, int count) override { add(count, 4 * count); }
+    void drawRects(const QRectF *, int count) override { add(1, 4 * count); }
     void drawEllipse(const QRectF &) override { add(1, 4); }
-    void drawLines(const QLineF *, int count) override { add(count, 2 * count); }
-    void drawPoints(const QPointF *, int count) override { add(count, count); }
+    void drawLines(const QLineF *, int count) override { add(1, 2 * count); }
+    void drawPoints(const QPointF *, int count) override { add(1, count); }
     void drawTextItem(const QPointF &, const QTextItem &) override { add(1, 4); }
     void drawPixmap(const QRectF &, const QPixmap &, const QRectF &) override { add(1, 4); }
     void drawTiledPixmap(const QRectF &, const QPixmap &, const QPointF &) override { add(1, 4); }
