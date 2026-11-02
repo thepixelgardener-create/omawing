@@ -50,17 +50,18 @@ void FlightView::paint(QPainter *painter) {
         const double ratio = window() ? window()->devicePixelRatio() : 1;
         m_frameStats.record(timer.nsecsElapsed() / 1e6, m_backend->lastStep() * 1000, polygons,
                             QSize(int(width() * ratio), int(height() * ratio)),
-                            painter->paintEngine()->type() == QPaintEngine::OpenGL2);
+                            painter->paintEngine()->type() == QPaintEngine::OpenGL2,
+                            window() && window()->screen() ? window()->screen()->refreshRate() : 60);
     }
 }
 
-void FlightView::FrameStats::record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu) {
+void FlightView::FrameStats::record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu, double refreshRate) {
     // A hitch is a frame shown more than one and a half refreshes after the
     // one before it.
     if (interval.isValid()) {
         const double gap = interval.nsecsElapsed() / 1e6;
         longestGap = std::max(longestGap, gap);
-        if (gap > 25) {
+        if (gap > 1500.0 / (refreshRate >= 20 && refreshRate <= 500 ? refreshRate : 60)) {
             hitches++;
             std::fprintf(stderr, "omawing: hitch %.1f ms between frames (paint %.1f ms, step %.1f ms)\n", gap, paintMs, stepMs);
         }
@@ -80,6 +81,8 @@ void FlightView::FrameStats::record(double paintMs, double stepMs, int polygons,
                  "%d polygons, %dx%d px, %s\n",
                  frames * 1000.0 / clock.elapsed(), total / frames, worst, longestGap, stepLow, stepHigh, hitches, polygons,
                  pixels.width(), pixels.height(), gpu ? "gpu" : "cpu");
+    const QElapsedTimer lastInterval = interval;
     *this = FrameStats();
+    interval = lastInterval;
     clock.start();
 }

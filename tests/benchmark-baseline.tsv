@@ -1,17 +1,19 @@
 # The painting work of one 1920x1080 frame of each benchmark scene: draw
-# calls, the points in them, points of paths to cut into triangles, and
+# calls, the points in them, unique filled-path points, and
 # changes of painter state.
 # Written by bin/benchmark --record; CI checks against it.
-AMBER TERMINAL	1323	4980	120	730
-C64 DREAMS	991	3903	120	668
-COPPER COAST	983	3572	120	664
-ICE PALACE	994	3583	120	746
-LAVA FIELDS	1125	3975	120	692
-NEON MIRAGE	1754	6707	120	1406
-OMARCHY	992	3900	120	665
-STAR RUN	1316	4950	120	778
-VECTOR GARDEN	1022	3682	120	657
-burst on the mirage	2438	9443	120	2089
-high altitude	1255	4665	0	713
-strong beat	1022	3683	120	656
-wreck	1583	6050	0	703
+AMBER TERMINAL	1319	5118	0	732
+C64 DREAMS	987	4041	0	670
+COPPER COAST	979	3710	0	666
+ICE PALACE	990	3721	0	748
+LAVA FIELDS	1121	4113	0	694
+NEON MIRAGE	1748	6837	0	1220
+OMARCHY	988	4038	0	667
+STAR RUN	1312	5088	0	780
+VECTOR GARDEN	1018	3820	0	659
+burst on the mirage	2432	9573	0	1903
+high altitude	1251	4653	0	715
+mirage transition	1722	6821	2688	1295
+strong beat	1018	3821	0	658
+sustained particles	2432	9573	0	1201
+wreck	1579	6188	0	705

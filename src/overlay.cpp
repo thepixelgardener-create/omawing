@@ -50,13 +50,6 @@ QFont hudFont(double pixelSize, double spacing, const QString &text, int weight 
     return monoFont(pixelSize, spacing, weight);
 }
 
-// Draws text with its end at x, like SVG's text-anchor="end".
-void drawEnd(QPainter &p, double x, double y, const QString &text) {
-    p.drawText(QPointF(x - QFontMetricsF(p.font()).horizontalAdvance(text), y), text);
-}
-void drawCentred(QPainter &p, double x, double y, const QString &text) {
-    p.drawText(QPointF(x - QFontMetricsF(p.font()).horizontalAdvance(text) / 2, y), text);
-}
 
 // The demo's chrome: a sunset ramp with a hard horizon line through the middle.
 QLinearGradient chrome(const QRectF &box) {
@@ -207,6 +200,38 @@ Overlay::Sprite Overlay::renderGlyph(QChar c) const {
     return render(path.boundingRect(), [&](QPainter &p) { p.fillPath(path, chrome(path.boundingRect())); });
 }
 
+const Overlay::Text &Overlay::text(const QFont &font, const QString &string) {
+    const QString key = font.key() + '/' + string;
+    auto it = m_texts.find(key);
+    if (it != m_texts.end()) {
+        it->used = ++m_textUse;
+        return *it;
+    }
+    // Evict only the least recently used value. Labels used every frame stay
+    // hot even while altitude and score produce new strings.
+    if (m_texts.size() >= 512) {
+        auto oldest = m_texts.begin();
+        for (auto candidate = m_texts.begin(); candidate != m_texts.end(); ++candidate)
+            if (candidate->used < oldest->used) oldest = candidate;
+        m_texts.erase(oldest);
+    }
+    Text laid;
+    laid.used = ++m_textUse;
+    laid.layout = QStaticText(string);
+    laid.layout.setTextFormat(Qt::PlainText);
+    laid.layout.setPerformanceHint(QStaticText::AggressiveCaching);
+    const QFontMetricsF metrics(font);
+    laid.advance = metrics.horizontalAdvance(string);
+    laid.ascent = metrics.ascent();
+    return *m_texts.insert(key, laid);
+}
+
+void Overlay::drawText(QPainter &p, const QFont &font, const QPointF &at, const QString &string, double anchor) {
+    const Text &laid = text(font, string);
+    p.setFont(font);
+    p.drawStaticText(QPointF(at.x() - laid.advance * anchor, at.y() - laid.ascent), laid.layout);
+}
+
 // Letters outside the atlas are drawn the first time they are needed.
 const Overlay::Sprite &Overlay::glyph(QChar c) {
     auto it = m_glyphs.find(c);
@@ -236,6 +261,7 @@ void Overlay::prepare(const View &view, double pixelsPerUnit) {
     for (int y = period - std::max(1, int(std::lround(pixelsPerUnit))); y < period; ++y)
         m_scanlines.setPixelColor(0, y, withAlpha("#090f29", 0.14));
     prepareGlyphs();
+    m_radarFace = m_radarRim = Sprite();
     // Each logo pixel is a whole number of screen pixels, so the blocks
     // stay crisp. A soft shadow one pixel down and right lifts the dark
     // bottom band off the night sky.
@@ -339,15 +365,12 @@ void Overlay::paintTitles(QPainter &p, const SceneHud &hud) {
     p.setOpacity(m_view->look.titles);
     blit(p, m_title, {28, 20});
     p.setPen(subtitle);
-    p.setFont(hudFont(11, 2.2, hud.subtitle));
-    p.drawText(QPointF(Layout::Margin, 20 + 17 * TitlePixel + 16), hud.subtitle);
+    drawText(p, hudFont(11, 2.2, hud.subtitle), {Layout::Margin, 20 + 17 * TitlePixel + 16}, hud.subtitle);
     p.setPen(scene);
-    p.setFont(monoFont(13, 2));
-    drawEnd(p, W - Layout::Margin, 36,
-            QString("%1 / %2").arg(m_view->act + 1, 2, 10, QChar('0')).arg(Scene::actName(m_view->act, m_view->look.themeName)));
+    drawText(p, monoFont(13, 2), {W - Layout::Margin, 36},
+             QString("%1 / %2").arg(m_view->act + 1, 2, 10, QChar('0')).arg(Scene::actName(m_view->act, m_view->look.themeName)), 1);
     p.setPen(mode);
-    p.setFont(hudFont(10, 1.6, hud.mode));
-    drawEnd(p, W - Layout::Margin, 59, hud.mode);
+    drawText(p, hudFont(10, 1.6, hud.mode), {W - Layout::Margin, 59}, hud.mode, 1);
     for (int i = 0; i < Flight::Acts; ++i)
         p.fillRect(QRectF(W - Layout::Margin - (Flight::Acts - i) * 15 + 3, 74, 12, 3),
                    i == m_view->act ? rgb(m_view->palette.accent) : unlit);
@@ -364,23 +387,19 @@ void Overlay::paintScore(QPainter &p, const SceneHud &hud) {
     p.setOpacity(m_view->look.titles);
     if (!hud.points.isEmpty()) {
         p.setPen(label);
-        p.setFont(hudFont(9, 3, hud.score));
-        drawCentred(p, centre, 26, hud.score);
+        drawText(p, hudFont(9, 3, hud.score), {centre, 26}, hud.score, 0.5);
         p.setPen(points);
         const QFont pointsFont = monoFont(24, 3, QFont::Black);
-        p.setFont(pointsFont);
-        drawCentred(p, centre, 52, hud.points);
+        drawText(p, pointsFont, {centre, 52}, hud.points, 0.5);
         if (m_view->flight->game.multiplier > 1) {
             p.setPen(rgb(m_view->palette.accent));
-            p.setFont(monoFont(14, 1, QFont::Bold));
-            p.drawText(QPointF(centre + QFontMetricsF(pointsFont).horizontalAdvance(hud.points) / 2 + 8, 50),
-                       QString::fromUtf8("×") + QLocale().toString(m_view->flight->game.multiplier));
+            drawText(p, monoFont(14, 1, QFont::Bold), {centre + text(pointsFont, hud.points).advance / 2 + 8, 50},
+                     QString::fromUtf8("×") + QLocale().toString(m_view->flight->game.multiplier));
         }
     }
     if (!hud.best.isEmpty()) {
         p.setPen(best);
-        p.setFont(hudFont(10, 1.6, hud.best));
-        drawCentred(p, centre, hud.points.isEmpty() ? 36 : 70, hud.best);
+        drawText(p, hudFont(10, 1.6, hud.best), {centre, hud.points.isEmpty() ? 36.0 : 70.0}, hud.best, 0.5);
     }
     p.setOpacity(1);
 }
@@ -397,8 +416,7 @@ void Overlay::paintGauges(QPainter &p, const SceneHud &hud) {
     if (!hud.hull.isEmpty()) {
         const double hull = game.hull / Game::FullHull;
         p.setPen(label);
-        p.setFont(hudFont(9, 2, hud.hull));
-        p.drawText(QPointF(Margin, b + HullLabel), hud.hull);
+        drawText(p, hudFont(9, 2, hud.hull), {Margin, b + HullLabel}, hud.hull);
         p.fillRect(QRectF(Margin, b + HullBar, GaugeWidth, GaugeHeight), track);
         if (game.hurt <= 0 || std::fmod(game.hurt, 0.2) >= 0.1)
             p.fillRect(QRectF(Margin, b + HullBar, GaugeWidth * hull, GaugeHeight),
@@ -406,15 +424,12 @@ void Overlay::paintGauges(QPainter &p, const SceneHud &hud) {
     }
 
     p.setPen(label);
-    p.setFont(hudFont(9, 2, hud.thrust));
-    p.drawText(QPointF(Margin, b + ThrustLabel), hud.thrust);
+    drawText(p, hudFont(9, 2, hud.thrust), {Margin, b + ThrustLabel}, hud.thrust);
     p.fillRect(QRectF(Margin, b + ThrustBar, GaugeWidth, GaugeHeight), track);
     p.fillRect(QRectF(Margin, b + ThrustBar, ThrustIdle + boost * (GaugeWidth - ThrustIdle), GaugeHeight), thrust);
-    p.setFont(monoFont(10));
-    p.drawText(QPointF(Margin, b + Altitude), hud.altitude);
+    drawText(p, monoFont(10), {Margin, b + Altitude}, hud.altitude);
     p.setPen(status);
-    p.setFont(hudFont(11, 1, hud.status));
-    drawEnd(p, m_view->width - Margin, b + Status, hud.status);
+    drawText(p, hudFont(11, 1, hud.status), {m_view->width - Margin, b + Status}, hud.status, 1);
 }
 
 // A big chrome message across the middle when the hull gives out.
@@ -478,19 +493,36 @@ void Overlay::paintRadar(QPainter &p) {
     auto inside = [&](const QPointF &at, double margin) { return QLineF(centre, at).length() <= Radius - margin; };
 
     p.save();
-    static const QColor backing = withAlpha("#0b0b1c", 0.62), ballColor("#db4c70"), shipColor("#f4f0ff");
-    p.setPen(Qt::NoPen);
-    p.setBrush(backing);
-    p.drawEllipse(centre, Radius, Radius);
-    p.setBrush(Qt::NoBrush);
-    p.setPen(QPen(withAlpha(rgb(v.palette.accent), 0.18), 0.8));
-    p.drawEllipse(centre, Radius / 3, Radius / 3);
-    p.drawEllipse(centre, Radius * 2 / 3, Radius * 2 / 3);
-    p.drawLine(centre - QPointF(Radius, 0), centre + QPointF(Radius, 0));
-    p.drawLine(centre - QPointF(0, Radius), centre + QPointF(0, Radius));
+    static const QColor ballColor("#db4c70"), shipColor("#f4f0ff");
+    // The face (its backing, rings, and cross) and the rim only change with
+    // the act's accent, so they're drawn into images and reused.
+    const QRgb accent = rgb(v.palette.accent).rgb();
+    if (m_radarFace.image.isNull() || m_radarAccent != accent) {
+        m_radarAccent = accent;
+        const QRectF box(-Radius - 1, -Radius - 1, 2 * Radius + 2, 2 * Radius + 2);
+        m_radarFace = render(box, [&](QPainter &f) {
+            static const QColor backing = withAlpha("#0b0b1c", 0.62);
+            f.setPen(Qt::NoPen);
+            f.setBrush(backing);
+            f.drawEllipse(QPointF(0, 0), Radius, Radius);
+            f.setBrush(Qt::NoBrush);
+            f.setPen(QPen(withAlpha(QColor(accent), 0.18), 0.8));
+            f.drawEllipse(QPointF(0, 0), Radius / 3, Radius / 3);
+            f.drawEllipse(QPointF(0, 0), Radius * 2 / 3, Radius * 2 / 3);
+            f.drawLine(QPointF(-Radius, 0), QPointF(Radius, 0));
+            f.drawLine(QPointF(0, -Radius), QPointF(0, Radius));
+        });
+        m_radarRim = render(box, [&](QPainter &f) {
+            f.setPen(QPen(QColor(accent), 1.2));
+            f.drawEllipse(QPointF(0, 0), Radius, Radius);
+        });
+    }
+    blit(p, m_radarFace, centre);
 
     // The scan: a ring every Period seconds, growing from the ship to the
-    // rim and fading as it goes, with a soft glow just inside it.
+    // rim and fading as it goes, with a soft glow just inside it. The glow
+    // fades through the painter's opacity, so its gradient stays the same
+    // and the GPU keeps it.
     constexpr double Period = 1.8;
     const double phase = std::fmod(time, Period) / Period;
     {
@@ -498,10 +530,12 @@ void Overlay::paintRadar(QPainter &p) {
         QRadialGradient glow(centre, std::max(1.0, r));
         glow.setColorAt(0, withAlpha(rgb(v.palette.accent), 0));
         glow.setColorAt(0.75, withAlpha(rgb(v.palette.accent), 0));
-        glow.setColorAt(1, withAlpha(rgb(v.palette.accent), 0.22 * fade));
+        glow.setColorAt(1, withAlpha(rgb(v.palette.accent), 0.22));
         p.setPen(Qt::NoPen);
         p.setBrush(glow);
+        p.setOpacity(fade);
         p.drawEllipse(centre, r, r);
+        p.setOpacity(1);
         p.setBrush(Qt::NoBrush);
         p.setPen(QPen(withAlpha(rgb(blend(v.palette.accent, {255, 255, 255}, 0.3)), 0.75 * fade), 1.4));
         p.drawEllipse(centre, r, r);
@@ -572,9 +606,8 @@ void Overlay::paintRadar(QPainter &p) {
                                centre + QPointF(-3.4, 3.5)};
     p.drawPolygon(chevron, 4);
 
-    p.setBrush(Qt::NoBrush);
-    p.setPen(QPen(withAlpha(rgb(v.palette.accent), 0.45 + 0.2 * v.look.beat), 1.2));
-    p.drawEllipse(centre, Radius, Radius);
+    p.setOpacity(0.45 + 0.2 * v.look.beat);
+    blit(p, m_radarRim, centre);
     p.restore();
 }
 
@@ -602,7 +635,7 @@ void Overlay::paintSwitches(QPainter &p, const SceneHud &hud) {
     // A soft dark backing keeps them readable over any scenery.
     double width = 0;
     for (const Switch &s : switches)
-        width += QFontMetricsF(hudFont(9, 1.8, s.label)).horizontalAdvance(s.label) + 6 + cap + gap;
+        width += text(hudFont(9, 1.8, s.label), s.label).advance + 6 + cap + gap;
     width -= gap;
     p.setPen(Qt::NoPen);
     p.setBrush(withAlpha("#0b0b1c", 0.6));
@@ -611,10 +644,9 @@ void Overlay::paintSwitches(QPainter &p, const SceneHud &hud) {
     for (int i = 2; i >= 0; --i) {
         const Switch &s = switches[i];
         const QFont labelFont = hudFont(9, 1.8, s.label);
-        const double labelWidth = QFontMetricsF(labelFont).horizontalAdvance(s.label);
-        p.setFont(labelFont);
+        const double labelWidth = text(labelFont, s.label).advance;
         p.setPen(s.on ? QColor("#ffe2b3") : dim);
-        p.drawText(QPointF(x - labelWidth, y + cap / 2 + 3.5), s.label);
+        drawText(p, labelFont, {x, y + cap / 2 + 3.5}, s.label, 1);
         x -= labelWidth + 6 + cap;
         const QRectF key(x, y, cap, cap);
         if (s.on) {

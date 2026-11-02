@@ -28,4 +28,5 @@ private:
     std::vector<Vec> m_grid, m_points, m_scratch;
     std::array<std::vector<QPolygonF>, Bands> m_tiles;
     std::array<std::vector<QLineF>, LineBands> m_lines;
+    QPolygonF m_shadow;
 };

@@ -2,7 +2,6 @@
 
 #include <QLinearGradient>
 #include <QPainter>
-#include <QPainterPath>
 #include <QRadialGradient>
 #include <algorithm>
 #include <cmath>
@@ -144,8 +143,22 @@ void Ground::paintLines(QPainter &p, const View &view, int side, double reach) {
 
 void Ground::paintCorridor(QPainter &p, const View &view) {
     // Small emissive strips mark the corridor. Their soft pools of light
-    // sit on the same projected ground plane as the checkerboard.
-    static const QColor glowCore("#ff7fdd"), glowEdge = withAlpha("#ff49c9", 0), stripColor("#fff1fc");
+    // sit on the same projected ground plane as the checkerboard. Every
+    // pool is the same glow, drawn once into an image, then scaled and
+    // faded: a gradient of its own for each would be a new texture each.
+    static const QColor stripColor("#fff1fc");
+    static const QImage glow = [] {
+        QImage image(128, 128, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        QPainter g(&image);
+        QRadialGradient gradient(QPointF(64, 64), 64);
+        gradient.setColorAt(0, withAlpha("#ff7fdd", 0.55));
+        gradient.setColorAt(1, withAlpha("#ff49c9", 0));
+        g.fillRect(image.rect(), gradient);
+        return image;
+    }();
+    p.setRenderHint(QPainter::SmoothPixmapTransform);
+    p.setPen(Qt::NoPen);
     const int start = int(std::floor((view.camera.z - View::Far) / 12));
     for (int i = start; i < start + int(View::Far * 2 / 12) + 2; ++i) {
         for (double side : {-1.0, 1.0}) {
@@ -155,11 +168,11 @@ void Ground::paintCorridor(QPainter &p, const View &view) {
             const double alpha = view.valley * view.fadeIn(at[2]);
             const QPointF screen = view.project(at);
             const double radius = std::min(22.0, View::Focal * 0.65 / at[2]);
-            QRadialGradient glow(screen, radius);
-            glow.setColorAt(0, withAlpha(glowCore, 0.55 * alpha));
-            glow.setColorAt(1, glowEdge);
-            p.setPen(Qt::NoPen); p.setBrush(glow);
-            p.drawEllipse(screen, radius, radius);
+            if (screen.x() + radius < 0 || screen.x() - radius > view.width || screen.y() - radius > view.height)
+                continue;
+            p.setOpacity(alpha);
+            p.drawImage(QRectF(screen.x() - radius, screen.y() - radius, 2 * radius, 2 * radius), glow);
+            p.setOpacity(1);
             m_points.assign({view.toCamera({x-0.10,0.08,z-0.65}), view.toCamera({x+0.10,0.08,z-0.65}),
                              view.toCamera({x+0.10,0.08,z+0.65}), view.toCamera({x-0.10,0.08,z+0.65})});
             view.clipInPlace(m_points, m_scratch);
@@ -173,13 +186,15 @@ void Ground::paintCorridor(QPainter &p, const View &view) {
 
 // The ship's shadow: its hull and wings flattened straight down onto the
 // ground, so it banks, flexes, and sweeps with the ship. Every piece is
-// wound the same way and filled as one path, so overlaps don't darken.
+// wound the same way and filled together, so overlaps don't darken. They're
+// one polygon, each piece joined to the first by a line out and straight
+// back, which encloses nothing. Reuse the polygon storage between frames;
+// Qt can stencil-fill the combined silhouette in the OpenGL renderer.
 void Ground::paintShadow(QPainter &p, const View &view) {
     static const QColor shade("#12102a");
     const auto &ship = view.flight->ship;
     const Vec at{ship.x, ship.y, ship.z}, rotation{ship.yaw, ship.pitch, ship.bank};
-    QPainterPath shadow;
-    shadow.setFillRule(Qt::WindingFill);
+    m_shadow.clear();
     auto add = [&](const std::vector<Vec> &piece) {
         m_points.clear();
         for (const Vec &v : piece) {
@@ -190,7 +205,7 @@ void Ground::paintShadow(QPainter &p, const View &view) {
         view.clipInPlace(m_points, m_scratch);
         if (m_points.size() < 3)
             return;
-        QPolygonF polygon = view.polygonOf(m_points);
+        const QPolygonF polygon = view.polygonOf(m_points);
         double area = 0;
         for (int i = 0; i < polygon.size(); ++i) {
             const QPointF &a = polygon[i], &b = polygon[(i + 1) % polygon.size()];
@@ -198,10 +213,12 @@ void Ground::paintShadow(QPainter &p, const View &view) {
         }
         if (std::abs(area) < 1e-3)
             return;
-        if (area < 0)
-            std::reverse(polygon.begin(), polygon.end());
-        shadow.addPolygon(polygon);
-        shadow.closeSubpath();
+        const QPointF origin = m_shadow.isEmpty() ? polygon[0] : m_shadow[0];
+        if (area > 0)
+            m_shadow += polygon;
+        else
+            m_shadow.append(QPolygonF(polygon.rbegin(), polygon.rend()));
+        m_shadow << m_shadow[m_shadow.size() - polygon.size()] << origin;
     };
     for (const auto &piece : hullPieces())
         add(piece);
@@ -211,9 +228,11 @@ void Ground::paintShadow(QPainter &p, const View &view) {
     for (const double side : {-1.0, 1.0})
         for (const auto &panel : ShipShape::finPanels(side))
             add(panel);
-    if (!shadow.isEmpty()) {
+    if (!m_shadow.isEmpty()) {
         p.setOpacity(clampTo(0.55 - ship.y * 0.025, 0.12, 0.5));
-        p.fillPath(shadow, shade);
+        p.setPen(Qt::NoPen);
+        p.setBrush(shade);
+        p.drawPolygon(m_shadow, Qt::WindingFill);
         p.setOpacity(1);
     }
 }

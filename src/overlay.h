@@ -7,6 +7,7 @@
 #include <QImage>
 #include <QPointF>
 #include <QRect>
+#include <QStaticText>
 #include <functional>
 
 #include "view.h"
@@ -31,6 +32,16 @@ private:
     // Draws a sprite resized by `scale`, for text that moves in depth.
     void blitScaled(QPainter &p, const Sprite &sprite, const QPointF &anchor, double scale) const;
     Sprite renderGlyph(QChar c) const;
+    // Text laid out once and kept: shaping and measuring every string every
+    // frame was a good share of the overlay's time. `anchor` places the text
+    // at its start (0), centre (0.5), or end (1); y is its baseline.
+    struct Text {
+        QStaticText layout;
+        double advance = 0, ascent = 0;
+        quint64 used = 0;
+    };
+    const Text &text(const QFont &font, const QString &string);
+    void drawText(QPainter &p, const QFont &font, const QPointF &at, const QString &string, double anchor = 0);
     const Sprite &glyph(QChar c);
     void prepareGlyphs();
     void paintStreaks(QPainter &p);
@@ -50,4 +61,8 @@ private:
     double m_glyphAdvance = 16;
     Sprite m_title;
     QImage m_scanlines;   // One period of the scanlines, a pixel wide, tiled over the view.
+    Sprite m_radarFace, m_radarRim;
+    QHash<QString, Text> m_texts;
+    quint64 m_textUse = 0;
+    QRgb m_radarAccent = 0;
 };

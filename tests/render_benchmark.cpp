@@ -46,6 +46,7 @@ struct Fixture {
     const char *name;
     // Sets up the flight (and the look) for the frames timed.
     std::function<void(Flight &, Scene::Look &)> setUp;
+    std::function<void(Flight &, Scene::Look &, int)> update;
 };
 
 std::vector<Fixture> fixtures() {
@@ -76,6 +77,16 @@ std::vector<Fixture> fixtures() {
         look.beat = 1;
         look.level = 1;
     }});
+    list.push_back({"sustained particles", [](Flight &f, Scene::Look &) { f.scene(4); },
+        [](Flight &f, Scene::Look &, int) {
+            f.particles.clear();
+            f.emitParticles(Particle::Glitter, {f.ship.x, f.ship.y, f.ship.z + 12},
+                            {0, 0, f.ship.speed}, 8, Flight::MaxParticles);
+        }});
+    list.push_back({"mirage transition", [](Flight &f, Scene::Look &) { f.scene(4); },
+        [](Flight &f, Scene::Look &, int frame) {
+            f.time = 4 * Flight::ActLength + (frame % 120) / 60.0;
+        }});
     return list;
 }
 
@@ -105,17 +116,15 @@ double mean(const std::vector<double> &times) {
 }
 
 // The painting work of a frame, as a paint engine sees it: draw calls, the
-// points in them, the points of filled paths that have to be cut into
-// triangles, and changes of painter state.
+// points in them, unique filled-path points, and changes of painter state.
 struct Work {
-    long calls = 0, points = 0, triangulated = 0, states = 0;
+    long calls = 0, points = 0, uniquePathPoints = 0, states = 0;
 };
 
 // A batch of rectangles, lines, or points handed over at once is one call,
-// as it is for a real engine. Qt's OpenGL engine cuts a filled path into
-// triangles on the CPU, and keeps them for the next time the same path is
-// filled; so a fill counts its points as triangulated only the first time
-// that path is seen, as it costs there.
+// as it is for a real engine. Unique filled-path points are a geometry-work
+// proxy, not a measurement of driver triangulation: Qt can use stencil fills
+// instead, and its caches depend on path identity rather than our value hash.
 class CountingEngine : public QPaintEngine {
 public:
     CountingEngine() : QPaintEngine(QPaintEngine::AllFeatures) {}
@@ -139,7 +148,7 @@ public:
             key = qHashMulti(key, int(e.type), e.x, e.y);
         }
         if (seen.insert(key).second)
-            work.triangulated += path.elementCount();
+            work.uniquePathPoints += path.elementCount();
     }
     void drawRects(const QRectF *, int count) override { add(1, 4 * count); }
     void drawEllipse(const QRectF &) override { add(1, 4); }
@@ -193,6 +202,7 @@ std::map<std::string, Work> countWork(const std::vector<Fixture> &list) {
         CountingDevice device(QSize(1920, 1080));
         for (int i = 0; i <= WarmUp; ++i) {
             step(flight);
+            if (fixture.update) fixture.update(flight, look, i);
             device.work() = {};
             QPainter p(&device);
             scene.paint(p, flight, QSizeF(1920, 1080), hud, look);
@@ -203,7 +213,7 @@ std::map<std::string, Work> countWork(const std::vector<Fixture> &list) {
 }
 
 // The baseline is one line per fixture: its name, a tab, then its calls,
-// points, and state changes.
+// points, unique filled-path points, and state changes.
 std::map<std::string, Work> readWork(const QString &path) {
     std::map<std::string, Work> result;
     QFile file(path);
@@ -226,11 +236,11 @@ bool writeWork(const QString &path, const std::map<std::string, Work> &work) {
         return false;
     QTextStream out(&file);
     out << "# The painting work of one 1920x1080 frame of each benchmark scene: draw\n"
-           "# calls, the points in them, points of paths to cut into triangles, and\n"
+           "# calls, the points in them, unique filled-path points, and\n"
            "# changes of painter state.\n"
            "# Written by bin/benchmark --record; CI checks against it.\n";
     for (const auto &[name, w] : work)
-        out << QString::fromStdString(name) << '\t' << w.calls << '\t' << w.points << '\t' << w.triangulated << '\t'
+        out << QString::fromStdString(name) << '\t' << w.calls << '\t' << w.points << '\t' << w.uniquePathPoints << '\t'
             << w.states << '\n';
     return true;
 }
@@ -242,7 +252,13 @@ constexpr long Slack = 16;
 
 bool checkWork(const std::map<std::string, Work> &baseline, const std::map<std::string, Work> &work) {
     bool ok = true;
-    std::printf("\n| scene | draw calls | points | triangulated | state changes |\n| --- | ---: | ---: | ---: | ---: |\n");
+    std::printf("\n| scene | draw calls | points | unique path points | state changes |\n| --- | ---: | ---: | ---: | ---: |\n");
+    for (const auto &[name, ignored] : baseline) {
+        if (!work.count(name)) {
+            std::fprintf(stderr, "render_benchmark: baseline scene no longer exercised: %s\n", name.c_str());
+            ok = false;
+        }
+    }
     auto cell = [&](long now, long before) {
         const bool over = now > before * Tolerance + Slack;
         ok &= !over;
@@ -255,9 +271,13 @@ bool checkWork(const std::map<std::string, Work> &baseline, const std::map<std::
     };
     for (const auto &[name, w] : work) {
         const auto found = baseline.find(name);
+        if (found == baseline.end()) {
+            std::fprintf(stderr, "render_benchmark: scene missing from baseline: %s\n", name.c_str());
+            ok = false;
+        }
         const Work before = found == baseline.end() ? Work{} : found->second;
         std::printf("| %s | %s | %s | %s | %s |\n", name.c_str(), cell(w.calls, before.calls).c_str(),
-                    cell(w.points, before.points).c_str(), cell(w.triangulated, before.triangulated).c_str(),
+                    cell(w.points, before.points).c_str(), cell(w.uniquePathPoints, before.uniquePathPoints).c_str(),
                     cell(w.states, before.states).c_str());
     }
     if (!ok)
@@ -320,9 +340,17 @@ int main(int argc, char **argv) {
     if (!cpu) {
         QSurfaceFormat format;
         format.setSamples(4);
+        format.setDepthBufferSize(24);
+        format.setStencilBufferSize(8);
         context.setFormat(format);
         if (!context.create()) {
             std::fprintf(stderr, "render_benchmark: no OpenGL context (try --cpu)\n");
+            return 2;
+        }
+        // Qt's paint engine chooses its stencil path from the context
+        // format, not just the FBO attachment. Match Qt Quick's defaults.
+        if (context.format().stencilBufferSize() < 8) {
+            std::fprintf(stderr, "render_benchmark: context lacks an 8-bit stencil buffer (try --cpu)\n");
             return 2;
         }
         surface.setFormat(context.format());
@@ -348,6 +376,15 @@ int main(int argc, char **argv) {
                 std::fprintf(stderr, "render_benchmark: could not set up a %dx%d framebuffer\n", size.width(), size.height());
                 return 4;
             }
+            GLint stencilBits = 0;
+            context.functions()->glGetIntegerv(GL_STENCIL_BITS, &stencilBits);
+            std::printf("OpenGL renderer: %s; context stencil: %d; framebuffer stencil: %d; samples: %d\n",
+                        reinterpret_cast<const char *>(context.functions()->glGetString(GL_RENDERER)),
+                        context.format().stencilBufferSize(), stencilBits, fbo->format().samples());
+            if (stencilBits < 8 || fbo->format().samples() < 4) {
+                std::fprintf(stderr, "render_benchmark: framebuffer lacks the requested stencil or multisampling\n");
+                return 4;
+            }
             device = std::make_unique<QOpenGLPaintDevice>(size);
         }
         QPaintDevice *target = cpu ? static_cast<QPaintDevice *>(&image) : device.get();
@@ -356,12 +393,12 @@ int main(int argc, char **argv) {
                 context.functions()->glFinish();
         };
 
-        std::printf("\n%dx%d, %s, ms per frame\n\n| scene | mean | median | p95 |", size.width(), size.height(),
+        std::printf("\n%dx%d, %s, ms per frame\n\n| scene | mean | median | p95 | p99 |", size.width(), size.height(),
                     cpu ? "cpu" : "gpu");
         if (timeParts)
             for (const char *part : parts)
                 std::printf(" %s |", part);
-        std::printf("\n| --- | ---: | ---: | ---: |");
+        std::printf("\n| --- | ---: | ---: | ---: | ---: |");
         if (timeParts)
             for (size_t i = 0; i < std::size(parts); ++i)
                 std::printf(" ---: |");
@@ -384,6 +421,7 @@ int main(int argc, char **argv) {
                 });
             for (int i = 0; i < WarmUp + frames; ++i) {
                 step(flight);
+                if (fixture.update) fixture.update(flight, look, i);
                 if (i == WarmUp)
                     partTimes.clear();
                 QElapsedTimer timer;
@@ -398,14 +436,14 @@ int main(int argc, char **argv) {
                 if (i >= WarmUp)
                     times.push_back(timer.nsecsElapsed() / 1e6);
             }
-            std::printf("| %s | %.2f | %.2f | %.2f |", fixture.name, mean(times), percentile(times, 0.5),
-                        percentile(times, 0.95));
+            std::printf("| %s | %.2f | %.2f | %.2f | %.2f |", fixture.name, mean(times), percentile(times, 0.5),
+                        percentile(times, 0.95), percentile(times, 0.99));
             if (timeParts)
                 for (const char *part : parts)
                     std::printf(" %.2f |", mean(partTimes[part]));
             std::printf("\n");
             all.insert(all.end(), times.begin(), times.end());
         }
-        std::printf("| **all** | **%.2f** | **%.2f** | **%.2f** |\n", mean(all), percentile(all, 0.5), percentile(all, 0.95));
+        std::printf("| **all** | **%.2f** | **%.2f** | **%.2f** | **%.2f** |\n", mean(all), percentile(all, 0.5), percentile(all, 0.95), percentile(all, 0.99));
     }
 }

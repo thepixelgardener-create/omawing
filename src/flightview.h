@@ -30,7 +30,7 @@ private:
     // With OMAWING_STATS set, frame rate, paint times, and hitches are
     // reported on stderr once a second.
     struct FrameStats {
-        void record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu);
+        void record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu, double refreshRate);
 
         int frames = 0, hitches = 0;
         double total = 0, worst = 0, longestGap = 0;
