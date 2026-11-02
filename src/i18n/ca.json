@@ -9,7 +9,6 @@
   "ALT %1": "ALT %1",
   "No audio output device was found.": "No s’ha trobat cap dispositiu de sortida d’àudio.",
   "The audio output can't play this sound.": "La sortida d’àudio no pot reproduir aquest so.",
-  "Sound stopped: the audio output failed.": "El so s’ha aturat: ha fallat la sortida d’àudio.",
   "Take control": "Pren el control",
   "Watch demo": "Mira la demo",
   "Play": "Reprodueix",

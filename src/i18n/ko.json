@@ -9,7 +9,6 @@
   "ALT %1": "고도 %1",
   "No audio output device was found.": "오디오 출력 장치를 찾을 수 없습니다.",
   "The audio output can't play this sound.": "오디오 출력에서 이 소리를 재생할 수 없습니다.",
-  "Sound stopped: the audio output failed.": "소리가 멈췄습니다: 오디오 출력에 문제가 생겼습니다.",
   "Take control": "직접 조종",
   "Watch demo": "데모 보기",
   "Play": "재생",

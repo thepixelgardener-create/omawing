@@ -1,11 +1,16 @@
 #!/bin/sh
+# Builds build/omawing, or omawing in $OMAWING_BUILD_DIR. Extra arguments go
+# to qmake, such as the compiler flags a package recipe passes in; a recipe
+# should build in a folder of its own, since make only rebuilds what changed
+# and objects left from other flags would be kept.
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-mkdir -p "$ROOT/build"
-cd "$ROOT/build"
+BUILD="${OMAWING_BUILD_DIR:-$ROOT/build}"
+mkdir -p "$BUILD"
+cd "$BUILD"
 
-qmake6 "$ROOT/omawing.pro"
+qmake6 "$ROOT/omawing.pro" "$@"
 make -j"$(nproc)"
 
-echo "Built $ROOT/build/omawing"
+echo "Built $BUILD/omawing"

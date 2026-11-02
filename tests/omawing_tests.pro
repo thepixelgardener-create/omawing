@@ -1,17 +1,10 @@
-QT += core gui network quick quickcontrols2 multimedia testlib
-CONFIG += c++20 testcase
-QMAKE_CXXFLAGS += -Wno-missing-field-initializers
+QT += core gui network qml quick quickcontrols2 multimedia testlib
+CONFIG += testcase
 TARGET = omawing_tests
 TEMPLATE = app
 
-INCLUDEPATH += ../src
-
-HEADERS += ../src/backend.h ../src/flight.h ../src/game.h ../src/scene.h ../src/view.h ../src/sky.h ../src/ground.h ../src/worldlayer.h ../src/overlay.h ../src/shipshape.h ../src/scoreboard.h ../src/audio.h ../src/theme.h ../src/translator.h
-SOURCES += omawing_tests.cpp ../src/backend.cpp ../src/flight.cpp ../src/game.cpp ../src/scene.cpp ../src/view.cpp ../src/sky.cpp ../src/ground.cpp ../src/worldlayer.cpp ../src/overlay.cpp ../src/scoreboard.cpp ../src/audio.cpp \
-    ../src/theme.cpp ../src/translator.cpp
-
-HEADERS += ../src/flightview.h
-SOURCES += ../src/flightview.cpp
-RESOURCES += ../src/resources.qrc
-# The tests play the soundtrack from the source tree.
-DEFINES += OMAWING_TEST_MUSIC=\\\"$$PWD/../src/audio\\\"
+include(../src/src.pri)
+SOURCES += omawing_tests.cpp
+# The tests play the soundtrack and read the catalogs and sources from the
+# source tree.
+DEFINES += OMAWING_TEST_MUSIC=\\\"$$PWD/../src/audio\\\" OMAWING_TEST_SOURCE=\\\"$$PWD/../src\\\"

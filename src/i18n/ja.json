@@ -9,7 +9,6 @@
   "ALT %1": "高度 %1",
   "No audio output device was found.": "音声出力デバイスが見つかりません。",
   "The audio output can't play this sound.": "音声出力でこのサウンドを再生できません。",
-  "Sound stopped: the audio output failed.": "サウンドが停止しました：音声出力でエラーが発生しました。",
   "Take control": "操縦する",
   "Watch demo": "デモを見る",
   "Play": "再生",

@@ -4,6 +4,8 @@
 #include <QList>
 #include <QString>
 
+class QSettings;
+
 // The top ten, best first, saved in the app's settings file. A finished run
 // that makes the board waits as the pending score until it gets a name. As a
 // list model, QML shows it with roles name, score, rings, and date.
@@ -44,11 +46,13 @@ public:
 
     bool qualifies(int score) const;
     // A finished run: held for a name if it made the board. An older score
-    // still waiting is saved first, under the last name.
+    // still waiting is saved first, under the last name; if that fails, the
+    // better of the two stays pending.
     void offer(int score, int rings);
     // Puts the pending score on the board; an empty name uses the last one.
     // On a failed save the score stays pending, so it can be tried again.
-    Q_INVOKABLE void save(const QString &name);
+    // Scores saved meanwhile by another copy of the game are kept.
+    Q_INVOKABLE bool save(const QString &name);
 
 signals:
     void changed();
@@ -57,7 +61,8 @@ signals:
 
 private:
     void load();
-    bool write(const QList<Entry> &entries);
+    static QList<Entry> read(QSettings &settings);
+    bool write(QSettings &settings, const QList<Entry> &entries);
 
     QString m_settingsFile, m_playerName, m_error;
     QList<Entry> m_entries;

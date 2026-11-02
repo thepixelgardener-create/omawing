@@ -7,7 +7,7 @@ arch=('x86_64' 'aarch64')
 url='https://github.com/thepixelgardener-create/omawing'
 # The code is MIT; the bundled Gemini soundtrack is not (see LICENSE).
 license=('MIT' 'LicenseRef-omawing-soundtrack')
-depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-multimedia' 'gcc-libs' 'glibc')
+depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-multimedia' 'qt6-svg' 'gcc-libs' 'glibc')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('a7874f81462eaadbfc9e0ff45eed77b8668893f87d0733edb5d10fb7c328b30f')
 
@@ -21,6 +21,17 @@ build() {
     QMAKE_CXXFLAGS_RELEASE="$CXXFLAGS" \
     QMAKE_LFLAGS_RELEASE="$LDFLAGS"
   make
+}
+
+# The test suite flies, paints, and plays the game offscreen, from the
+# same source; a release that fails it isn't packaged.
+check() {
+  cd "$pkgname-$pkgver"
+  mkdir -p build/tests
+  cd build/tests
+  qmake6 ../../tests/omawing_tests.pro
+  make
+  QT_QPA_PLATFORM=offscreen ./omawing_tests
 }
 
 package() {

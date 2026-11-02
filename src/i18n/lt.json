@@ -9,7 +9,6 @@
   "ALT %1": "AUKŠTIS %1",
   "No audio output device was found.": "Nerastas joks garso išvesties įrenginys.",
   "The audio output can't play this sound.": "Garso išvestis negali groti šio garso.",
-  "Sound stopped: the audio output failed.": "Garsas sustojo: sutriko garso išvestis.",
   "Take control": "Perimti valdymą",
   "Watch demo": "Žiūrėti demonstraciją",
   "Play": "Groti",

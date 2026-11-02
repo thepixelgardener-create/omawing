@@ -99,7 +99,12 @@ void Translator::reload() {
 
     // omarchy-language replaces the file, which drops it from the watch, and a
     // first pick creates it; watch its directory too and re-arm every time.
-    const QString directory = QFileInfo(m_languageFile).absolutePath();
+    // Until the directory exists (Omarchy set up after the game started, or
+    // the folder replaced), the nearest folder above it that does is watched,
+    // so its creation is noticed.
+    QString directory = QFileInfo(m_languageFile).absolutePath();
+    while (!QFileInfo::exists(directory) && directory != QFileInfo(directory).absolutePath())
+        directory = QFileInfo(directory).absolutePath();
     if (QFileInfo::exists(directory))
         m_watcher.addPath(directory);
     if (QFileInfo::exists(m_languageFile))

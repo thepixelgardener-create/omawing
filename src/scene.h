@@ -5,8 +5,10 @@
 #include <QSizeF>
 #include <QString>
 #include <array>
+#include <functional>
 #include <vector>
 
+#include "ground.h"
 #include "overlay.h"
 #include "view.h"
 #include "worldlayer.h"
@@ -35,6 +37,12 @@ public:
         return paint(painter, flight, size, hud, Look{});
     }
 
+    // Called as each part of a frame is finished ("sky", "ground", "world
+    // build", "world", "overlay"), for the benchmark to time them. Unset in
+    // the game.
+    using Probe = std::function<void(const char *part)>;
+    void setProbe(Probe probe) { m_probe = std::move(probe); }
+
     // The projected world faces of the last frame, in canvas units; tests use
     // them to check that geometry stays finite and inside the view.
     const std::vector<Face> &faces() const { return m_world.faces(); }
@@ -50,6 +58,8 @@ public:
 
 private:
     View m_view;
+    Ground m_ground;
     WorldLayer m_world;
     Overlay m_overlay;
+    Probe m_probe;
 };

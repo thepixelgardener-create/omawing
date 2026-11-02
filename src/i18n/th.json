@@ -9,7 +9,6 @@
   "ALT %1": "ความสูง %1",
   "No audio output device was found.": "ไม่พบอุปกรณ์ส่งออกเสียง",
   "The audio output can't play this sound.": "อุปกรณ์ส่งออกเสียงไม่สามารถเล่นเสียงนี้ได้",
-  "Sound stopped: the audio output failed.": "เสียงหยุด: อุปกรณ์ส่งออกเสียงขัดข้อง",
   "Take control": "ควบคุมเอง",
   "Watch demo": "ดูเดโม",
   "Play": "เล่น",

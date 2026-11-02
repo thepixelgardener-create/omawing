@@ -1,6 +1,7 @@
-QT += core gui opengl
-CONFIG += c++20 release console
-QMAKE_CXXFLAGS += -Wno-missing-field-initializers
+QT += core gui network qml quick quickcontrols2 multimedia opengl
+CONFIG += release console
 TARGET = render_benchmark
-INCLUDEPATH += ../src
-SOURCES += render_benchmark.cpp ../src/scene.cpp ../src/view.cpp ../src/sky.cpp ../src/ground.cpp ../src/worldlayer.cpp ../src/overlay.cpp ../src/flight.cpp ../src/game.cpp
+TEMPLATE = app
+
+include(../src/src.pri)
+SOURCES += render_benchmark.cpp

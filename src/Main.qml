@@ -20,7 +20,10 @@ ApplicationWindow {
 
     Material.theme: Material.Dark
     Material.accent: theme.accent
-    Material.roundedScale: theme.radius
+    // Material takes the corner radius in pixels, but reads 255 as "fully
+    // round"; no Hyprland rounding should turn buttons into pills.
+    readonly property int cornerScale: Math.min(theme.radius, 32)
+    Material.roundedScale: cornerScale
 
     property bool helpVisible: false
     // The toolbar shows while the pointer moves, then gets out of the way.
@@ -99,6 +102,9 @@ ApplicationWindow {
         source: backend
         focus: true
         Component.onCompleted: forceActiveFocus()
+        // Once focus moves away (the volume sliders, the score board), key
+        // releases go there instead, so nothing may stay held.
+        onActiveFocusChanged: if (!activeFocus) backend.clearInput()
 
         // Flight keys are held, so they need press and release, not shortcuts.
         Keys.onPressed: event => { if (!event.isAutoRepeat && backend.keyDown(event.key)) event.accepted = true }
@@ -177,7 +183,7 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.maximumWidth: win.width - 40
                 focusPolicy: Qt.NoFocus
-                Material.roundedScale: theme.radius
+                Material.roundedScale: win.cornerScale
                 ToolTip.visible: hovered
                 ToolTip.text: qsTr("Next track") + " (P)"
                 onClicked: backend.nextTrack()
@@ -402,7 +408,7 @@ ApplicationWindow {
         popupType: Popup.Item
         Material.theme: Material.Dark
         Material.accent: theme.accent
-        Material.roundedScale: theme.radius
+        Material.roundedScale: win.cornerScale
         parent: Overlay.overlay
         anchors.centerIn: parent
         width: Math.min(win.width - 32, 580)
@@ -525,7 +531,7 @@ ApplicationWindow {
 
     component BarButton: Button {
         property string key
-        Material.roundedScale: theme.radius
+        Material.roundedScale: win.cornerScale
         Layout.fillWidth: true
         Layout.minimumWidth: 0
         contentItem: Label { text: parent.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }

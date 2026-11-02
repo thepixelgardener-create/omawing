@@ -9,7 +9,6 @@
   "ALT %1": "الارتفاع %1",
   "No audio output device was found.": "لم يُعثر على جهاز لإخراج الصوت.",
   "The audio output can't play this sound.": "لا يستطيع مخرج الصوت تشغيل هذا الصوت.",
-  "Sound stopped: the audio output failed.": "توقف الصوت: تعطّل مخرج الصوت.",
   "Take control": "تولَّ القيادة",
   "Watch demo": "شاهد العرض",
   "Play": "تشغيل",

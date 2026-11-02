@@ -9,41 +9,37 @@ using namespace geo;
 namespace {
 // The shortest signed angle from a to b, so turning never goes the long way round.
 double turn(double from, double to) { return std::atan2(std::sin(to - from), std::cos(to - from)); }
-// The acts where the autopilot opens the throttle.
+// The acts where the autopilot opens the throttle, and when in the act.
 bool boostAct(int act) { return act == 2 || act == 7; }
+constexpr double AutoBoostFrom = 6, AutoBoostUntil = 17;
+// The autopilot weaves gently around the course and bobs around
+// AutoAltitude, steering and climbing at most AutoLimit of full stick.
+constexpr double AutoAltitude = 3.7, AutoBob = 1.2, AutoLimit = 0.7;
 }
 
 namespace World {
 std::vector<Obstacle> scenery(double x, double z, int reach, double time) {
     std::vector<Obstacle> list;
-    const int cx = int(std::floor(x / Cell)), cz = int(std::floor(z / Cell));
-    for (int iz = cz - reach; iz <= cz + reach; ++iz)
-        for (int ix = cx - reach; ix <= cx + reach; ++ix) {
-            const double ox = ix * Cell + 12 + (hash(ix, iz) - 0.5) * 8, oz = iz * Cell + 14;
-            // The course down the middle stays clear.
-            if (std::abs(ox) < 8)
-                continue;
-            if ((ix + iz) % 3 == 0)
-                list.push_back({Obstacle::Pyramid, ox, 0, oz, 0, ix, iz});
-            else
-                list.push_back({Obstacle::Crystal, ox, 2 + std::sin(time * 1.4 + ix + iz) * 0.5, oz, time * 0.4 + ix, ix, iz});
-        }
+    list.reserve(size_t(2 * reach + 1) * size_t(2 * reach + 1));
+    forEachScenery(x, z, reach, time, [&](const Obstacle &o) { list.push_back(o); });
     return list;
 }
 
-Ring ring(int index) { return {index, 5 * std::sin(index * 1.1), RingHeight, index * RingSpacing + 24}; }
+Ring ring(int index) { return {index, 5 * std::sin(index * 1.1), RingHeight, index * RingSpacing + RingOffset}; }
 
+// The ball of the stretch the ship is in; a stretch starts 8 units before
+// its ball's cell begins, so the next ball is in play well before it's passed.
 Obstacle ball(double z, double time) {
-    return {Obstacle::Ball, 14, 4.3 + std::abs(std::sin(time * 1.25)) * 3.5, std::floor((z + 8) / 110) * 110 + 36,
-            time * 0.5};
+    return {Obstacle::Ball, BallX, 4.3 + std::abs(std::sin(time * 1.25)) * 3.5,
+            std::floor((z + 8) / BallSpacing) * BallSpacing + BallOffset, time * 0.5};
 }
 
 std::vector<Obstacle> balls(double z, double reach, double time) {
     std::vector<Obstacle> list;
-    const int first = int(std::ceil((z - reach - 36) / 110));
-    const int last = int(std::floor((z + reach - 36) / 110));
+    const int first = int(std::ceil((z - reach - BallOffset) / BallSpacing));
+    const int last = int(std::floor((z + reach - BallOffset) / BallSpacing));
     for (int cell = first; cell <= last; ++cell)
-        list.push_back(ball(cell * 110.0, time));
+        list.push_back(ball(cell * BallSpacing, time));
     return list;
 }
 }
@@ -73,10 +69,10 @@ void Flight::step(double dt) {
         // A wreck has no say over where it goes.
     } else if (demo) {
         const double wantedYaw = std::sin(time * 0.24) * 0.28 + std::sin(time * 0.51) * 0.07;
-        steering = clampTo(turn(ship.yaw, wantedYaw) * 2.2, -0.7, 0.7);
-        climb = clampTo((3.7 + 1.2 * std::sin(time * 0.43) - ship.y) * 0.7, -0.7, 0.7);
+        steering = clampTo(turn(ship.yaw, wantedYaw) * 2.2, -AutoLimit, AutoLimit);
+        climb = clampTo((AutoAltitude + AutoBob * std::sin(time * 0.43) - ship.y) * 0.7, -AutoLimit, AutoLimit);
         const double inAct = std::fmod(time, ActLength);
-        boost = boostAct(act()) && inAct > 6 && inAct < 17;
+        boost = boostAct(act()) && inAct > AutoBoostFrom && inAct < AutoBoostUntil;
     } else {
         steering = double(holding(Right)) - double(holding(Left));
         climb = double(holding(Climb)) - double(holding(Descend));
@@ -159,6 +155,9 @@ void Flight::updateCamera(double dt) {
     // Look through the ship horizontally, rather than along its changing
     // heading. Position easing already smooths this bearing; another yaw
     // delay lets tight turns drag the ship off the side of the screen.
+    // Adding the shortest turn, rather than assigning the bearing, keeps the
+    // yaw unwrapped: it counts whole turns, so the backdrop, which scrolls
+    // with it, never jumps by a lap.
     const double dx = ship.x - camera.x, dz = ship.z - camera.z;
     camera.yaw += turn(camera.yaw, std::atan2(dx, dz));
     const double ahead = std::hypot(dx, dz) + 56 * scale;
@@ -185,18 +184,20 @@ void Flight::emitParticles(Particle::Kind kind, const Vec &at, const Vec &veloci
         }
         particles.push_back(p);
     }
-    if (particles.size() > size_t(MaxParticles))
-        particles.erase(particles.begin(), particles.begin() + (particles.size() - MaxParticles));
+    while (particles.size() > size_t(MaxParticles))
+        particles.pop_front();
 }
 
 void Flight::animateParticles(double dt) {
+    // The drag of each kind, the same for every particle this step.
+    const double exhaustDrag = std::exp(-dt * 2), glitterDrag = std::exp(-dt * 2.5), smokeDrag = std::exp(-dt * 1.2);
     for (Particle &p : particles) {
         p.age += dt;
         switch (p.kind) {
-        case Particle::Exhaust: p.velocity = scaled(p.velocity, std::exp(-dt * 2)); break;
+        case Particle::Exhaust: p.velocity = scaled(p.velocity, exhaustDrag); break;
         case Particle::Spark: p.velocity[1] -= 16 * dt; break;
-        case Particle::Glitter: p.velocity = scaled(p.velocity, std::exp(-dt * 2.5)); p.velocity[1] -= 1.5 * dt; break;
-        case Particle::Smoke: p.velocity = scaled(p.velocity, std::exp(-dt * 1.2)); p.velocity[1] += 1.2 * dt; break;
+        case Particle::Glitter: p.velocity = scaled(p.velocity, glitterDrag); p.velocity[1] -= 1.5 * dt; break;
+        case Particle::Smoke: p.velocity = scaled(p.velocity, smokeDrag); p.velocity[1] += 1.2 * dt; break;
         case Particle::Flash: break;
         }
         p.position = translated(p.position, scaled(p.velocity, dt));
@@ -221,7 +222,7 @@ void Flight::advance(double seconds) {
     // Events from every step are kept, so a ring passed early still sounds.
     unsigned happened = 0;
     for (double left = seconds; left > 1e-8;) {
-        const double dt = std::min(left, 1.0 / 60);
+        const double dt = std::min(left, StepLength);
         step(dt);
         happened |= events;
         left -= dt;

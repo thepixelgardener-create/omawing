@@ -9,7 +9,6 @@
   "ALT %1": "ВИС. %1",
   "No audio output device was found.": "Није пронађен ниједан уређај за излаз звука.",
   "The audio output can't play this sound.": "Излаз звука не може да пусти овај звук.",
-  "Sound stopped: the audio output failed.": "Звук је заустављен: излаз звука је отказао.",
   "Take control": "Преузми управљање",
   "Watch demo": "Гледај демо",
   "Play": "Пусти",

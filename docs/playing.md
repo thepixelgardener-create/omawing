@@ -43,15 +43,20 @@ hull points. Each ring can be collected only once per run, in either direction.
 Missing a ring or hitting scenery resets the combo.
 
 You start with 100 hull points. Pyramids cost 34, crystals 20, the bouncing ball
-25, and a ring rim 12. An impact flashes the hull gauge, shakes the camera,
+25, and a ring rim 12 (these are `Game`'s constants in `src/game.h`). An impact flashes the hull gauge, shakes the camera,
 throws sparks, and gives 1.4 seconds of protection. At zero hull, the ship wrecks
 and the autopilot resumes. The demo itself is invulnerable.
 
 A completed run can enter the local top ten. Switching to the demo or restarting
 also ends the run; quitting preserves a qualifying score under your last name.
-The board pauses the flight while you enter a name. Scores and the banner
-preference are stored in `~/.config/omawing/omawing.conf` (or the platform's
-`XDG_CONFIG_HOME` equivalent).
+The board pauses the flight while you enter a name. If a score can't be saved
+(say the settings folder isn't writable), it stays waiting and is tried again;
+if another run finishes first, the better of the two waits. Two copies of the
+game running at once keep each other's scores.
+
+Scores, your last name, and the preferences (titles, toolbar, banner, music,
+effects, and both volume levels) are stored in `~/.config/omawing/omawing.conf`
+(or the platform's `XDG_CONFIG_HOME` equivalent).
 
 ## A clear view
 
@@ -83,6 +88,17 @@ Each moves at a different speed as the camera travels, with soft haze in the
 valleys. Atmospheric perspective shifts distant scenery and the checkerboard
 toward the same blue haze, reducing contrast while keeping the nearby ship crisp.
 
+Scenery stands thick along the course out to 220 units, then ever more
+sparsely out to 640, taking on the air's colour, so the plain stays dotted with
+pyramids and crystals almost to the horizon. The checkerboard runs out until
+its squares are about a pixel tall. Rings reach 640 units and beach balls 220,
+each with a 60-unit fade at the outer edge; neighboring balls stay in place as
+you cross course segments.
+
+Neon Mirage adds a forested mountain valley, a dark reflective grid, mirrored
+rings and scenery, and pink lights along the flight corridor. Its camera opens
+up more sky while keeping the ship low in the frame.
+
 ## Scenes
 
 Copper Coast · Vector Garden · Star Run · Omarchy · Neon Mirage · Amber Terminal ·
@@ -112,8 +128,10 @@ clears effects so old collision noises do not replay when you resume.
 The MP3s ship as files in `/usr/share/omawing/music` (in a build tree they are
 read from `src/audio`); the short effects are compiled into the executable.
 Qt's FFmpeg backend copies a compiled-in track to a temporary file to stream
-it and never removes the copy, so the music stays on disk. `bin/generate-effects`
-rebuilds the four original WAV cues without touching the soundtrack.
+it and never removes the copy, so the music stays on disk. Set
+`OMAWING_MUSIC_DIR` to play the tracks from another folder (the tests use it).
+`bin/generate-effects` rebuilds the eleven WAV cues (boost, impact, wreck, and
+the eight steps of the ring chime) without touching the soundtrack.
 
 ## Moving with the music
 
@@ -129,14 +147,6 @@ scenery is still.
 Every ring you fly through flashes and throws out a ring of glitter, and its
 chime climbs a step of a pentatonic scale for each ring in the chain, up to
 eight.
-
-Neon Mirage adds a forested mountain valley, a dark reflective grid, mirrored
-rings and scenery, and pink lights along the flight corridor. Its camera opens
-up more sky while keeping the ship low in the frame.
-
-Scenery is considered out to 220 units and fades in at staggered distances,
-keeping the far field sparse. Rings and beach balls have a 60-unit fade at
-the outer edge; neighboring balls stay in place as you cross course segments.
 
 ## What it follows
 

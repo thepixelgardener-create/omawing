@@ -9,14 +9,14 @@ install scripts: the program, the soundtrack, a launcher entry, an icon, and
 the licence. Omawing runs as your user, makes no network connections, and runs
 no program other than `hyprctl` (to read the window rounding).
 
-**Build it yourself from the recipe.** This is exactly what the AUR does. Read
-[aur/PKGBUILD](../aur/PKGBUILD) first if you like; it downloads the tagged source
-from this repository, checks its SHA-256, and builds it with Arch's compiler
-flags:
+**Build it yourself from the recipe.** Read
+[release/PKGBUILD](../release/PKGBUILD) first if you like; it downloads the
+tagged source from this repository, checks its SHA-256, and builds it with
+Arch's compiler flags:
 
 ```sh
 git clone https://github.com/thepixelgardener-create/omawing
-cd omawing/aur && makepkg -si
+cd omawing/release && makepkg -si
 ```
 
 **Or download the package GitHub built.** Release packages are built by
@@ -27,15 +27,16 @@ workflow and commit that built them. Download `omawing-*.pkg.tar.zst` from the
 then check it and install it:
 
 ```sh
-gh attestation verify omawing-0.4.0-1-x86_64.pkg.tar.zst -R thepixelgardener-create/omawing
-sudo pacman -U omawing-0.4.0-1-x86_64.pkg.tar.zst
+gh attestation verify omawing-*-x86_64.pkg.tar.zst -R thepixelgardener-create/omawing
+sudo pacman -U omawing-*-x86_64.pkg.tar.zst
 ```
 
-The `aur/` directory contains the build recipe; it does not imply that the
-package is published in the AUR.
+Omawing is made for Omarchy, so it isn't in the AUR.
 
-To build, install a C++ compiler, `make`, `qmake6`, and the Qt 6 Base,
-Declarative, Wayland, and Multimedia development packages.
+To build, install a C++20 compiler, `make`, `qmake6`, and Qt 6.8 or newer: the
+Base, Declarative, Wayland, Multimedia (with its FFmpeg backend), and SVG
+packages. Building from the recipe also runs the test suite; `makepkg --nocheck`
+skips it.
 
 To try it without installing anything:
 

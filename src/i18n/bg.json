@@ -9,7 +9,6 @@
   "ALT %1": "ВИС. %1",
   "No audio output device was found.": "Не е намерено устройство за аудио изход.",
   "The audio output can't play this sound.": "Аудио изходът не може да възпроизведе този звук.",
-  "Sound stopped: the audio output failed.": "Звукът спря: аудио изходът отказа.",
   "Take control": "Поеми управлението",
   "Watch demo": "Гледай демото",
   "Play": "Пусни",

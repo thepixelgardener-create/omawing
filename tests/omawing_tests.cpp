@@ -13,6 +13,10 @@
 #include <QTemporaryDir>
 #include <QSettings>
 #include <QtTest>
+#include <QDirIterator>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QRegularExpression>
 #include <cmath>
 #include <limits>
 #include <QQmlApplicationEngine>
@@ -223,9 +227,11 @@ private slots:
             if (const auto player = backend.audio().findChild<QMediaPlayer *>())
                 QTRY_VERIFY_WITH_TIMEOUT(player->mediaStatus() != QMediaPlayer::LoadingMedia, 10000);
         }
-        // The choice is remembered for next time.
+        // The choice is remembered for next time. Without a device, the
+        // failure turned effects off on screen only, so the second toggle
+        // asked for them again, and that wish is what's kept.
         QSettings settings(file, QSettings::IniFormat);
-        QCOMPARE(settings.value("effects").toBool(), false);
+        QCOMPARE(settings.value("effects").toBool(), QMediaDevices::defaultAudioOutput().isNull());
     }
 
     void volumeIsClampedAndRemembered()
@@ -661,6 +667,18 @@ private slots:
         capture("volume");
         QTest::keyClick(window, Qt::Key_Escape);
         QTRY_VERIFY(!panel->property("visible").toBool());
+        // Opening the panel while steering takes the key's release away from
+        // the flight, so the turn mustn't stay held.
+        backend.setPaused(false);
+        QTest::keyPress(window, Qt::Key_Right);
+        QVERIFY(backend.flight().holding(Flight::Right));
+        QTest::keyClick(window, Qt::Key_V);
+        QTRY_VERIFY(panel->property("opened").toBool());
+        QTest::keyRelease(window, Qt::Key_Right);
+        QVERIFY(!backend.flight().holding(Flight::Right));
+        QTest::keyClick(window, Qt::Key_Escape);
+        QTRY_VERIFY(!panel->property("visible").toBool());
+        backend.setPaused(true);
         // L switches the toolbar off and U the titles, even while the pointer is moving, and
         // fades it away; a second U brings it back.
         auto bar = window->findChild<QObject *>("toolbar");
@@ -818,6 +836,19 @@ private slots:
         }
     }
 
+    void sceneryReachesTowardsTheHorizon() {
+        Flight f;
+        View view; view.begin(f, {960, 540}, {});
+        WorldLayer world; world.build(view);
+        // A few pieces stand past the dense scenery along the course (the
+        // great landmarks start further out still).
+        int beyondDense = 0;
+        for (const auto &face : world.faces())
+            if (!face.ship && !face.glow && face.depth > View::Dense + 40 && face.depth < 300)
+                ++beyondDense;
+        QVERIFY(beyondDense > 10);
+    }
+
     void ballsStayInTheWorldAcrossShipSegments() {
         Flight f;
         f.camera.z = 80;
@@ -836,7 +867,7 @@ private slots:
         f.ship.z = 102.001;
         QCOMPARE(scenery(), before);
         for (double z : {-228.0, -8.0, 102.0, 212.0}) {
-            const auto candidates = World::balls(z, View::Far, 2);
+            const auto candidates = World::balls(z, View::Dense, 2);
             const auto collision = World::ball(z, 2);
             QVERIFY(candidates.size() >= 3 && candidates.size() <= 5);
             QVERIFY(std::any_of(candidates.begin(), candidates.end(), [&](const Obstacle &o) {
@@ -965,6 +996,232 @@ private slots:
         QCOMPARE(translator.translate("Main", "%n clips", nullptr, 25), QString("%n клипов"));
         QCOMPARE(Translator::pluralCategory("ar", 11), QString("many"));
         QCOMPARE(Translator::pluralCategory("ja", 1), QString("other"));
+    }
+
+    void keyAliasesReleaseIndependently()
+    {
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
+        backend.keyDown(Qt::Key_A);
+        backend.keyDown(Qt::Key_Left);
+        backend.keyUp(Qt::Key_A);
+        QVERIFY(backend.flight().holding(Flight::Left));
+        backend.keyUp(Qt::Key_Left);
+        QVERIFY(!backend.flight().holding(Flight::Left));
+        // Letting go of every key forgets the aliases too.
+        backend.keyDown(Qt::Key_W);
+        backend.keyDown(Qt::Key_Up);
+        backend.clearInput();
+        backend.keyDown(Qt::Key_W);
+        backend.keyUp(Qt::Key_W);
+        QVERIFY(!backend.flight().holding(Flight::Climb));
+    }
+
+    void rightDragKeepsShiftBoost()
+    {
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
+        backend.keyDown(Qt::Key_Shift);
+        QVERIFY(!backend.demo());
+        backend.stickStart();
+        QVERIFY(backend.flight().holding(Flight::Boost));
+        // From the demo, taking the controls by dragging starts from nothing held.
+        backend.setDemo(true);
+        QVERIFY(!backend.flight().holding(Flight::Boost));
+    }
+
+    void pendingScoreSurvivesFailedSavesAndLaterRuns()
+    {
+        QTemporaryDir settings;
+        const QString blocked = settings.filePath("blocked");
+        write(blocked, "file, not a directory");
+        ScoreBoard board(blocked + "/game.ini");
+        board.offer(1000, 5);
+        QCOMPARE(board.pendingScore(), 1000);
+        QVERIFY(!board.save("Pilot"));
+        // A lesser run doesn't push out the unsaved one; a better one does.
+        board.offer(100, 1);
+        QCOMPARE(board.pendingScore(), 1000);
+        board.offer(2000, 9);
+        QCOMPARE(board.pendingScore(), 2000);
+        QCOMPARE(board.count(), 0);
+    }
+
+    void laterScoreIsMeasuredAgainstTheSavedBoard()
+    {
+        QTemporaryDir settings;
+        ScoreBoard board(settings.filePath("game.ini"));
+        for (int i = 1; i <= ScoreBoard::Size - 1; ++i) {
+            board.offer(i * 100, i);
+            QVERIFY(board.save("Pilot"));
+        }
+        // The board has one place left: 50 takes it once 2000 is pending,
+        // but not once 2000 has been saved.
+        board.offer(2000, 10);
+        board.offer(50, 1);
+        QCOMPARE(board.count(), ScoreBoard::Size);
+        QCOMPARE(board.pendingScore(), 0);
+        QCOMPARE(board.best(), 2000);
+    }
+
+    void twoRunningCopiesKeepEachOthersScores()
+    {
+        QTemporaryDir settings;
+        const QString path = settings.filePath("game.ini");
+        ScoreBoard first(path), second(path);
+        first.offer(500, 3);
+        QVERIFY(first.save("One"));
+        second.offer(300, 2);
+        QVERIFY(second.save("Two"));
+        QCOMPARE(second.count(), 2);
+        ScoreBoard reread(path);
+        QCOMPARE(reread.count(), 2);
+        QCOMPARE(reread.entries()[0].name, QString("One"));
+        QCOMPARE(reread.entries()[1].name, QString("Two"));
+    }
+
+    void translatorFollowsALanguageFolderCreatedLater()
+    {
+        QTemporaryDir dir;
+        write(dir.path() + "/de.json", R"({"Save": "Speichern"})");
+        const QString folder = dir.path() + "/config/omarchy";
+        Translator translator(folder + "/language", dir.path());
+        QCOMPARE(translator.language(), QString("en"));
+        QVERIFY(QDir().mkpath(folder));
+        write(folder + "/language", "de\n");
+        QTRY_COMPARE(translator.language(), QString("de"));
+        QCOMPARE(translator.translate("Main", "Save"), QString("Speichern"));
+    }
+
+    void beatTrackerForgetsTheOldTrack()
+    {
+        // A kick a minute into one track, then the next track from its start:
+        // the old kick must never fire.
+        const int rate = 44100;
+        std::vector<float> silence(rate, 0.0f), kick(rate, 0.0f);
+        for (int i = 0; i < rate / 10; ++i)
+            kick[i] = 0.9f * std::sin(2 * M_PI * 60 * i / rate);
+        BeatTracker tracker;
+        tracker.feed(silence.data(), rate, rate, 59000000);
+        tracker.feed(kick.data(), rate, rate, 60000000);
+        tracker.feed(silence.data(), rate, rate, 0);
+        bool beat = false;
+        for (qint64 at = 0; at <= 2000000; at += 20000)
+            beat |= tracker.take(at).beat;
+        QVERIFY(!beat);
+        // The new track's samples still arrive and are heard.
+        tracker.feed(kick.data(), rate, rate, 1000000);
+        for (qint64 at = 1000000; at <= 3000000; at += 20000)
+            beat |= tracker.take(at).beat;
+        QVERIFY(beat);
+    }
+
+    void advanceFliesTheSamePathAsSteps()
+    {
+        Flight jumped, stepped;
+        jumped.advance(3);
+        for (int i = 0; i < 180; ++i)
+            stepped.step(Flight::StepLength);
+        QVERIFY(std::abs(jumped.ship.x - stepped.ship.x) < 1e-6);
+        QVERIFY(std::abs(jumped.ship.z - stepped.ship.z) < 1e-6);
+        QVERIFY(std::abs(jumped.camera.yaw - stepped.camera.yaw) < 1e-9);
+        QCOMPARE(jumped.particles.size(), stepped.particles.size());
+    }
+
+    void crystalsAndTheBallCostHull()
+    {
+        // Parked in a crystal, and then in the ball, each costs its damage.
+        for (const Obstacle::Kind kind : {Obstacle::Crystal, Obstacle::Ball}) {
+            Flight f;
+            f.demo = false;
+            Obstacle target{};
+            if (kind == Obstacle::Ball) {
+                target = World::ball(200, 0);
+            } else {
+                // The nearest crystal to a cell well off the course.
+                for (const Obstacle &o : World::scenery(100, 200, 2, 0))
+                    if (o.kind == Obstacle::Crystal) { target = o; break; }
+                QCOMPARE(target.kind, Obstacle::Crystal);
+            }
+            f.time = 0;
+            f.ship.x = target.x;
+            f.ship.z = target.z - 0.05;
+            f.ship.y = std::clamp(target.y, Flight::MinAltitude, Flight::MaxAltitude);
+            f.ship.speed = 0.01;
+            f.step(0.001);
+            QVERIFY2(f.events & Flight::Impact, kind == Obstacle::Ball ? "ball" : "crystal");
+            QCOMPARE(f.game.hull, Game::FullHull - (kind == Obstacle::Ball ? Game::BallDamage : Game::CrystalDamage));
+        }
+    }
+
+    void pluralCategoriesFollowCldr()
+    {
+        QCOMPARE(Translator::pluralCategory("pl", 1), QString("one"));
+        QCOMPARE(Translator::pluralCategory("pl", 22), QString("few"));
+        QCOMPARE(Translator::pluralCategory("pl", 12), QString("many"));
+        QCOMPARE(Translator::pluralCategory("fr", 0), QString("one"));
+        QCOMPARE(Translator::pluralCategory("fr", 2000000), QString("many"));
+        QCOMPARE(Translator::pluralCategory("it", 0), QString("other"));
+        QCOMPARE(Translator::pluralCategory("cs", 3), QString("few"));
+        QCOMPARE(Translator::pluralCategory("sl", 102), QString("two"));
+        QCOMPARE(Translator::pluralCategory("lv", 10), QString("zero"));
+        QCOMPARE(Translator::pluralCategory("ga", 7), QString("many"));
+        QCOMPARE(Translator::pluralCategory("he", 2), QString("two"));
+        QCOMPARE(Translator::pluralCategory("ro", 15), QString("few"));
+        QCOMPARE(Translator::pluralCategory("hi", 0), QString("one"));
+        QCOMPARE(Translator::pluralCategory("de", -1), QString("one"));
+    }
+
+    void themeColorsAreReadStrictly()
+    {
+        QTemporaryDir dir;
+        const QString path = dir.filePath("colors.toml");
+        write(path, "accent = '#112233'\n"
+                    "# foreground = \"#ffffff\"\n"
+                    "background = \"#12345\"\n"
+                    "  magenta=\"#AbCdEf\" # trailing comment\n"
+                    "blue = blue\n");
+        const auto colors = Theme::readColors(path);
+        QCOMPARE(colors.value("accent"), QString("#112233"));
+        QCOMPARE(colors.value("magenta"), QString("#AbCdEf"));
+        QVERIFY(!colors.contains("foreground"));
+        QVERIFY(!colors.contains("background"));
+        QVERIFY(!colors.contains("blue"));
+    }
+
+    void everyStringIsTranslated()
+    {
+        // Every string the code translates, from tr() and qsTr().
+        QSet<QString> strings;
+        static const QRegularExpression call(QStringLiteral("\\b(?:qsTr|tr)\\(\"((?:[^\"\\\\]|\\\\.)*)\""));
+        QDirIterator files(OMAWING_TEST_SOURCE, {"*.cpp", "*.qml"}, QDir::Files);
+        while (files.hasNext()) {
+            QFile file(files.next());
+            QVERIFY(file.open(QIODevice::ReadOnly));
+            auto matches = call.globalMatch(QString::fromUtf8(file.readAll()));
+            while (matches.hasNext())
+                strings.insert(matches.next().captured(1).replace("\\\"", "\""));
+        }
+        QVERIFY(strings.size() > 50);
+        // Each language has them all, except English (the source) and
+        // Brazilian Portuguese (a few words over Portuguese); and no catalog
+        // keeps a string the code no longer uses.
+        QDirIterator catalogs(QString(OMAWING_TEST_SOURCE) + "/i18n", {"*.json"}, QDir::Files);
+        int count = 0;
+        while (catalogs.hasNext()) {
+            const QString path = catalogs.next(), code = QFileInfo(path).baseName();
+            QFile file(path);
+            QVERIFY(file.open(QIODevice::ReadOnly));
+            const QJsonObject catalog = QJsonDocument::fromJson(file.readAll()).object();
+            QVERIFY2(!catalog.isEmpty(), qPrintable(path));
+            for (const QString &key : catalog.keys())
+                QVERIFY2(strings.contains(key), qPrintable(code + ": unused \"" + key + "\""));
+            if (code != "en" && code != "pt-BR")
+                for (const QString &string : strings)
+                    QVERIFY2(catalog.contains(string), qPrintable(code + ": missing \"" + string + "\""));
+            ++count;
+        }
+        QCOMPARE(count, 50);
     }
 
 private:

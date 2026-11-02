@@ -1,0 +1,50 @@
+# Builds the game, runs the test suite, and checks the painting work of every
+# benchmark scene, on every push to main and every pull request, in the same
+# clean Arch Linux container the release uses.
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install build dependencies
+        run: pacman -Syu --noconfirm --needed qt6-base qt6-declarative qt6-wayland qt6-multimedia qt6-multimedia-ffmpeg qt6-svg ttf-dejavu
+
+      - uses: actions/checkout@v5
+
+      - name: Build
+        run: bin/build
+
+      # Offscreen, with no sound card: the tests that need an audio device
+      # skip themselves.
+      - name: Test
+        run: bin/test
+
+      # The draw calls, points, and painter state changes of each scene are
+      # the same on any machine, so they're held to the recorded baseline.
+      # Frame times on a shared runner without a GPU vary from run to run,
+      # so they're only reported, on the run's summary page.
+      - name: Check painting work
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          echo "## Painting work per 1920x1080 frame" >> "$GITHUB_STEP_SUMMARY"
+          bin/benchmark --check tests/benchmark-baseline.tsv | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Time frames
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          echo "## Frame times on the runner's CPU (for comparison between runs only)" >> "$GITHUB_STEP_SUMMARY"
+          bin/benchmark --cpu --parts --frames 20 --size 1920x1080 | tee -a "$GITHUB_STEP_SUMMARY"

@@ -4,6 +4,9 @@
 // demo sequence; the arcade rules are in Game. Pure simulation: no Qt types,
 // so tests can fly it without a window.
 
+#include <cmath>
+#include <deque>
+#include <utility>
 #include <vector>
 
 #include "game.h"
@@ -47,10 +50,43 @@ struct Ring {
 // with them, so what you see is what you hit.
 namespace World {
 constexpr double Cell = 24, RingSpacing = 32, RingRadius = 5, RingHeight = 5.5;
+// The first ring stands RingOffset along the course, then one every RingSpacing.
+constexpr double RingOffset = 24;
 constexpr double PyramidHalf = 5, PyramidHeight = 8, BallRadius = 3.2;
+constexpr double CrystalHalf = 1.5, CrystalHeight = 4, CrystalDepth = 1;
+// Each cell's piece stands SceneryX into the cell, give or take ScenerySway,
+// and SceneryZ along it. Keeping every piece at least CourseHalfWidth from
+// x = 0 leaves the course down the middle clear.
+constexpr double SceneryX = 12, ScenerySway = 4, SceneryZ = 14, CourseHalfWidth = 8;
+static_assert(SceneryX - ScenerySway >= CourseHalfWidth && Cell - SceneryX - ScenerySway >= CourseHalfWidth,
+              "scenery must stay off the course");
+// One beach ball bounces beside the course every BallSpacing units.
+constexpr double BallSpacing = 110, BallX = 14, BallOffset = 36;
+
+// The piece in a cell: a pyramid in every third, a crystal in the rest.
+inline Obstacle piece(int ix, int iz, double time) {
+    const double ox = ix * Cell + SceneryX + (geo::hash(ix, iz) - 0.5) * 2 * ScenerySway, oz = iz * Cell + SceneryZ;
+    if ((ix + iz) % 3 == 0)
+        return {Obstacle::Pyramid, ox, 0, oz, 0, ix, iz};
+    return {Obstacle::Crystal, ox, 2 + std::sin(time * 1.4 + ix + iz) * 0.5, oz, time * 0.4 + ix, ix, iz};
+}
+// Calls visit(obstacle) for the pieces in the cells within `reach` of (x, z),
+// without building a list.
+template <typename Visit>
+void forEachScenery(double x, double z, int reach, double time, Visit &&visit) {
+    const int cx = int(std::floor(x / Cell)), cz = int(std::floor(z / Cell));
+    for (int iz = cz - reach; iz <= cz + reach; ++iz)
+        for (int ix = cx - reach; ix <= cx + reach; ++ix)
+            visit(piece(ix, iz, time));
+}
 // The pyramids and crystals in the cells within `reach` of (x, z).
 std::vector<Obstacle> scenery(double x, double z, int reach, double time);
 Ring ring(int index);
+// The indices of the rings whose z lies between lo and hi, and perhaps one
+// more at each end.
+inline std::pair<int, int> ringsBetween(double lo, double hi) {
+    return {int(std::floor((lo - RingOffset) / RingSpacing)), int(std::ceil((hi - RingOffset) / RingSpacing))};
+}
 // One beach ball bounces beside the course every 110 units.
 Obstacle ball(double z, double time);
 // Stable neighboring balls for rendering and radar, including the next one
@@ -66,6 +102,8 @@ public:
     static constexpr double MinAltitude = 1.4, MaxAltitude = 16;
     static constexpr double CruiseSpeed = 13, BoostSpeed = 27;
     static constexpr int MaxParticles = 700;
+    // advance() steps in these; one call should cover seconds, not hours.
+    static constexpr double StepLength = 1.0 / 60;
 
     // Boost comes from Shift, MouseBoost from the left mouse button; either boosts.
     enum Key { Left = 1, Right = 2, Climb = 4, Descend = 8, Boost = 16, MouseBoost = 32 };
@@ -81,7 +119,8 @@ public:
 
     // The run in progress, played while you have the controls.
     Game game;
-    std::vector<Particle> particles;
+    // Oldest first; the oldest go when there are more than MaxParticles.
+    std::deque<Particle> particles;
 
     int act() const;
     double boostAmount() const;

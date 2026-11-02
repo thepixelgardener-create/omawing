@@ -9,7 +9,6 @@
   "ALT %1": "KORKEUS %1",
   "No audio output device was found.": "Äänilähtölaitetta ei löytynyt.",
   "The audio output can't play this sound.": "Äänilähtö ei voi toistaa tätä ääntä.",
-  "Sound stopped: the audio output failed.": "Ääni pysähtyi: äänilähtö lakkasi toimimasta.",
   "Take control": "Ota ohjat",
   "Watch demo": "Katso demo",
   "Play": "Toista",

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QElapsedTimer>
+#include <QPointer>
 #include <QQuickPaintedItem>
 
 #include "backend.h"
@@ -11,33 +12,34 @@
 class FlightView : public QQuickPaintedItem {
     Q_OBJECT
     Q_PROPERTY(Backend *source READ source WRITE setSource NOTIFY sourceChanged)
-    Q_PROPERTY(double renderMs READ renderMs NOTIFY rendered)
-    Q_PROPERTY(int polygons READ polygons NOTIFY rendered)
 
 public:
     explicit FlightView(QQuickItem *parent = nullptr);
 
+    // The view only watches the backend: if it goes away first, the view
+    // shows nothing rather than drawing from a dangling pointer.
     Backend *source() const { return m_backend; }
     void setSource(Backend *backend);
-    double renderMs() const { return m_renderMs; }
-    int polygons() const { return m_polygons; }
 
     void paint(QPainter *painter) override;
 
 signals:
     void sourceChanged();
-    void rendered();
 
 private:
-    Backend *m_backend = nullptr;
+    // With OMAWING_STATS set, frame rate, paint times, and hitches are
+    // reported on stderr once a second.
+    struct FrameStats {
+        void record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu, double refreshRate);
+
+        int frames = 0, hitches = 0;
+        double total = 0, worst = 0, longestGap = 0;
+        double stepLow = 1e9, stepHigh = 0;
+        QElapsedTimer clock, interval;
+    };
+
+    QPointer<Backend> m_backend;
     Scene m_scene;
-    double m_renderMs = 0;
-    int m_polygons = 0;
     bool m_stats = false;
-    int m_statFrames = 0;
-    double m_statTotal = 0, m_statWorst = 0;
-    QElapsedTimer m_statClock, m_statInterval;
-    double m_statGap = 0;
-    int m_statHitches = 0;
-    double m_stepLow = 1e9, m_stepHigh = 0;
+    FrameStats m_frameStats;
 };

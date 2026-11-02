@@ -9,7 +9,6 @@
   "ALT %1": "高度 %1",
   "No audio output device was found.": "未找到音频输出设备。",
   "The audio output can't play this sound.": "音频输出无法播放此声音。",
-  "Sound stopped: the audio output failed.": "声音已停止：音频输出出现故障。",
   "Take control": "接管操控",
   "Watch demo": "观看演示",
   "Play": "播放",

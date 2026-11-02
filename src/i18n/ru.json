@@ -9,7 +9,6 @@
   "ALT %1": "ВЫС. %1",
   "No audio output device was found.": "Устройство вывода звука не найдено.",
   "The audio output can't play this sound.": "Устройство вывода звука не может воспроизвести этот звук.",
-  "Sound stopped: the audio output failed.": "Звук остановлен: сбой устройства вывода звука.",
   "Take control": "Взять управление",
   "Watch demo": "Смотреть демо",
   "Play": "Пуск",
