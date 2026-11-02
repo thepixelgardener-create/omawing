@@ -35,6 +35,7 @@
 #include <cstring>
 #include <functional>
 #include <map>
+#include <set>
 #include <memory>
 #include <vector>
 
@@ -103,24 +104,43 @@ double mean(const std::vector<double> &times) {
     return times.empty() ? 0 : sum / times.size();
 }
 
-// The painting work of a frame, as a paint engine sees it.
+// The painting work of a frame, as a paint engine sees it: draw calls, the
+// points in them, the points of filled paths that have to be cut into
+// triangles, and changes of painter state.
 struct Work {
-    long calls = 0, points = 0, states = 0;
+    long calls = 0, points = 0, triangulated = 0, states = 0;
 };
 
 // A batch of rectangles, lines, or points handed over at once is one call,
-// as it is for a real engine.
+// as it is for a real engine. Qt's OpenGL engine cuts a filled path into
+// triangles on the CPU, and keeps them for the next time the same path is
+// filled; so a fill counts its points as triangulated only the first time
+// that path is seen, as it costs there.
 class CountingEngine : public QPaintEngine {
 public:
     CountingEngine() : QPaintEngine(QPaintEngine::AllFeatures) {}
     Work work;
+    std::set<size_t> seen;
 
     bool begin(QPaintDevice *) override { return true; }
     bool end() override { return true; }
     Type type() const override { return QPaintEngine::User; }
     void updateState(const QPaintEngineState &) override { ++work.states; }
     void drawPolygon(const QPointF *, int count, PolygonDrawMode) override { add(1, count); }
-    void drawPath(const QPainterPath &path) override { add(1, path.elementCount()); }
+    void drawPath(const QPainterPath &path) override {
+        if (state->brush().style() == Qt::NoBrush) {
+            add(1, path.elementCount());
+            return;
+        }
+        ++work.calls;
+        size_t key = qHash(int(path.fillRule()));
+        for (int i = 0; i < path.elementCount(); ++i) {
+            const QPainterPath::Element e = path.elementAt(i);
+            key = qHashMulti(key, int(e.type), e.x, e.y);
+        }
+        if (seen.insert(key).second)
+            work.triangulated += path.elementCount();
+    }
     void drawRects(const QRectF *, int count) override { add(1, 4 * count); }
     void drawEllipse(const QRectF &) override { add(1, 4); }
     void drawLines(const QLineF *, int count) override { add(1, 2 * count); }
@@ -193,9 +213,9 @@ std::map<std::string, Work> readWork(const QString &path) {
     while (!in.atEnd()) {
         const QString line = in.readLine();
         const QStringList fields = line.split('\t');
-        if (line.startsWith('#') || fields.size() != 4)
+        if (line.startsWith('#') || fields.size() != 5)
             continue;
-        result[fields[0].toStdString()] = {fields[1].toLong(), fields[2].toLong(), fields[3].toLong()};
+        result[fields[0].toStdString()] = {fields[1].toLong(), fields[2].toLong(), fields[3].toLong(), fields[4].toLong()};
     }
     return result;
 }
@@ -205,27 +225,30 @@ bool writeWork(const QString &path, const std::map<std::string, Work> &work) {
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
         return false;
     QTextStream out(&file);
-    out << "# The painting work of one 1920x1080 frame of each benchmark scene:\n"
-           "# draw calls, the points in them, and changes of painter state.\n"
+    out << "# The painting work of one 1920x1080 frame of each benchmark scene: draw\n"
+           "# calls, the points in them, points of paths to cut into triangles, and\n"
+           "# changes of painter state.\n"
            "# Written by bin/benchmark --record; CI checks against it.\n";
     for (const auto &[name, w] : work)
-        out << QString::fromStdString(name) << '\t' << w.calls << '\t' << w.points << '\t' << w.states << '\n';
+        out << QString::fromStdString(name) << '\t' << w.calls << '\t' << w.points << '\t' << w.triangulated << '\t'
+            << w.states << '\n';
     return true;
 }
 
 // A scene may ask for a little more than its baseline: floating point can
 // clip a polygon differently on another machine.
 constexpr double Tolerance = 1.03;
+constexpr long Slack = 16;
 
 bool checkWork(const std::map<std::string, Work> &baseline, const std::map<std::string, Work> &work) {
     bool ok = true;
-    std::printf("\n| scene | draw calls | points | state changes |\n| --- | ---: | ---: | ---: |\n");
+    std::printf("\n| scene | draw calls | points | triangulated | state changes |\n| --- | ---: | ---: | ---: | ---: |\n");
     auto cell = [&](long now, long before) {
-        const bool over = before > 0 && now > before * Tolerance;
+        const bool over = now > before * Tolerance + Slack;
         ok &= !over;
         char text[96];
         if (before <= 0)
-            std::snprintf(text, sizeof text, "%ld (new)", now);
+            std::snprintf(text, sizeof text, "%ld%s", now, over ? " **over**" : "");
         else
             std::snprintf(text, sizeof text, "%ld (%+.1f%%)%s", now, 100.0 * (now - before) / before, over ? " **over**" : "");
         return std::string(text);
@@ -233,8 +256,9 @@ bool checkWork(const std::map<std::string, Work> &baseline, const std::map<std::
     for (const auto &[name, w] : work) {
         const auto found = baseline.find(name);
         const Work before = found == baseline.end() ? Work{} : found->second;
-        std::printf("| %s | %s | %s | %s |\n", name.c_str(), cell(w.calls, before.calls).c_str(),
-                    cell(w.points, before.points).c_str(), cell(w.states, before.states).c_str());
+        std::printf("| %s | %s | %s | %s | %s |\n", name.c_str(), cell(w.calls, before.calls).c_str(),
+                    cell(w.points, before.points).c_str(), cell(w.triangulated, before.triangulated).c_str(),
+                    cell(w.states, before.states).c_str());
     }
     if (!ok)
         std::printf("\nSome scenes ask for more painting work than tests/benchmark-baseline.tsv allows. If that is "

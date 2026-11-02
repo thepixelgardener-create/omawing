@@ -35,8 +35,12 @@ totals come out a little higher.
 
 Timings depend on the machine; the painting work doesn't. `bin/benchmark
 --check tests/benchmark-baseline.tsv` counts the draw calls, the points in them,
-and the painter state changes of one frame of each scene, and fails if any
-scene asks for more than 3% over the recorded baseline. CI runs it on every
+the points of filled paths that have to be cut into triangles, and the painter
+state changes of one frame of each scene, and fails if any scene asks for more
+than 3% over the recorded baseline. Qt's OpenGL engine triangulates a filled
+`QPainterPath` on the CPU and keeps the triangles with the path, so a shape
+made afresh every frame is triangulated every frame; shapes that only move are
+made once and moved into place with the painter's transform. CI runs it on every
 push and pull request, and reports CPU frame times on the run's summary page
 for comparison. After a change that makes more work on purpose, or less,
 record a new baseline with `bin/benchmark --record tests/benchmark-baseline.tsv`
