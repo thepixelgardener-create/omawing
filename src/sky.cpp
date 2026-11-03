@@ -26,17 +26,6 @@ bool skyPoint(const View &view, double azimuth, double elevation, QPointF *at) {
     return true;
 }
 
-// QPainter's OpenGL engine cuts a filled path into triangles on the CPU and
-// keeps them with the path. A path made afresh every frame is cut up every
-// frame, which was most of the work of drawing the sky; so shapes that only
-// move are made once, in their own coordinates, and moved into place.
-void fillAt(QPainter &p, const QPainterPath &shape, const QPointF &offset, const QBrush &brush) {
-    const QTransform base = p.transform();
-    p.setTransform(QTransform::fromTranslate(offset.x(), offset.y()) * base);
-    p.fillPath(shape, brush);
-    p.setTransform(base);
-}
-
 // A soft round glow, as a radial gradient that fades to nothing.
 void glow(QPainter &p, const QPointF &at, double radius, const QColor &color, double strength) {
     QRadialGradient g(at, radius);

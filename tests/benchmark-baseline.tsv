@@ -4,23 +4,24 @@
 # and HUD strings laid out.
 # Written by bin/benchmark --record; CI checks against it.
 # scene	draw calls	points	state changes	new path points	new images	text layouts
-AMBER TERMINAL	1445	5663	906	0	5	0
-C64 DREAMS	1085	4453	802	252	5	0
-COPPER COAST	1082	4088	813	343	5	0
-ICE PALACE	1103	4139	800	30	5	0
-LAVA FIELDS	1208	4417	829	0	5	0
-NEON MIRAGE	1846	7194	1437	30	5	0
-OMARCHY	1100	4526	794	30	5	0
-STAR RUN	1414	5485	905	0	5	0
-VECTOR GARDEN	1076	4012	814	343	5	0
-arabic hud	1170	4403	847	0	8	243
-burst on the mirage	2494	9794	2047	30	5	0
-display scale change	1082	4088	813	343	21	0
-high altitude	1321	4909	766	0	5	0
-live hud	1152	4331	847	0	8	243
-mirage transition	1851	7303	1632	319846	195	0
-strong beat	1075	4012	809	343	5	0
-sustained particles	2500	9814	1387	30	1	0
-text cache overflow	1152	4331	847	0	8	601
-window resize	1079	4077	805	343	101	0
-wreck	1579	6188	706	0	0	0
+AMBER TERMINAL	1448	5663	906	0	5	0
+C64 DREAMS	1088	4453	802	252	5	0
+COPPER COAST	1085	4088	813	343	5	0
+ICE PALACE	1106	4139	800	30	5	0
+LAVA FIELDS	1211	4417	829	0	5	0
+NEON MIRAGE	1849	7194	1437	30	5	0
+OMARCHY	1103	4526	794	30	5	0
+STAR RUN	1417	5485	905	0	5	0
+VECTOR GARDEN	1079	4012	814	343	5	0
+arabic hud	1173	4403	847	0	8	243
+burst on the mirage	2497	9794	2047	30	5	0
+colour transition	1083	4041	834	30	5	0
+display scale change	1085	4088	813	343	13	0
+high altitude	1324	4909	766	0	5	0
+live hud	1155	4331	847	0	8	243
+mirage transition	1854	7303	1632	319846	5	0
+strong beat	1078	4012	809	343	5	0
+sustained particles	2503	9814	1387	30	1	0
+text cache overflow	1155	4331	847	0	8	601
+window resize	1082	4077	805	343	53	0
+wreck	1582	6188	706	0	0	0

@@ -63,9 +63,7 @@ private:
     double m_glyphAdvance = 16;
     Sprite m_title;
     QImage m_scanlines;   // One period of the scanlines, a pixel wide, tiled over the view.
-    Sprite m_radarFace, m_radarRim;
     QHash<QString, Text> m_texts;
     quint64 m_textUse = 0;
     long m_textLayouts = 0;
-    QRgb m_radarAccent = 0;
 };

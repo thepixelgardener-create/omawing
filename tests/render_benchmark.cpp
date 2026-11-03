@@ -8,6 +8,7 @@
 //   --parts          also time each part of the frame: sky, ground, building
 //                    the world, painting it, and the overlay
 //   --frames N       frames timed per scene, after a few to warm up (60)
+//   --scene NAME     only the scenes whose names contain NAME; may be repeated
 //   --size WxH       the size to paint at; may be repeated (1920x1080 and 3840x2160)
 //   --record FILE    write the painting work per scene to FILE
 //   --check FILE     compare the painting work with FILE, and fail if any scene
@@ -143,8 +144,12 @@ std::vector<Fixture> fixtures() {
             f.emitParticles(Particle::Glitter, {f.ship.x, f.ship.y, f.ship.z + 12},
                             {0, 0, f.ship.speed}, 8, Flight::MaxParticles);
         }});
-    // The two seconds over which the colours, and the mirror floor and the
-    // valley, blend in from the act before.
+    // The two seconds over which an act's colours blend in from the act
+    // before; and into Neon Mirage, its mirror floor and valley too.
+    list.push_back({"colour transition", [](Flight &f, Scene::Look &) { f.scene(1); },
+        [](Flight &f, Scene::Look &, int frame) {
+            f.time = 1 * Flight::ActLength + (frame % 120) / 60.0;
+        }});
     list.push_back({"mirage transition", [](Flight &f, Scene::Look &) { f.scene(4); },
         [](Flight &f, Scene::Look &, int frame) {
             f.time = 4 * Flight::ActLength + (frame % 120) / 60.0;
@@ -446,6 +451,7 @@ int main(int argc, char **argv) {
     bool cpu = false, timeParts = false;
     int frames = 60;
     std::vector<QSize> sizes;
+    QStringList only;
     QString record, check;
     for (int i = 1; i < argc; ++i) {
         const char *arg = argv[i];
@@ -453,6 +459,7 @@ int main(int argc, char **argv) {
         if (!std::strcmp(arg, "--cpu")) cpu = true;
         else if (!std::strcmp(arg, "--parts")) timeParts = true;
         else if (!std::strcmp(arg, "--frames") && hasValue) frames = std::max(1, std::atoi(argv[++i]));
+        else if (!std::strcmp(arg, "--scene") && hasValue) only << QString::fromLocal8Bit(argv[++i]);
         else if (!std::strcmp(arg, "--record") && hasValue) record = argv[++i];
         else if (!std::strcmp(arg, "--check") && hasValue) check = argv[++i];
         else if (!std::strcmp(arg, "--size") && hasValue) {
@@ -461,16 +468,29 @@ int main(int argc, char **argv) {
                 sizes.push_back(QSize(w, h));
         } else {
             std::fprintf(stderr, "usage: render_benchmark [--cpu] [--parts] [--frames N] [--size WxH]... "
-                                 "[--record FILE] [--check FILE]\n");
+                                 "[--scene NAME]... [--record FILE] [--check FILE]\n");
             return 1;
         }
     }
     if (sizes.empty())
         sizes = {QSize(1920, 1080), QSize(3840, 2160)};
 
-    const std::vector<Fixture> list = fixtures();
+    std::vector<Fixture> list = fixtures();
     // Counting needs no GPU and takes a moment; recording or checking does
-    // only that.
+    // only that, for every scene.
+    if (!only.isEmpty() && (!record.isEmpty() || !check.isEmpty())) {
+        std::fprintf(stderr, "render_benchmark: --scene is for timing; --record and --check count every scene\n");
+        return 1;
+    }
+    std::erase_if(list, [&](const Fixture &fixture) {
+        return !only.isEmpty() && std::none_of(only.begin(), only.end(), [&](const QString &name) {
+            return QString::fromUtf8(fixture.name).contains(name, Qt::CaseInsensitive);
+        });
+    });
+    if (list.empty()) {
+        std::fprintf(stderr, "render_benchmark: no scene matches\n");
+        return 1;
+    }
     if (!record.isEmpty() || !check.isEmpty()) {
         const auto work = countWork(list);
         if (!record.isEmpty() && !writeWork(record, work)) {

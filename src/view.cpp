@@ -1,5 +1,7 @@
 #include "view.h"
 
+#include <QPainter>
+#include <QPainterPath>
 #include <algorithm>
 #include <cmath>
 
@@ -29,6 +31,13 @@ QColor withAlpha(const QColor &color, double alpha) {
 const Vec &light() {
     static const Vec direction = normalized({-0.5, 0.85, -0.4});
     return direction;
+}
+
+void fillAt(QPainter &p, const QPainterPath &shape, const QPointF &offset, const QBrush &brush) {
+    const QTransform base = p.transform();
+    p.setTransform(QTransform::fromTranslate(offset.x(), offset.y()) * base);
+    p.fillPath(shape, brush);
+    p.setTransform(base);
 }
 } // namespace draw
 

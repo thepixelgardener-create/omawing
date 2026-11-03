@@ -8,6 +8,7 @@
 #include <QLinearGradient>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPainterPathStroker>
 #include <QRadialGradient>
 #include <algorithm>
 #include <cmath>
@@ -262,7 +263,6 @@ void Overlay::prepare(const View &view, double pixelsPerUnit) {
     for (int y = period - std::max(1, int(std::lround(pixelsPerUnit))); y < period; ++y)
         m_scanlines.setPixelColor(0, y, withAlpha("#090f29", 0.14));
     prepareGlyphs();
-    m_radarFace = m_radarRim = Sprite();
     // Each logo pixel is a whole number of screen pixels, so the blocks
     // stay crisp. A soft shadow one pixel down and right lifts the dark
     // bottom band off the night sky.
@@ -494,31 +494,32 @@ void Overlay::paintRadar(QPainter &p) {
     auto inside = [&](const QPointF &at, double margin) { return QLineF(centre, at).length() <= Radius - margin; };
 
     p.save();
-    static const QColor ballColor("#db4c70"), shipColor("#f4f0ff");
-    // The face (its backing, rings, and cross) and the rim only change with
-    // the act's accent, so they're drawn into images and reused.
-    const QRgb accent = rgb(v.palette.accent).rgb();
-    if (m_radarFace.image.isNull() || m_radarAccent != accent) {
-        m_radarAccent = accent;
-        const QRectF box(-Radius - 1, -Radius - 1, 2 * Radius + 2, 2 * Radius + 2);
-        m_radarFace = render(box, [&](QPainter &f) {
-            static const QColor backing = withAlpha("#0b0b1c", 0.62);
-            f.setPen(Qt::NoPen);
-            f.setBrush(backing);
-            f.drawEllipse(QPointF(0, 0), Radius, Radius);
-            f.setBrush(Qt::NoBrush);
-            f.setPen(QPen(withAlpha(QColor(accent), 0.18), 0.8));
-            f.drawEllipse(QPointF(0, 0), Radius / 3, Radius / 3);
-            f.drawEllipse(QPointF(0, 0), Radius * 2 / 3, Radius * 2 / 3);
-            f.drawLine(QPointF(-Radius, 0), QPointF(Radius, 0));
-            f.drawLine(QPointF(0, -Radius), QPointF(0, Radius));
-        });
-        m_radarRim = render(box, [&](QPainter &f) {
-            f.setPen(QPen(QColor(accent), 1.2));
-            f.drawEllipse(QPointF(0, 0), Radius, Radius);
-        });
-    }
-    blit(p, m_radarFace, centre);
+    static const QColor ballColor("#db4c70"), shipColor("#f4f0ff"), backing = withAlpha("#0b0b1c", 0.62);
+    // The face (a dark backing, and two rings and a cross in the act's
+    // accent) and the rim are drawn afresh each frame. As sprites they would
+    // be drawn again and sent to the GPU on every frame of each change of
+    // act, as the accent blends into the next; as outlines made once around
+    // the centre, they're only moved into place and coloured (see fillAt).
+    static const auto outline = [](std::initializer_list<double> radii, double width) {
+        QPainterPath circles;
+        for (const double r : radii)
+            circles.addEllipse(QPointF(0, 0), r, r);
+        QPainterPathStroker stroker;
+        stroker.setWidth(width);
+        return stroker.createStroke(circles);
+    };
+    static const QPainterPath rings = outline({Radius / 3, Radius * 2 / 3}, 0.8), rim = outline({Radius}, 1.2);
+    static const QPainterPath disc = [] {
+        QPainterPath path;
+        path.addEllipse(QPointF(0, 0), Radius, Radius);
+        return path;
+    }();
+    const QColor accent = rgb(v.palette.accent), faint = withAlpha(accent, 0.18);
+    fillAt(p, disc, centre, backing);
+    fillAt(p, rings, centre, faint);
+    // The cross, as lines with square ends.
+    p.fillRect(QRectF(centre.x() - Radius - 0.4, centre.y() - 0.4, 2 * Radius + 0.8, 0.8), faint);
+    p.fillRect(QRectF(centre.x() - 0.4, centre.y() - Radius - 0.4, 0.8, 2 * Radius + 0.8), faint);
 
     // The scan: a ring every Period seconds, growing from the ship to the
     // rim and fading as it goes, with a soft glow just inside it. The glow
@@ -608,7 +609,7 @@ void Overlay::paintRadar(QPainter &p) {
     p.drawPolygon(chevron, 4);
 
     p.setOpacity(0.45 + 0.2 * v.look.beat);
-    blit(p, m_radarRim, centre);
+    fillAt(p, rim, centre, accent);
     p.restore();
 }
 
