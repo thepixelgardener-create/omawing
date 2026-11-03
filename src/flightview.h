@@ -23,21 +23,26 @@ public:
 
     void paint(QPainter *painter) override;
 
-signals:
-    void sourceChanged();
-
-private:
     // With OMAWING_STATS set, frame rate, paint times, and hitches are
     // reported on stderr once a second.
     struct FrameStats {
         void record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu, double refreshRate);
+        // Frames stopped on purpose (paused, or hidden): the next one isn't
+        // late, however long it has been.
+        void stop() { interval.invalidate(); }
 
         int frames = 0, hitches = 0;
         double total = 0, worst = 0, longestGap = 0;
         double stepLow = 1e9, stepHigh = 0;
         QElapsedTimer clock, interval;
     };
+    // For the tests.
+    const FrameStats &frameStats() const { return m_frameStats; }
 
+signals:
+    void sourceChanged();
+
+private:
     QPointer<Backend> m_backend;
     Scene m_scene;
     bool m_stats = false;

@@ -31,6 +31,10 @@ void FlightView::setSource(Backend *backend) {
         connect(m_backend.data(), &Backend::frameChanged, this, [this] { update(); });
         // The overlay's status text changes with pause and the autopilot.
         connect(m_backend.data(), &Backend::changed, this, [this] { update(); });
+        connect(m_backend.data(), &Backend::animatingChanged, this, [this] {
+            if (!m_backend->animating())
+                m_frameStats.stop();
+        });
         connect(m_backend.data(), &QObject::destroyed, this, [this] { update(); });
     }
     emit sourceChanged();

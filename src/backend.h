@@ -28,6 +28,7 @@ class Backend : public QObject {
     Q_PROPERTY(QString soundError READ soundError NOTIFY changed)
     Q_PROPERTY(QString settingsError READ settingsError NOTIFY changed)
     Q_PROPERTY(int fps READ fps NOTIFY fpsChanged)
+    Q_PROPERTY(bool animating READ animating NOTIFY animatingChanged)
     Q_PROPERTY(ScoreBoard *scoreBoard READ scoreBoardObject CONSTANT)
 
 public:
@@ -58,6 +59,12 @@ public:
     // A failed save of preferences or of the score board, or empty.
     QString settingsError() const { return m_settingsError.isEmpty() ? m_board.error() : m_settingsError; }
     int fps() const { return m_fps; }
+    // Whether the coming frames still change: always in flight; while
+    // paused, only until the titles and switch keys have faded and a zoom
+    // has settled; never while the window is hidden. The window ticks only
+    // while it is true, so a paused game sleeps instead of waking for every
+    // refresh of the screen.
+    bool animating() const { return m_animating; }
     // The simulated time of the last frame, in seconds.
     double lastStep() const { return m_lastStep; }
     const Audio &audio() const { return m_audio; }
@@ -115,11 +122,13 @@ signals:
     void frameChanged();
     void fpsChanged();
     void volumeChanged();
+    void animatingChanged();
 
 private:
     void syncSound();
     void showSwitches(double seconds);
     void updateLook();
+    void updateAnimating();
     void applyVolume();
     void saveVolume();
     // Ends the run in progress and offers its score to the board.
@@ -136,6 +145,7 @@ private:
     Scene::Look m_look;
     ScoreBoard m_board;
     bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true, m_titlesOn = true, m_toolbar = true, m_musicThroughPause = false;
+    bool m_animating = true;
     int m_frames = 0, m_fps = 0;
     double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0;
     double m_zoomFor = 0; // Keep paused redraws limited to an active zoom transition.

@@ -22,6 +22,8 @@ After `bin/install`, Omawing is in the app launcher (Super + Alt + Space).
 `OMAWING_STATS=1 omawing` prints the frame rate, paint time, longest gap between
 frames, and the range of simulation steps once a second, logs every hitch (a gap
 over 1.5 display refresh periods), and says whether painting runs on the GPU or the CPU.
+The game stops ticking while paused once its fades have settled, and while its
+window is hidden; the first frame after either isn't counted as a hitch.
 
 The renderer rejects invisible polygons early and uses the GPU's convex-polygon
 path for the checkerboard and meshes. It retains native resolution and the full

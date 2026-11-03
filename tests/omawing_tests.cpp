@@ -199,6 +199,74 @@ private slots:
         QVERIFY(backend.flight().time > time);
     }
 
+    void aPausedGameSleepsOnceItsFadesSettle()
+    {
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
+        auto settle = [&] {
+            for (int i = 0; i < 1000 && backend.animating(); ++i)
+                backend.tick(0.02);
+            return !backend.animating();
+        };
+        QVERIFY(backend.animating());
+        backend.setPaused(true);
+        QVERIFY(backend.animating());   // The switch keys still show from startup.
+        QVERIFY(settle());
+        // Each of these changes the picture for a while, even paused.
+        const std::vector<std::pair<const char *, std::function<void()>>> wakers{
+            {"pointer moved", [&] { backend.wake(); }},
+            {"zoomed", [&] { backend.zoom(1); }},
+            {"titles switched", [&] { backend.toggleTitles(); }},
+        };
+        for (const auto &[what, wake] : wakers) {
+            QSignalSpy changes(&backend, &Backend::animatingChanged);
+            wake();
+            QVERIFY2(backend.animating() && changes.count() == 1, what);
+            QVERIFY2(settle(), what);
+        }
+        // Flying never settles, but a hidden window doesn't tick.
+        backend.setPaused(false);
+        QVERIFY(backend.animating() && !settle());
+        backend.setHidden(true);
+        QVERIFY(!backend.animating());
+        backend.setHidden(false);
+        QVERIFY(backend.animating());
+    }
+
+    void pausingIsNotAHitch()
+    {
+        qputenv("OMAWING_STATS", "1");
+        FlightView view;
+        qunsetenv("OMAWING_STATS");
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
+        view.setSource(&backend);
+        view.setSize({320, 180});
+        QImage image(320, 180, QImage::Format_ARGB32_Premultiplied);
+        auto paint = [&] {
+            QPainter painter(&image);
+            view.paint(&painter);
+        };
+        // A frame that comes four refreshes late while flying is a hitch...
+        paint();
+        QTest::qWait(70);
+        paint();
+        QCOMPARE(view.frameStats().hitches, 1);
+        // ...but not the first after a pause, or after the window was hidden.
+        backend.setPaused(true);
+        for (int i = 0; i < 1000 && backend.animating(); ++i)
+            backend.tick(0.02);
+        QTest::qWait(70);
+        backend.setPaused(false);
+        paint();
+        backend.setHidden(true);
+        QTest::qWait(70);
+        backend.setHidden(false);
+        paint();
+        QCOMPARE(view.frameStats().hitches, 1);
+        QVERIFY(view.frameStats().longestGap < 140);
+    }
+
     void nextSceneAndRestart()
     {
         QTemporaryDir settings;
@@ -848,6 +916,14 @@ private slots:
         QVERIFY(backend.toolbarShown() && backend.titlesShown());
         QTRY_COMPARE(bar->property("opacity").toDouble(), 1.0);
         QTRY_COMPARE(backend.look().titles, 1.0);
+        // Paused, once the switch keys have faded too, the window stops
+        // ticking; moving the pointer starts it again.
+        auto ticker = window->findChild<QObject *>("ticker");
+        QVERIFY(ticker);
+        QTRY_VERIFY_WITH_TIMEOUT(!ticker->property("running").toBool(), 8000);
+        QVERIFY(backend.paused());
+        QMetaObject::invokeMethod(window, "wake");
+        QVERIFY(ticker->property("running").toBool());
         window->setProperty("pointerAwake", false);
         window->resize(640, 400);
         for (const QString &language : {QString("de"), QString("ar")}) {

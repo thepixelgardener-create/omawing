@@ -88,8 +88,10 @@ ApplicationWindow {
         }
     }
 
+    // Paused, once nothing is left to fade or zoom, the window stops ticking.
     FrameAnimation {
-        running: win.visibility !== Window.Minimized && win.visibility !== Window.Hidden
+        objectName: "ticker"
+        running: backend.animating && win.visibility !== Window.Minimized && win.visibility !== Window.Hidden
         onTriggered: backend.tick(frameTime)
     }
 

@@ -84,12 +84,14 @@ void Backend::zoom(double steps) {
     const double before = m_flight.cameraDistance();
     m_flight.zoom(steps);
     if (before != m_flight.cameraDistance()) m_zoomFor = 3;
+    updateAnimating();
 }
 
 void Backend::resetZoom() {
     const double before = m_flight.cameraDistance();
     m_flight.resetZoom();
     if (before != m_flight.cameraDistance()) m_zoomFor = 3;
+    updateAnimating();
 }
 
 void Backend::endRun() {
@@ -202,6 +204,7 @@ void Backend::tick(double seconds) {
         emit frameChanged();
     }
     m_zoomFor = std::max(0.0, m_zoomFor - dt);
+    updateAnimating();
     ++m_frames;
     m_elapsed += seconds;
     if (m_elapsed > 0.75) {
@@ -235,8 +238,18 @@ void Backend::setPaused(bool paused, bool keepMusic) {
     m_musicThroughPause = paused && keepMusic;
     clearInput();
     syncSound();
+    updateAnimating();
     emit changed();
     emit frameChanged();
+}
+
+void Backend::updateAnimating() {
+    const bool animating = !m_hidden && (!m_paused || m_zoomFor > 0 || m_switchesFor > 0 || m_switches != 0 ||
+                                         m_titles != (m_titlesOn ? 1 : 0));
+    if (animating == m_animating)
+        return;
+    m_animating = animating;
+    emit animatingChanged();
 }
 
 void Backend::setDemo(bool demo) {
@@ -331,6 +344,7 @@ void Backend::toggleToolbar() {
 void Backend::showSwitches(double seconds) {
     m_switchesFor = std::max(m_switchesFor, seconds);
     updateLook();
+    updateAnimating();
 }
 
 void Backend::updateLook() {
@@ -358,6 +372,7 @@ void Backend::setHidden(bool hidden) {
     m_hidden = hidden;
     clearInput();
     syncSound();
+    updateAnimating();
 }
 
 int Backend::flightKey(int key) {
