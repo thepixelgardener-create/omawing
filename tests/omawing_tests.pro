@@ -1,4 +1,4 @@
-QT += core gui network qml quick quickcontrols2 multimedia testlib
+QT += core gui network qml quick quickcontrols2 multimedia opengl testlib
 CONFIG += testcase
 TARGET = omawing_tests
 TEMPLATE = app

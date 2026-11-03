@@ -28,6 +28,10 @@
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QQuickItem>
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLPaintDevice>
 #include "flightview.h"
 
 #include "backend.h"
@@ -509,6 +513,141 @@ private slots:
         QVERIFY(soft > 0);
     }
 
+    void cachesNeverShowInThePicture()
+    {
+        // The overlay keeps sprites and laid-out text from frame to frame,
+        // and the sky its hills. After other acts and accents, window shapes,
+        // display scales, Arabic, and more strings than the text cache holds,
+        // a scene paints a frame exactly as a new one does.
+        Flight flight;
+        flight.scene(1);
+        flight.demo = false;
+        flight.game.multiplier = 3;
+        flight.advance(3);
+        flight.game.popups.clear();   // Their letters, like the scroller's, may differ a little: see changed().
+        Scene::Look look;
+        look.switches = 1;
+        const Scene::Hud hud = hudIn(false);
+        // The frame as a new scene paints it, before any other; the scene
+        // that paints all the others starts at another scale.
+        Scene fresh, scene;
+        const QImage before = frame(fresh, flight, {960, 540}, 1, hud, look);
+        Flight other;
+        other.scene(4);
+        other.advance(0.5);   // Half-way through Neon Mirage's colours and valley.
+        Scene::Hud churn = hud;
+        for (int i = 0; i < 60; ++i) {
+            const QString n = QString::number(i);
+            for (QString Scene::Hud::*line : {&Scene::Hud::status, &Scene::Hud::mode, &Scene::Hud::subtitle,
+                                              &Scene::Hud::altitude, &Scene::Hud::points, &Scene::Hud::best,
+                                              &Scene::Hud::thrust, &Scene::Hud::hull, &Scene::Hud::score,
+                                              &Scene::Hud::titlesSwitch})
+                churn.*line = hud.*line + n;
+            frame(scene, other, {160, 90}, 1, churn, look);
+        }
+        QVERIFY(scene.textLayouts() > 600);
+        frame(scene, flight, {700, 900}, 1, hudIn(true), look);
+        frame(scene, other, {480, 270}, 2, hud, look);
+        // Last, the same size and scale in another accent, so only the
+        // accent can tell the radar's sprites to be drawn again.
+        frame(scene, other, {960, 540}, 1, hud, look);
+        QCOMPARE(changed(frame(scene, flight, {960, 540}, 1, hud, look), before), 0);
+    }
+
+    void theHudDrawsEachLineInItsPlace()
+    {
+        // Changing a line of the HUD changes the picture there and nowhere
+        // else, in English and in Arabic (joined, and in its own digits).
+        Flight flight;
+        flight.scene(1);
+        flight.advance(3);
+        const QSize size(960, 540);   // One pixel to a canvas unit.
+        for (const bool arabic : {false, true}) {
+            const Scene::Hud hud = hudIn(arabic);
+            Scene scene;
+            const QImage base = frame(scene, flight, size, 1, hud);
+            struct Line {
+                QString Scene::Hud::*text;
+                QString other;
+                QRect area;
+            };
+            const Line lines[] = {
+                {&Scene::Hud::points, arabic ? QString::fromUtf8("٩٨٧٦٥٤") : "987654", QRect(370, 24, 220, 34)},
+                {&Scene::Hud::status, QString::fromUtf8(arabic ? "التعزيز مفعّل" : "BOOST ENGAGED"),
+                 QRect(480, 436, 460, 24)},
+                {&Scene::Hud::altitude, arabic ? QString::fromUtf8("الارتفاع ١٧٫٩") : "ALT 17.9",
+                 QRect(20, 440, 220, 20)},
+            };
+            for (const Line &line : lines) {
+                Scene::Hud changed = hud;
+                changed.*line.text = line.other;
+                const QImage after = frame(scene, flight, size, 1, changed);
+                const QString what = (arabic ? "ar: " : "en: ") + line.other;
+                QVERIFY2(differing(after, base, 24, line.area) > 20, qPrintable(what));
+                QVERIFY2(differing(after, base) == differing(after, base, 0, line.area), qPrintable(what));
+            }
+        }
+    }
+
+    void aDisplayScaleOnlyAddsPixels()
+    {
+        // At twice the scale, a window shows the same frame as one twice its
+        // size: sprites and text are drawn for the pixels, not the window.
+        Flight flight;
+        flight.scene(1);
+        flight.advance(3);
+        flight.game.popups.clear();
+        Scene::Look look;
+        look.switches = 1;
+        Scene scene, other;
+        const QImage doubled = frame(scene, flight, {960, 540}, 2, hudIn(false), look);
+        QCOMPARE(doubled.size(), QSize(1920, 1080));
+        QCOMPARE(changed(doubled, frame(other, flight, {1920, 1080}, 1, hudIn(false), look)), 0);
+    }
+
+    void theGpuPaintsWhatTheCpuPaints()
+    {
+        // The game paints into an OpenGL framebuffer; the tests above use
+        // images. Averaged over 32-pixel blocks, the two agree.
+        QOffscreenSurface surface;
+        QOpenGLContext context;
+        QSurfaceFormat format;
+        format.setSamples(4);
+        format.setStencilBufferSize(8);
+        context.setFormat(format);
+        surface.setFormat(format);
+        surface.create();
+        if (!context.create() || !context.makeCurrent(&surface))
+            QSKIP("No OpenGL here; the CPU's painting is tested on its own.");
+        Flight flight;
+        flight.scene(4);
+        flight.demo = false;
+        flight.advance(3);
+        const QSize size(960, 544);
+        QOpenGLFramebufferObjectFormat fboFormat;
+        fboFormat.setSamples(4);
+        fboFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+        QOpenGLFramebufferObject fbo(size, fboFormat);
+        QVERIFY(fbo.bind());
+        Scene gpuScene, cpuScene;
+        {
+            QOpenGLPaintDevice device(size);
+            QPainter p(&device);
+            gpuScene.paint(p, flight, size, hudIn(false));
+        }
+        const QImage gpu = fbo.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+        const QImage cpu = frame(cpuScene, flight, size, 1, hudIn(false));
+        int worst = 0;
+        for (int by = 0; by < size.height() / 32; ++by)
+            for (int bx = 0; bx < size.width() / 32; ++bx) {
+                const QRect block(bx * 32, by * 32, 32, 32);
+                const QColor a = average(gpu, block), b = average(cpu, block);
+                worst = std::max({worst, std::abs(a.red() - b.red()), std::abs(a.green() - b.green()),
+                                  std::abs(a.blue() - b.blue())});
+            }
+        QVERIFY2(worst <= 16, qPrintable(QString("a block differs by %1 of 255").arg(worst)));
+    }
+
     void scoresRankPersistAndBannerStaysOff() {
         QTemporaryDir settings;
         const QString path = settings.filePath("game.ini");
@@ -622,10 +761,18 @@ private slots:
         QTest::keyClick(window, Qt::Key_Return);
         QCOMPARE(backend.scoreBoard().pendingScore(), 0);
         QCOMPARE(backend.scoreBoard().best(), 1200);
-        auto capture = [&](const QString &name) {
+        // Something was painted: a blank window, or panels over a flight view
+        // that drew nothing, shows only a few colours. The flight itself
+        // shows hundreds.
+        auto capture = [&](const QString &name, int colours = 24) {
             QTest::qWait(250);
             const QImage shot = window->grabWindow();
             QVERIFY(!shot.isNull());
+            QSet<QRgb> seen;
+            for (int y = 0; y < 32; ++y)
+                for (int x = 0; x < 32; ++x)
+                    seen.insert(shot.pixel(x * (shot.width() - 1) / 31, y * (shot.height() - 1) / 31));
+            QVERIFY2(seen.size() > colours, qPrintable(name + ": " + QString::number(seen.size()) + " colours"));
             const QString out = qEnvironmentVariable("OMAWING_SCREENSHOT_DIR");
             if (!out.isEmpty()) { QDir().mkpath(out); QVERIFY(shot.save(out + "/" + name + ".png")); }
         };
@@ -644,7 +791,7 @@ private slots:
         backend.setPaused(true);
         backend.flight().advance(5);
         backend.nextScene();
-        capture("flight");
+        capture("flight", 150);
         backend.setDemo(false);
         backend.flight().ship.x = 0;
         backend.flight().ship.y = 4;
@@ -657,7 +804,7 @@ private slots:
         window->setProperty("pointerAwake", false);
         // The toolbar takes a moment to fade away.
         QTRY_VERIFY(!window->findChild<QObject *>("toolbar")->property("visible").toBool());
-        capture("gameplay");
+        capture("gameplay", 150);
         backend.setPaused(true);
         // V opens the volume panel with the music slider focused; the arrow
         // keys move it and Esc closes the panel.
@@ -1313,6 +1460,73 @@ public:
     }
 
 private:
+    // A HUD as the game words it, in English or Arabic.
+    static Scene::Hud hudIn(bool arabic)
+    {
+        if (!arabic)
+            return {"YOU HAVE THE CONTROLS", QString::fromUtf8("FREE FLIGHT · 03 / 24"), "THRUST", "ALT 04.2",
+                    "Flying into the future", "HULL", "SCORE", "001350", "BEST 001350", {}, "TITLES", "MENU",
+                    "BANNER"};
+        return {QString::fromUtf8("التحكم بين يديك"), QString::fromUtf8("طيران حر · ٠٣ / ٢٤"),
+                QString::fromUtf8("الدفع"), QString::fromUtf8("الارتفاع ٠٤٫٢"),
+                QString::fromUtf8("نحلّق نحو المستقبل"), QString::fromUtf8("الهيكل"), QString::fromUtf8("النقاط"),
+                QString::fromUtf8("٠٠١٣٥٠"), QString::fromUtf8("الأفضل ٠٠١٣٥٠"), {},
+                QString::fromUtf8("العناوين"), QString::fromUtf8("القائمة"), QString::fromUtf8("الشريط")};
+    }
+    // A frame of `scene` as a window `logical` in size shows it, at `ratio`
+    // pixels to each of the window's.
+    static QImage frame(Scene &scene, const Flight &flight, const QSize &logical, double ratio, const Scene::Hud &hud,
+                        const Scene::Look &look = {})
+    {
+        QImage image(logical * ratio, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::black);
+        QPainter p(&image);
+        p.scale(ratio, ratio);
+        scene.paint(p, flight, QSizeF(logical), hud, look);
+        return image;
+    }
+    // Pixels in `area` (all of the image if empty) whose colours differ by
+    // more than `tolerance` in a channel.
+    static int differing(const QImage &a, const QImage &b, int tolerance = 0, QRect area = {})
+    {
+        if (a.size() != b.size())
+            return -1;
+        area = area.isEmpty() ? a.rect() : area & a.rect();
+        int count = 0;
+        for (int y = area.top(); y <= area.bottom(); ++y) {
+            const QRgb *ra = reinterpret_cast<const QRgb *>(a.constScanLine(y));
+            const QRgb *rb = reinterpret_cast<const QRgb *>(b.constScanLine(y));
+            for (int x = area.left(); x <= area.right(); ++x)
+                count += std::abs(qRed(ra[x]) - qRed(rb[x])) > tolerance ||
+                         std::abs(qGreen(ra[x]) - qGreen(rb[x])) > tolerance ||
+                         std::abs(qBlue(ra[x]) - qBlue(rb[x])) > tolerance;
+        }
+        return count;
+    }
+    // Pixels that differ between two frames, 16:9, that should be the same.
+    // Qt outlines the letters of the scroller (and of the points that float
+    // up from rings) a 32nd of a pixel differently depending on what text it
+    // has drawn before, so their edges may differ a little; anything else
+    // must match exactly.
+    static int changed(const QImage &a, const QImage &b)
+    {
+        const int scroller = a.height() * 480 / 540;
+        return differing(a, b, 0, QRect(0, 0, a.width(), scroller)) +
+               differing(a, b, 48, QRect(0, scroller, a.width(), a.height() - scroller));
+    }
+    static QColor average(const QImage &image, const QRect &area)
+    {
+        long r = 0, g = 0, b = 0;
+        for (int y = area.top(); y <= area.bottom(); ++y)
+            for (int x = area.left(); x <= area.right(); ++x) {
+                const QRgb c = image.pixel(x, y);
+                r += qRed(c);
+                g += qGreen(c);
+                b += qBlue(c);
+            }
+        const long n = long(area.width()) * area.height();
+        return QColor(int(r / n), int(g / n), int(b / n));
+    }
     static void write(const QString &path, const QByteArray &contents)
     {
         QFile file(path);

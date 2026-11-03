@@ -44,7 +44,6 @@
 #include <vector>
 
 #include "scene.h"
-#include "translator.h"
 
 namespace {
 // What a frame is painted at: its size in logical pixels and the display's
@@ -88,7 +87,9 @@ QString padded(const QLocale &locale, int value, int width) {
 // altitude, and score change as you fly. Here the score climbs every frame,
 // faster than any pilot, so each frame brings new strings.
 Scene::Hud liveHud(const Flight &f, int frame, const HudWords &words) {
-    const QLocale locale = Translator::formatLocale(words.language);
+    // The language's own digits, the same on every machine (the game asks
+    // Omarchy which locale to format in).
+    const QLocale locale(QString::fromLatin1(words.language));
     const int second = int(std::floor(std::fmod(f.time, Flight::ActLength)));
     const QString clock = padded(locale, second, 2) + " / " + locale.toString(int(Flight::ActLength));
     QString altitude = locale.toString(f.ship.y, 'f', 1);

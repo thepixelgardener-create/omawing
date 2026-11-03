@@ -57,6 +57,14 @@ frame times on the run's summary page. After reviewing an intentional change
 in painting work, record a new baseline with
 `bin/benchmark --record tests/benchmark-baseline.tsv` and commit it.
 
+The tests check the pictures too, on the CPU, where painting is repeatable: a
+scene that has painted other acts, sizes, display scales, Arabic, and more HUD
+strings than its cache holds must paint a frame exactly as a new scene does;
+changing one line of the HUD must change the picture there and nowhere else;
+and twice the display scale must give the same frame as twice the size. With
+OpenGL available (not in CI) a frame painted on the GPU is compared with the
+CPU's, averaged over 32-pixel blocks.
+
 For a local timing run without opening a window:
 
 ```sh
