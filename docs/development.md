@@ -12,7 +12,7 @@ The renderer projects low-poly geometry into a GPU-backed QPainter surface.
 
 ```sh
 bin/build      # build/omawing; extra arguments go to qmake
-bin/test       # Qt Test, offscreen; audio checks run silently
+bin/test       # Qt Test, offscreen; audio checks run silently; extra arguments go to qmake
 bin/benchmark  # GPU frame times at 1080p and 4K (--cpu: without OpenGL; --parts: per layer)
 bin/install    # makepkg -fsi: installs the binary, launcher entry, and icon
 ```
@@ -85,7 +85,10 @@ synchronization between layers; use normal runs for overall frame times.
 The build uses `-Wall -Wextra` and the tree compiles without warnings. The
 sources are listed once, in `src/src.pri`, which the app, the tests, and the
 benchmark all include; the version is set there too. Every push and pull
-request is built and tested by [a workflow](../.github/workflows/ci.yml), and
+request is built and tested by [a workflow](../.github/workflows/ci.yml), which
+also runs the tests built with AddressSanitizer and UndefinedBehaviorSanitizer
+(`OMAWING_TEST_BUILD_DIR=build/sanitize bin/test CONFIG+=sanitizer
+CONFIG+=sanitize_address CONFIG+=sanitize_undefined`), and
 the release recipe's `check()` runs the tests on the tagged source before it is
 packaged.
 

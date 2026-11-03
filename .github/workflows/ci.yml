@@ -49,3 +49,23 @@ jobs:
         run: |
           echo "## Frame times on the runner's CPU (for comparison between runs only)" >> "$GITHUB_STEP_SUMMARY"
           bin/benchmark --cpu --parts --frames 20 --size 1920x1080 | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # The tests again, built with AddressSanitizer and UndefinedBehaviorSanitizer:
+  # a memory error or undefined behaviour fails the run. Qt and the font
+  # libraries keep some allocations until the process ends, so leaks aren't
+  # checked.
+  sanitize:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install build dependencies
+        run: pacman -Syu --noconfirm --needed qt6-base qt6-declarative qt6-wayland qt6-multimedia qt6-multimedia-ffmpeg qt6-svg ttf-dejavu
+
+      - uses: actions/checkout@v5
+
+      - name: Test with sanitizers
+        env:
+          OMAWING_TEST_BUILD_DIR: build/sanitize
+          ASAN_OPTIONS: detect_leaks=0
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: bin/test CONFIG+=sanitizer CONFIG+=sanitize_address CONFIG+=sanitize_undefined
