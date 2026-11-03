@@ -9,7 +9,10 @@
 #include <QSoundEffect>
 #include <QFile>
 #include <QImage>
+#include <QLockFile>
 #include <QPainter>
+#include <QProcess>
+#include <QThread>
 #include <QTemporaryDir>
 #include <QSettings>
 #include <QtTest>
@@ -19,6 +22,7 @@
 #include <QRegularExpression>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
@@ -1080,6 +1084,64 @@ private slots:
         QCOMPARE(reread.entries()[1].name, QString("Two"));
     }
 
+    void heldScoreLockKeepsTheRunAndSavesSoonAfter()
+    {
+        QTemporaryDir settings;
+        const QString path = settings.filePath("game.ini");
+        ScoreBoard board(path);
+        board.offer(1200, 6);
+        // Another copy of the game is in the middle of saving.
+        QLockFile other(path + ".scores.lock");
+        QVERIFY(other.tryLock(0));
+        QElapsedTimer timer;
+        timer.start();
+        QVERIFY(!board.save("Pilot"));
+        QVERIFY2(timer.elapsed() < 50, qPrintable(QString::number(timer.elapsed()) + " ms"));
+        QCOMPARE(board.pendingScore(), 1200);
+        QVERIFY(board.error().isEmpty());   // Waiting isn't a failure.
+        QVERIFY(!QFile::exists(path));      // Nothing written without the lock.
+        other.unlock();
+        QTRY_COMPARE(board.pendingScore(), 0);
+        QCOMPARE(board.best(), 1200);
+        QCOMPARE(ScoreBoard(path).entries().first().name, QString("Pilot"));
+    }
+
+    void copiesSavingAtOnceKeepEveryQualifyingScore()
+    {
+        // Separate processes, each saving a dozen rising scores as fast as
+        // it can. However their saves interleave, the board ends as the ten
+        // best of them all.
+        QTemporaryDir settings;
+        const QString path = settings.filePath("game.ini");
+        const int copies = 4;
+        const qint64 start = QDateTime::currentMSecsSinceEpoch() + 300;   // Together, once all have started.
+        std::vector<std::unique_ptr<QProcess>> writers;
+        for (int copy = 0; copy < copies; ++copy) {
+            auto &writer = writers.emplace_back(std::make_unique<QProcess>());
+            auto env = QProcessEnvironment::systemEnvironment();
+            env.insert(ScoreWriter, QString("%1|%2|%3|%4").arg(path).arg(copy).arg(copies).arg(start));
+            writer->setProcessEnvironment(env);
+            writer->setProcessChannelMode(QProcess::ForwardedErrorChannel);
+            writer->start(QCoreApplication::applicationFilePath(), {});
+        }
+        for (auto &writer : writers) {
+            QVERIFY(writer->waitForFinished(20000));
+            QCOMPARE(writer->exitStatus(), QProcess::NormalExit);
+            QCOMPARE(writer->exitCode(), 0);
+        }
+        QList<int> all;
+        for (int copy = 0; copy < copies; ++copy)
+            for (int i = 0; i < WriterScores; ++i)
+                all.append(writerScore(copy, i, copies));
+        std::sort(all.begin(), all.end(), std::greater<>());
+        ScoreBoard board(path);
+        QCOMPARE(board.count(), ScoreBoard::Size);
+        for (int i = 0; i < ScoreBoard::Size; ++i) {
+            QCOMPARE(board.entries()[i].score, all[i]);
+            QCOMPARE(board.entries()[i].name, QString("Copy %1").arg(all[i] % copies));
+        }
+    }
+
     void translatorFollowsALanguageFolderCreatedLater()
     {
         QTemporaryDir dir;
@@ -1224,6 +1286,32 @@ private slots:
         QCOMPARE(count, 50);
     }
 
+public:
+    // copiesSavingAtOnceKeepEveryQualifyingScore runs this program again as
+    // the copies of the game, with this variable set to "file|copy|copies|start".
+    static constexpr const char *ScoreWriter = "OMAWING_TEST_SCORE_WRITER";
+    static constexpr int WriterScores = 12;
+    static int writerScore(int copy, int i, int copies) { return 1000 + i * copies + copy; }
+    static int writeScores()
+    {
+        const QStringList args = qEnvironmentVariable(ScoreWriter).split('|');
+        if (args.size() != 4)
+            return 2;
+        const int copy = args[1].toInt(), copies = args[2].toInt();
+        while (QDateTime::currentMSecsSinceEpoch() < args[3].toLongLong())
+            QThread::usleep(200);
+        ScoreBoard board(args[0]);
+        for (int i = 0; i < WriterScores; ++i) {
+            board.offer(writerScore(copy, i, copies), 1);
+            while (board.pendingScore() > 0 && !board.save(QString("Copy %1").arg(copy))) {
+                if (!board.error().isEmpty())
+                    return 1;
+                QThread::usleep(50);   // Another copy is saving.
+            }
+        }
+        return 0;
+    }
+
 private:
     static void write(const QString &path, const QByteArray &contents)
     {
@@ -1233,5 +1321,18 @@ private:
     }
 };
 
-QTEST_MAIN(OmawingTests)
+// QTEST_MAIN, except when started as one of the copies of the game for
+// copiesSavingAtOnceKeepEveryQualifyingScore.
+int main(int argc, char *argv[])
+{
+    if (qEnvironmentVariableIsSet(OmawingTests::ScoreWriter)) {
+        QCoreApplication app(argc, argv);
+        return OmawingTests::writeScores();
+    }
+    QGuiApplication app(argc, argv);
+    app.setAttribute(Qt::AA_Use96Dpi, true);
+    OmawingTests tests;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&tests, argc, argv);
+}
 #include "omawing_tests.moc"

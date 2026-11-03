@@ -5,16 +5,23 @@
 #include <QFileInfo>
 #include <QLockFile>
 #include <QSettings>
+#include <QTemporaryFile>
 #include <algorithm>
 
 ScoreBoard::ScoreBoard(const QString &settingsFile, QObject *parent)
     : QAbstractListModel(parent), m_settingsFile(settingsFile) {
+    m_retry.setSingleShot(true);
+    m_retry.setInterval(RetryInterval);
+    connect(&m_retry, &QTimer::timeout, this, [this] {
+        if (m_pending.score > 0)
+            commit(0);
+    });
     load();
 }
 
 ScoreBoard::~ScoreBoard() {
     if (m_pending.score > 0)
-        save({});
+        commit(QuitLockWait);
 }
 
 void ScoreBoard::load() {
@@ -71,26 +78,42 @@ bool ScoreBoard::save(const QString &name) {
     const QString trimmed = name.trimmed().left(NameLength);
     if (!trimmed.isEmpty())
         m_playerName = trimmed;
+    m_retries = 0;
+    return commit(0);
+}
+
+bool ScoreBoard::commit(int lockWait) {
+    m_retry.stop();
     Entry entry = m_pending;
     entry.name = m_playerName;
     entry.date = QDateTime::currentDateTime().toString(Qt::ISODate);
 
     // Another copy of the game may have saved a score since this one read
     // the board: the file is read again and merged, under a lock, so neither
-    // erases the other's runs. If the lock can't be had, the save goes ahead.
-    // (QSettings takes "<file>.lock" itself while it writes, so this one has
-    // a name of its own.)
+    // erases the other's runs. Nothing is written without the lock. (QSettings
+    // takes "<file>.lock" itself while it writes, so this one has a name of
+    // its own.)
     QDir().mkpath(QFileInfo(m_settingsFile).absolutePath());
     QLockFile lock(m_settingsFile + ".scores.lock");
-    lock.tryLock(1000);
-    QSettings settings(m_settingsFile, QSettings::IniFormat);
-    auto entries = settings.status() == QSettings::NoError ? read(settings) : m_entries;
+    if (!lock.tryLock(lockWait)) {
+        // Another copy is saving; it takes moments. A lock it has held too
+        // long is cleared by QLockFile as left behind.
+        if (lock.error() == QLockFile::LockFailedError && m_retries++ < Retries) {
+            m_retry.start();
+            return false;
+        }
+        m_error = tr("Could not save settings. Check folder permissions.");
+        emit changed();
+        return false;
+    }
+    auto entries = readSaved();
 
     // Ties keep the earlier score ahead.
     entries.insert(std::find_if(entries.begin(), entries.end(), [&](const Entry &e) { return e.score < entry.score; }),
                    entry);
     if (entries.size() > Size)
         entries.resize(Size);
+    QSettings settings(m_settingsFile, QSettings::IniFormat);
     if (!write(settings, entries)) {
         emit changed();
         return false;
@@ -101,6 +124,25 @@ bool ScoreBoard::save(const QString &name) {
     m_pending = {};
     emit changed();
     return true;
+}
+
+// The board as saved now. QSettings keeps what it last read of a file and
+// reads it again only if the file's size or modified time has changed; a
+// copy of the game saving straight after another can leave both the same
+// (file times only move every few milliseconds), and its scores would be
+// lost. So the board is read from a fresh copy of the file, which QSettings
+// hasn't seen before.
+QList<ScoreBoard::Entry> ScoreBoard::readSaved() const {
+    QFile file(m_settingsFile);
+    if (!file.exists())
+        return {};
+    QTemporaryFile copy;
+    if (file.open(QIODevice::ReadOnly) && copy.open() && copy.write(file.readAll()) == file.size() && copy.flush()) {
+        QSettings settings(copy.fileName(), QSettings::IniFormat);
+        if (settings.status() == QSettings::NoError)
+            return read(settings);
+    }
+    return m_entries;
 }
 
 bool ScoreBoard::write(QSettings &settings, const QList<Entry> &entries) {
