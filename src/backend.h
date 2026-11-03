@@ -65,8 +65,10 @@ public:
     // while it is true, so a paused game sleeps instead of waking for every
     // refresh of the screen.
     bool animating() const { return m_animating; }
-    // The simulated time of the last frame, in seconds.
+    // The simulated time of the last frame, in seconds, and how long the
+    // last tick took to run, in milliseconds.
     double lastStep() const { return m_lastStep; }
+    double lastTickTime() const { return m_tickMs; }
     const Audio &audio() const { return m_audio; }
     ScoreBoard &scoreBoard() { return m_board; }
     const ScoreBoard &scoreBoard() const { return m_board; }
@@ -147,7 +149,7 @@ private:
     bool m_paused = false, m_musicWanted = false, m_effectsWanted = false, m_hidden = false, m_banner = true, m_titlesOn = true, m_toolbar = true, m_musicThroughPause = false;
     bool m_animating = true;
     int m_frames = 0, m_fps = 0;
-    double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0;
+    double m_elapsed = 0, m_lastStep = 0, m_drift = 0, m_refreshRate = 0, m_tickMs = 0;
     double m_zoomFor = 0; // Keep paused redraws limited to an active zoom transition.
     double m_musicVolume = 0.8, m_effectsVolume = 0.8;
     double m_beat = 0, m_beatTarget = 0, m_level = 0, m_sinceBeat = 10;   // The music's pulse, for the picture.

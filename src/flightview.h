@@ -26,13 +26,19 @@ public:
     // With OMAWING_STATS set, frame rate, paint times, and hitches are
     // reported on stderr once a second.
     struct FrameStats {
-        void record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu, double refreshRate);
+        // The times of a frame, in milliseconds: painting it, putting its
+        // HUD's text together, the tick that moved the flight on, and the
+        // time that tick simulated.
+        struct Times {
+            double paint = 0, hud = 0, tick = 0, step = 0;
+        };
+        void record(const Times &times, int polygons, const QSize &pixels, bool gpu, double refreshRate);
         // Frames stopped on purpose (paused, or hidden): the next one isn't
         // late, however long it has been.
         void stop() { interval.invalidate(); }
 
         int frames = 0, hitches = 0;
-        double total = 0, worst = 0, longestGap = 0;
+        double total = 0, worst = 0, longestGap = 0, hudTotal = 0, tickTotal = 0, tickWorst = 0;
         double stepLow = 1e9, stepHigh = 0;
         QElapsedTimer clock, interval;
     };

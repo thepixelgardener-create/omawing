@@ -19,9 +19,12 @@ bin/install    # makepkg -fsi: installs the binary, launcher entry, and icon
 
 After `bin/install`, Omawing is in the app launcher (Super + Alt + Space).
 
-`OMAWING_STATS=1 omawing` prints the frame rate, paint time, longest gap between
-frames, and the range of simulation steps once a second, logs every hitch (a gap
-over 1.5 display refresh periods), and says whether painting runs on the GPU or the CPU.
+`OMAWING_STATS=1 omawing` prints the frame rate, paint time, the time to put the
+HUD's text together and to run the tick that moves the flight, the longest gap
+between frames, and the range of simulation steps once a second, logs every
+hitch (a gap over 1.5 display refresh periods), and says whether painting runs
+on the GPU or the CPU. Steps are whole refreshes of the screen, at most 0.05 s;
+what the frame timer measured beyond that is paid back over the next frames.
 The game stops ticking while paused once its fades have settled, and while its
 window is hidden; the first frame after either isn't counted as a hitch.
 

@@ -23,6 +23,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <random>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
@@ -748,6 +749,56 @@ private slots:
         QVERIFY(!b.settingsError().isEmpty());
         QCOMPARE(b.scoreBoard().pendingScore(), 100);
         QVERIFY((b.scoreBoard().count() == 0));
+    }
+
+    void stepsKeepToTheScreensRefreshWithoutDrifting()
+    {
+        // The timer measuring frames wobbles by a couple of milliseconds,
+        // and now and then the machine stalls. At the refresh rates of
+        // common screens, each step is whole refreshes give or take a small
+        // payback, and over a minute the flight's clock keeps to the wall
+        // clock, less what stalls longer than a step (0.05 s) don't count.
+        for (const double hertz : {60.0, 90.0, 144.0}) {
+            QTemporaryDir settings;
+            Backend b(nullptr, settings.filePath("game.ini"));
+            b.setRefreshRate(hertz);
+            const double period = 1 / hertz;
+            std::mt19937 random(static_cast<unsigned>(hertz));
+            std::uniform_real_distribution<double> jitter(-0.002, 0.002);
+            double counted = 0;
+            const double start = b.flight().time;
+            for (int frame = 0; frame < int(60 * hertz); ++frame) {
+                // Most frames come on the beat; one in every few hundred is
+                // late, and one in a thousand is a stall.
+                const double seconds = frame % 1000 == 500 ? 0.2 : frame % 300 == 150 ? 2.5 * period
+                                                                                       : period + jitter(random);
+                b.tick(seconds);
+                counted += std::min(seconds, 0.05);
+                const double refreshes = b.lastStep() / period;
+                QVERIFY2(std::round(refreshes) >= 1 && std::abs(refreshes - std::round(refreshes)) <= 0.03 + 1e-9,
+                         qPrintable(QString("%1 Hz, frame %2: a step of %3 refreshes").arg(hertz).arg(frame).arg(refreshes)));
+            }
+            const double behind = counted - (b.flight().time - start);
+            QVERIFY2(std::abs(behind) < 0.02, qPrintable(QString("%1 Hz: %2 s off the clock").arg(hertz).arg(behind)));
+        }
+        // A machine that only keeps up with every other refresh steps by two.
+        QTemporaryDir settings;
+        Backend b(nullptr, settings.filePath("game.ini"));
+        b.setRefreshRate(60);
+        for (int i = 0; i < 120; ++i) {
+            b.tick(2 / 60.0 + (i % 2 ? 0.0015 : -0.0015));
+            QCOMPARE(std::round(b.lastStep() * 60), 2.0);
+        }
+        // Moved to a faster screen, the steps follow it at once.
+        b.setRefreshRate(144);
+        b.tick(1 / 144.0 + 0.001);
+        QVERIFY(std::abs(b.lastStep() * 144 - 1) <= 0.03 + 1e-9);
+        // An unknown rate (or none) steps by the time measured.
+        for (const double unknown : {0.0, 1000.0}) {
+            b.setRefreshRate(unknown);
+            b.tick(0.0123);
+            QCOMPARE(b.lastStep(), 0.0123);
+        }
     }
 
     void hiddenWindowAndInvalidTicksDoNotAdvance() {
