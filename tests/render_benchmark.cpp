@@ -14,8 +14,11 @@
 //                    asks for more than a little over it
 //
 // Timings depend on the machine and what else it is doing; the work counted
-// (draw calls, the points in them, and changes of painter state) doesn't,
-// so a check against a recorded baseline is reliable anywhere, CI included.
+// doesn't, so a check against a recorded baseline is reliable anywhere, CI
+// included. It is counted over two seconds of frames after the warm-up: the
+// draw calls, the points in them, and changes of painter state of the
+// busiest frame, and over all of them, the geometry and images that are new
+// (that the GPU must be sent again) and the HUD strings laid out afresh.
 #include <QElapsedTimer>
 #include <QFile>
 #include <QGuiApplication>
@@ -30,6 +33,7 @@
 #include <QPainterPath>
 #include <QTextStream>
 #include <algorithm>
+#include <cmath>
 #include <climits>
 #include <cstdio>
 #include <cstring>
@@ -40,14 +44,69 @@
 #include <vector>
 
 #include "scene.h"
+#include "translator.h"
 
 namespace {
+// What a frame is painted at: its size in logical pixels and the display's
+// scale, so the pixels painted are size * ratio.
+struct Shape {
+    QSizeF size;
+    double ratio = 1;
+};
+
 struct Fixture {
     const char *name;
     // Sets up the flight (and the look) for the frames timed.
     std::function<void(Flight &, Scene::Look &)> setUp;
-    std::function<void(Flight &, Scene::Look &, int)> update;
+    // Changes things before each frame, given its number from 0.
+    std::function<void(Flight &, Scene::Look &, int)> update = {};
+    // The HUD of each frame; unset, the same every frame.
+    std::function<Scene::Hud(const Flight &, int)> hud = {};
+    // The shape of each frame, given the size of the run; unset, that size.
+    std::function<Shape(const QSize &, int)> shape = {};
 };
+
+const Scene::Hud fixedHud{"YOU HAVE THE CONTROLS", "FREE FLIGHT · 02 / 24", "THRUST", "ALT 04.2",
+                          "Flying into the future", "HULL", "SCORE", "001350", "BEST 001350"};
+
+// The words of the HUD, in the game's English and in its Arabic catalog.
+struct HudWords {
+    const char *language, *status, *mode, *thrust, *altitude, *subtitle, *hull, *score, *best, *titles, *menu,
+        *banner;
+};
+const HudWords english{"en", "YOU HAVE THE CONTROLS", "FREE FLIGHT", "THRUST", "ALT %1", "Flying into the future",
+                       "HULL", "SCORE", "BEST %1", "TITLES", "MENU", "BANNER"};
+const HudWords arabic{"ar", "التحكم بين يديك", "طيران حر", "الدفع", "الارتفاع %1", "نحلّق نحو المستقبل", "الهيكل",
+                      "النقاط", "الأفضل %1", "العناوين", "القائمة", "الشريط"};
+
+QString padded(const QLocale &locale, int value, int width) {
+    const QString text = locale.toString(value);
+    return text.size() < width ? QString(locale.zeroDigit()).repeated(width - text.size()) + text : text;
+}
+
+// The HUD as the game words it each frame (Backend::hud): the clock,
+// altitude, and score change as you fly. Here the score climbs every frame,
+// faster than any pilot, so each frame brings new strings.
+Scene::Hud liveHud(const Flight &f, int frame, const HudWords &words) {
+    const QLocale locale = Translator::formatLocale(words.language);
+    const int second = int(std::floor(std::fmod(f.time, Flight::ActLength)));
+    const QString clock = padded(locale, second, 2) + " / " + locale.toString(int(Flight::ActLength));
+    QString altitude = locale.toString(f.ship.y, 'f', 1);
+    if (f.ship.y < 10)
+        altitude.prepend(locale.zeroDigit());
+    const int score = 1000 + frame * 10;
+    Scene::Hud hud{QString::fromUtf8(words.status), QString::fromUtf8(words.mode) + QString::fromUtf8(" · ") + clock,
+                   QString::fromUtf8(words.thrust), QString::fromUtf8(words.altitude).arg(altitude),
+                   QString::fromUtf8(words.subtitle)};
+    hud.hull = QString::fromUtf8(words.hull);
+    hud.score = QString::fromUtf8(words.score);
+    hud.points = padded(locale, score, 6);
+    hud.best = QString::fromUtf8(words.best).arg(padded(locale, score, 6));
+    hud.titlesSwitch = QString::fromUtf8(words.titles);
+    hud.toolbarSwitch = QString::fromUtf8(words.menu);
+    hud.bannerSwitch = QString::fromUtf8(words.banner);
+    return hud;
+}
 
 std::vector<Fixture> fixtures() {
     std::vector<Fixture> list;
@@ -83,22 +142,69 @@ std::vector<Fixture> fixtures() {
             f.emitParticles(Particle::Glitter, {f.ship.x, f.ship.y, f.ship.z + 12},
                             {0, 0, f.ship.speed}, 8, Flight::MaxParticles);
         }});
+    // The two seconds over which the colours, and the mirror floor and the
+    // valley, blend in from the act before.
     list.push_back({"mirage transition", [](Flight &f, Scene::Look &) { f.scene(4); },
         [](Flight &f, Scene::Look &, int frame) {
             f.time = 4 * Flight::ActLength + (frame % 120) / 60.0;
         }});
+    // Flying yourself, with the switch keys showing.
+    auto playing = [](Flight &f, Scene::Look &look) {
+        f.scene(1);
+        f.demo = false;
+        look.switches = 1;
+    };
+    list.push_back({"live hud", playing, {},
+                    [](const Flight &f, int frame) { return liveHud(f, frame, english); }});
+    list.push_back({"arabic hud", playing, {},
+                    [](const Flight &f, int frame) { return liveHud(f, frame, arabic); }});
+    // More new strings every frame than the HUD's cache holds, by far: the
+    // labels that never change must stay laid out all the same.
+    list.push_back({"text cache overflow", playing, {}, [](const Flight &f, int frame) {
+        Scene::Hud hud = liveHud(f, frame, english);
+        const QString n = QString::number(frame);
+        hud.status += ' ' + n;
+        hud.mode += ' ' + n;
+        hud.subtitle += ' ' + n;
+        return hud;
+    }});
+    // Dragging the window's edge: narrower, then back, over two seconds.
+    list.push_back({"window resize", [](Flight &f, Scene::Look &) { f.scene(0); }, {}, {},
+        [](const QSize &full, int frame) {
+            const double t = 0.5 - 0.5 * std::cos(frame / 120.0 * 2 * M_PI);
+            return Shape{QSizeF(std::round(full.width() * (1 - t / 3)), full.height())};
+        }});
+    // The window moving between screens of different scales: the same
+    // size on each, in more pixels.
+    list.push_back({"display scale change", [](Flight &f, Scene::Look &) { f.scene(0); }, {}, {},
+        [](const QSize &full, int frame) {
+            static const double ratios[] = {1, 1.25, 1.5, 2};
+            return Shape{QSizeF(full) / 2, ratios[frame / 30 % 4]};
+        }});
     return list;
 }
 
-const Scene::Hud hud{"YOU HAVE THE CONTROLS", "FREE FLIGHT · 02 / 24", "THRUST", "ALT 04.2", "Flying into the future",
-                     "HULL", "SCORE", "001350", "BEST 001350"};
 constexpr int WarmUp = 8;
+// The painting work is counted over two seconds at 60 Hz: one whole
+// transition, and enough frames to fill the HUD's cache of strings.
+constexpr int CountFrames = 120;
 const char *const parts[] = {"sky", "ground", "world build", "world", "overlay"};
 
 // Flies a fixture on by a frame; a wreck holds still, as flying on would end it.
 void step(Flight &flight) {
     if (flight.game.wrecked < 0)
         flight.advance(1.0 / 60);
+}
+
+// Paints frame `frame` of a fixture onto `target`, `full` pixels in size.
+void paintFrame(QPaintDevice *target, Scene &scene, const Fixture &fixture, Flight &flight, Scene::Look &look,
+                const QSize &full, int frame) {
+    step(flight);
+    if (fixture.update) fixture.update(flight, look, frame);
+    const Shape shape = fixture.shape ? fixture.shape(full, frame) : Shape{QSizeF(full)};
+    QPainter p(target);
+    p.scale(shape.ratio, shape.ratio);
+    scene.paint(p, flight, shape.size, fixture.hud ? fixture.hud(flight, frame) : fixedHud, look);
 }
 
 double percentile(std::vector<double> times, double p) {
@@ -115,11 +221,19 @@ double mean(const std::vector<double> &times) {
     return times.empty() ? 0 : sum / times.size();
 }
 
-// The painting work of a frame, as a paint engine sees it: draw calls, the
-// points in them, unique filled-path points, and changes of painter state.
+// The painting work, as a paint engine sees it. Of the busiest frame: draw
+// calls, the points in them, and changes of painter state. Of all the frames
+// counted: the points of filled paths not seen before, which the GPU engine
+// must cut into triangles again; images not seen before, which it must
+// upload; and the HUD strings laid out, which the overlay keeps in a cache.
 struct Work {
-    long calls = 0, points = 0, uniquePathPoints = 0, states = 0;
+    long calls = 0, points = 0, states = 0;
+    long newPathPoints = 0, newImages = 0, textLayouts = 0;
 };
+const char *const columns[] = {"draw calls", "points", "state changes", "new path points", "new images",
+                               "text layouts"};
+long Work::*const fields[] = {&Work::calls, &Work::points, &Work::states, &Work::newPathPoints, &Work::newImages,
+                              &Work::textLayouts};
 
 // A batch of rectangles, lines, or points handed over at once is one call,
 // as it is for a real engine. Unique filled-path points are a geometry-work
@@ -130,6 +244,7 @@ public:
     CountingEngine() : QPaintEngine(QPaintEngine::AllFeatures) {}
     Work work;
     std::set<size_t> seen;
+    std::set<qint64> images;
 
     bool begin(QPaintDevice *) override { return true; }
     bool end() override { return true; }
@@ -148,21 +263,27 @@ public:
             key = qHashMulti(key, int(e.type), e.x, e.y);
         }
         if (seen.insert(key).second)
-            work.uniquePathPoints += path.elementCount();
+            work.newPathPoints += path.elementCount();
     }
     void drawRects(const QRectF *, int count) override { add(1, 4 * count); }
     void drawEllipse(const QRectF &) override { add(1, 4); }
     void drawLines(const QLineF *, int count) override { add(1, 2 * count); }
     void drawPoints(const QPointF *, int count) override { add(1, count); }
     void drawTextItem(const QPointF &, const QTextItem &) override { add(1, 4); }
-    void drawPixmap(const QRectF &, const QPixmap &, const QRectF &) override { add(1, 4); }
-    void drawTiledPixmap(const QRectF &, const QPixmap &, const QPointF &) override { add(1, 4); }
-    void drawImage(const QRectF &, const QImage &, const QRectF &, Qt::ImageConversionFlags) override { add(1, 4); }
+    void drawPixmap(const QRectF &, const QPixmap &pixmap, const QRectF &) override { image(pixmap.cacheKey()); }
+    void drawTiledPixmap(const QRectF &, const QPixmap &pixmap, const QPointF &) override { image(pixmap.cacheKey()); }
+    void drawImage(const QRectF &, const QImage &image, const QRectF &, Qt::ImageConversionFlags) override {
+        this->image(image.cacheKey());
+    }
 
 private:
     void add(long calls, long points) {
         work.calls += calls;
         work.points += points;
+    }
+    void image(qint64 key) {
+        add(1, 4);
+        work.newImages += images.insert(key).second;
     }
 };
 
@@ -191,29 +312,40 @@ private:
     mutable CountingEngine m_engine;
 };
 
-// The work of one frame of each fixture, after the same warm-up as the timings.
+// The work of each fixture over CountFrames frames, after the same warm-up
+// as the timings.
 std::map<std::string, Work> countWork(const std::vector<Fixture> &list) {
     std::map<std::string, Work> result;
+    const QSize full(1920, 1080);
     for (const Fixture &fixture : list) {
         Scene scene;
         Flight flight;
         Scene::Look look;
         fixture.setUp(flight, look);
-        CountingDevice device(QSize(1920, 1080));
-        for (int i = 0; i <= WarmUp; ++i) {
-            step(flight);
-            if (fixture.update) fixture.update(flight, look, i);
+        CountingDevice device(full);
+        Work &total = result[fixture.name];
+        long layouts = 0;
+        for (int i = 0; i < WarmUp + CountFrames; ++i) {
+            if (i == WarmUp)
+                layouts = scene.textLayouts();
             device.work() = {};
-            QPainter p(&device);
-            scene.paint(p, flight, QSizeF(1920, 1080), hud, look);
+            paintFrame(&device, scene, fixture, flight, look, full, i);
+            if (i < WarmUp)
+                continue;
+            const Work &frame = device.work();
+            total.calls = std::max(total.calls, frame.calls);
+            total.points = std::max(total.points, frame.points);
+            total.states = std::max(total.states, frame.states);
+            total.newPathPoints += frame.newPathPoints;
+            total.newImages += frame.newImages;
         }
-        result[fixture.name] = device.work();
+        total.textLayouts = scene.textLayouts() - layouts;
     }
     return result;
 }
 
-// The baseline is one line per fixture: its name, a tab, then its calls,
-// points, unique filled-path points, and state changes.
+// The baseline is one line per fixture: its name, then each of Work's
+// counts, in the order of `columns`, separated by tabs.
 std::map<std::string, Work> readWork(const QString &path) {
     std::map<std::string, Work> result;
     QFile file(path);
@@ -223,9 +355,11 @@ std::map<std::string, Work> readWork(const QString &path) {
     while (!in.atEnd()) {
         const QString line = in.readLine();
         const QStringList fields = line.split('\t');
-        if (line.startsWith('#') || fields.size() != 5)
+        if (line.startsWith('#') || fields.size() != 1 + int(std::size(columns)))
             continue;
-        result[fields[0].toStdString()] = {fields[1].toLong(), fields[2].toLong(), fields[3].toLong(), fields[4].toLong()};
+        Work &work = result[fields[0].toStdString()];
+        for (size_t i = 0; i < std::size(columns); ++i)
+            work.*::fields[i] = fields[i + 1].toLong();
     }
     return result;
 }
@@ -235,32 +369,48 @@ bool writeWork(const QString &path, const std::map<std::string, Work> &work) {
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
         return false;
     QTextStream out(&file);
-    out << "# The painting work of one 1920x1080 frame of each benchmark scene: draw\n"
-           "# calls, the points in them, unique filled-path points, and\n"
-           "# changes of painter state.\n"
-           "# Written by bin/benchmark --record; CI checks against it.\n";
-    for (const auto &[name, w] : work)
-        out << QString::fromStdString(name) << '\t' << w.calls << '\t' << w.points << '\t' << w.uniquePathPoints << '\t'
-            << w.states << '\n';
+    out << "# The painting work of each benchmark scene at 1920x1080, over two seconds\n"
+           "# of frames: the draw calls, points, and painter state changes of the\n"
+           "# busiest frame; and over them all, new filled-path points, new images,\n"
+           "# and HUD strings laid out.\n"
+           "# Written by bin/benchmark --record; CI checks against it.\n"
+           "# scene";
+    for (const char *column : columns)
+        out << '\t' << column;
+    out << '\n';
+    for (const auto &[name, w] : work) {
+        out << QString::fromStdString(name);
+        for (const auto field : fields)
+            out << '\t' << w.*field;
+        out << '\n';
+    }
     return true;
 }
 
 // A scene may ask for a little more than its baseline: floating point can
-// clip a polygon differently on another machine.
+// clip a polygon differently on another machine. New images and text
+// layouts are made the same everywhere, and a few more of them is just what
+// a cache going wrong looks like, so they may not exceed it at all.
 constexpr double Tolerance = 1.03;
 constexpr long Slack = 16;
 
 bool checkWork(const std::map<std::string, Work> &baseline, const std::map<std::string, Work> &work) {
     bool ok = true;
-    std::printf("\n| scene | draw calls | points | unique path points | state changes |\n| --- | ---: | ---: | ---: | ---: |\n");
+    std::printf("\n| scene |");
+    for (const char *column : columns)
+        std::printf(" %s |", column);
+    std::printf("\n| --- |");
+    for (size_t i = 0; i < std::size(columns); ++i)
+        std::printf(" ---: |");
+    std::printf("\n");
     for (const auto &[name, ignored] : baseline) {
         if (!work.count(name)) {
             std::fprintf(stderr, "render_benchmark: baseline scene no longer exercised: %s\n", name.c_str());
             ok = false;
         }
     }
-    auto cell = [&](long now, long before) {
-        const bool over = now > before * Tolerance + Slack;
+    auto cell = [&](long now, long before, bool exact) {
+        const bool over = exact ? now > before : now > before * Tolerance + Slack;
         ok &= !over;
         char text[96];
         if (before <= 0)
@@ -276,9 +426,12 @@ bool checkWork(const std::map<std::string, Work> &baseline, const std::map<std::
             ok = false;
         }
         const Work before = found == baseline.end() ? Work{} : found->second;
-        std::printf("| %s | %s | %s | %s | %s |\n", name.c_str(), cell(w.calls, before.calls).c_str(),
-                    cell(w.points, before.points).c_str(), cell(w.uniquePathPoints, before.uniquePathPoints).c_str(),
-                    cell(w.states, before.states).c_str());
+        std::printf("| %s |", name.c_str());
+        for (const auto field : fields) {
+            const bool exact = field == &Work::newImages || field == &Work::textLayouts;
+            std::printf(" %s |", cell(w.*field, before.*field, exact).c_str());
+        }
+        std::printf("\n");
     }
     if (!ok)
         std::printf("\nSome scenes ask for more painting work than tests/benchmark-baseline.tsv allows. If that is "
@@ -420,17 +573,12 @@ int main(int argc, char **argv) {
                     partClock.start();
                 });
             for (int i = 0; i < WarmUp + frames; ++i) {
-                step(flight);
-                if (fixture.update) fixture.update(flight, look, i);
                 if (i == WarmUp)
                     partTimes.clear();
                 QElapsedTimer timer;
                 timer.start();
                 partClock.start();
-                {
-                    QPainter p(target);
-                    scene.paint(p, flight, size, hud, look);
-                }
+                paintFrame(target, scene, fixture, flight, look, size, i);
                 finish();
                 // The first frames prepare sprites and caches.
                 if (i >= WarmUp)

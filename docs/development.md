@@ -31,18 +31,27 @@ buffer in both the context and framebuffer. Each run reports the renderer and
 actual buffer settings and fails if these are unavailable. Its timings differ
 from the CPU paint timings in `OMAWING_STATS`.
 Besides each scene it times a few of the heaviest moments: flying at the
-ceiling, a full sky of particles over Neon Mirage's mirror floor, a wreck, and
-a strong beat. `--parts` also times each layer (sky, ground, building the
+ceiling, a full sky of particles over Neon Mirage's mirror floor, a wreck, a
+strong beat, and the change into Neon Mirage. `--parts` also times each layer (sky, ground, building the
 world, painting it, and the overlay), waiting for the GPU after each, so the
 totals come out a little higher.
 
 Timings depend on the machine; the painting-work check is a deterministic
-regression proxy. `bin/benchmark --check tests/benchmark-baseline.tsv` counts
-draw calls, polygon points, unique filled-path points, and painter state
-changes after warming each scene. It fails above the baseline plus 3% and
-16 units of rounding slack. These counters do not measure GPU work or actual
-triangulation: Qt can stencil-fill paths, and its path caches differ from the
-counter's value-based deduplication. Use frame timings to validate optimizations.
+regression proxy. `bin/benchmark --check tests/benchmark-baseline.tsv` paints
+two seconds of each scene after warming it, one whole colour transition. From
+the busiest frame it takes the draw calls, polygon points, and painter state
+changes, which may exceed the baseline by 3% and 16 units of rounding slack.
+Over all the frames it counts new filled-path points (geometry the GPU engine
+must cut into triangles again), new images (textures it must upload again),
+and HUD strings laid out afresh; the images and layouts may not exceed the
+baseline at all, since a few more of them is what a cache going wrong looks
+like. Besides the scenes and heavy moments, it paints a HUD that changes every
+frame, the same in Arabic, more new strings than the HUD's cache holds, a
+window being resized, and a move between screens of different scales.
+The counters do not measure GPU work or actual triangulation: Qt can
+stencil-fill paths, and its path caches go by the path, not its value as the
+counter does, so a path made again with the same points isn't counted. Use
+frame timings to validate optimizations.
 CI checks the counters on pushes to main and pull requests, and reports CPU
 frame times on the run's summary page. After reviewing an intentional change
 in painting work, record a new baseline with

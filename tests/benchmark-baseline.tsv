@@ -1,19 +1,26 @@
-# The painting work of one 1920x1080 frame of each benchmark scene: draw
-# calls, the points in them, unique filled-path points, and
-# changes of painter state.
+# The painting work of each benchmark scene at 1920x1080, over two seconds
+# of frames: the draw calls, points, and painter state changes of the
+# busiest frame; and over them all, new filled-path points, new images,
+# and HUD strings laid out.
 # Written by bin/benchmark --record; CI checks against it.
-AMBER TERMINAL	1319	5118	0	732
-C64 DREAMS	987	4041	0	670
-COPPER COAST	979	3710	0	666
-ICE PALACE	990	3721	0	748
-LAVA FIELDS	1121	4113	0	694
-NEON MIRAGE	1748	6837	0	1220
-OMARCHY	988	4038	0	667
-STAR RUN	1312	5088	0	780
-VECTOR GARDEN	1018	3820	0	659
-burst on the mirage	2432	9573	0	1903
-high altitude	1251	4653	0	715
-mirage transition	1722	6821	2688	1295
-strong beat	1018	3821	0	658
-sustained particles	2432	9573	0	1201
-wreck	1579	6188	0	705
+# scene	draw calls	points	state changes	new path points	new images	text layouts
+AMBER TERMINAL	1445	5663	906	0	5	0
+C64 DREAMS	1085	4453	802	252	5	0
+COPPER COAST	1082	4088	813	343	5	0
+ICE PALACE	1103	4139	800	30	5	0
+LAVA FIELDS	1208	4417	829	0	5	0
+NEON MIRAGE	1846	7194	1437	30	5	0
+OMARCHY	1100	4526	794	30	5	0
+STAR RUN	1414	5485	905	0	5	0
+VECTOR GARDEN	1076	4012	814	343	5	0
+arabic hud	1170	4403	847	0	8	243
+burst on the mirage	2494	9794	2047	30	5	0
+display scale change	1082	4088	813	343	21	0
+high altitude	1321	4909	766	0	5	0
+live hud	1152	4331	847	0	8	243
+mirage transition	1851	7303	1632	319846	195	0
+strong beat	1075	4012	809	343	5	0
+sustained particles	2500	9814	1387	30	1	0
+text cache overflow	1152	4331	847	0	8	601
+window resize	1079	4077	805	343	101	0
+wreck	1579	6188	706	0	0	0

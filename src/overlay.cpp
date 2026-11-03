@@ -215,6 +215,7 @@ const Overlay::Text &Overlay::text(const QFont &font, const QString &string) {
             if (candidate->used < oldest->used) oldest = candidate;
         m_texts.erase(oldest);
     }
+    ++m_textLayouts;
     Text laid;
     laid.used = ++m_textUse;
     laid.layout = QStaticText(string);
