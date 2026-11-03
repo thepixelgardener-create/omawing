@@ -13,7 +13,7 @@ The renderer projects low-poly geometry into a GPU-backed QPainter surface.
 ```sh
 bin/build      # build/omawing; extra arguments go to qmake
 bin/test       # Qt Test, offscreen; audio checks run silently; extra arguments go to qmake
-bin/benchmark  # GPU frame times at 1080p and 4K (--cpu: without OpenGL; --parts: per layer)
+bin/benchmark  # GPU frame times at 1080p and 4K (--cpu: without OpenGL; --parts: per layer; --scene NAME: only some)
 bin/install    # makepkg -fsi: installs the binary, launcher entry, and icon
 ```
 
@@ -37,7 +37,7 @@ actual buffer settings and fails if these are unavailable. Its timings differ
 from the CPU paint timings in `OMAWING_STATS`.
 Besides each scene it times a few of the heaviest moments: flying at the
 ceiling, a full sky of particles over Neon Mirage's mirror floor, a wreck, a
-strong beat, and the change into Neon Mirage. `--parts` also times each layer (sky, ground, building the
+strong beat, a change of act's colours, and the change into Neon Mirage. `--parts` also times each layer (sky, ground, building the
 world, painting it, and the overlay), waiting for the GPU after each, so the
 totals come out a little higher.
 
