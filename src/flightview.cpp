@@ -31,6 +31,10 @@ void FlightView::setSource(Backend *backend) {
         connect(m_backend.data(), &Backend::frameChanged, this, [this] { update(); });
         // The overlay's status text changes with pause and the autopilot.
         connect(m_backend.data(), &Backend::changed, this, [this] { update(); });
+        connect(m_backend.data(), &Backend::animatingChanged, this, [this] {
+            if (!m_backend->animating())
+                m_frameStats.stop();
+        });
         connect(m_backend.data(), &QObject::destroyed, this, [this] { update(); });
     }
     emit sourceChanged();
@@ -45,17 +49,21 @@ void FlightView::paint(QPainter *painter) {
         m_backend->setRefreshRate(window()->screen()->refreshRate());
     QElapsedTimer timer;
     timer.start();
-    const int polygons = m_scene.paint(*painter, m_backend->flight(), size(), m_backend->hud(), m_backend->look());
+    const Scene::Hud hud = m_backend->hud();
+    const double hudMs = timer.nsecsElapsed() / 1e6;
+    timer.restart();
+    const int polygons = m_scene.paint(*painter, m_backend->flight(), size(), hud, m_backend->look());
     if (m_stats) {
         const double ratio = window() ? window()->devicePixelRatio() : 1;
-        m_frameStats.record(timer.nsecsElapsed() / 1e6, m_backend->lastStep() * 1000, polygons,
-                            QSize(int(width() * ratio), int(height() * ratio)),
+        m_frameStats.record({timer.nsecsElapsed() / 1e6, hudMs, m_backend->lastTickTime(), m_backend->lastStep() * 1000},
+                            polygons, QSize(int(width() * ratio), int(height() * ratio)),
                             painter->paintEngine()->type() == QPaintEngine::OpenGL2,
                             window() && window()->screen() ? window()->screen()->refreshRate() : 60);
     }
 }
 
-void FlightView::FrameStats::record(double paintMs, double stepMs, int polygons, const QSize &pixels, bool gpu, double refreshRate) {
+void FlightView::FrameStats::record(const Times &times, int polygons, const QSize &pixels, bool gpu, double refreshRate) {
+    const double paintMs = times.paint, stepMs = times.step;
     // A hitch is a frame shown more than one and a half refreshes after the
     // one before it.
     if (interval.isValid()) {
@@ -63,7 +71,8 @@ void FlightView::FrameStats::record(double paintMs, double stepMs, int polygons,
         longestGap = std::max(longestGap, gap);
         if (gap > 1500.0 / (refreshRate >= 20 && refreshRate <= 500 ? refreshRate : 60)) {
             hitches++;
-            std::fprintf(stderr, "omawing: hitch %.1f ms between frames (paint %.1f ms, step %.1f ms)\n", gap, paintMs, stepMs);
+            std::fprintf(stderr, "omawing: hitch %.1f ms between frames (paint %.1f ms, hud %.2f ms, tick %.2f ms, step %.1f ms)\n",
+                         gap, paintMs, times.hud, times.tick, stepMs);
         }
     }
     interval.start();
@@ -72,15 +81,18 @@ void FlightView::FrameStats::record(double paintMs, double stepMs, int polygons,
     frames++;
     total += paintMs;
     worst = std::max(worst, paintMs);
+    hudTotal += times.hud;
+    tickTotal += times.tick;
+    tickWorst = std::max(tickWorst, times.tick);
     if (!clock.isValid())
         clock.start();
     if (clock.elapsed() < 1000)
         return;
     std::fprintf(stderr,
-                 "omawing: %.0f fps, paint %.1f ms mean, %.1f ms worst, longest gap %.1f ms, steps %.1f-%.1f ms, %d hitches, "
-                 "%d polygons, %dx%d px, %s\n",
-                 frames * 1000.0 / clock.elapsed(), total / frames, worst, longestGap, stepLow, stepHigh, hitches, polygons,
-                 pixels.width(), pixels.height(), gpu ? "gpu" : "cpu");
+                 "omawing: %.0f fps, paint %.1f ms mean, %.1f ms worst, hud %.2f ms, tick %.2f ms mean, %.2f ms worst, "
+                 "longest gap %.1f ms, steps %.1f-%.1f ms, %d hitches, %d polygons, %dx%d px, %s\n",
+                 frames * 1000.0 / clock.elapsed(), total / frames, worst, hudTotal / frames, tickTotal / frames, tickWorst,
+                 longestGap, stepLow, stepHigh, hitches, polygons, pixels.width(), pixels.height(), gpu ? "gpu" : "cpu");
     const QElapsedTimer lastInterval = interval;
     *this = FrameStats();
     interval = lastInterval;

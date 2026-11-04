@@ -3,6 +3,7 @@
 #include <QAbstractListModel>
 #include <QList>
 #include <QString>
+#include <QTimer>
 
 class QSettings;
 
@@ -51,7 +52,9 @@ public:
     void offer(int score, int rings);
     // Puts the pending score on the board; an empty name uses the last one.
     // On a failed save the score stays pending, so it can be tried again.
-    // Scores saved meanwhile by another copy of the game are kept.
+    // Scores saved meanwhile by another copy of the game are kept. Doesn't
+    // wait while another copy is saving: the score stays pending, false is
+    // returned without an error, and the save is tried again shortly.
     Q_INVOKABLE bool save(const QString &name);
 
 signals:
@@ -60,11 +63,22 @@ signals:
     void pending();
 
 private:
+    // While another copy saves, a retry every RetryInterval ms, until it has
+    // held the lock for longer than QLockFile counts as left behind by a
+    // crash (30 s), and a little more.
+    static constexpr int RetryInterval = 100, Retries = 400;
+    // On quitting there's no later, and no window to hold up.
+    static constexpr int QuitLockWait = 2000;
+
     void load();
+    bool commit(int lockWait);
+    QList<Entry> readSaved() const;
     static QList<Entry> read(QSettings &settings);
     bool write(QSettings &settings, const QList<Entry> &entries);
 
     QString m_settingsFile, m_playerName, m_error;
     QList<Entry> m_entries;
     Entry m_pending;
+    QTimer m_retry;
+    int m_retries = 0;
 };

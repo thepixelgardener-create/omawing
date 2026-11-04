@@ -16,6 +16,10 @@
 
 #include "flight.h"
 
+class QBrush;
+class QPainter;
+class QPainterPath;
+
 // The HUD's text, translated by the app.
 struct SceneHud {
     QString status, mode, thrust, altitude, subtitle;
@@ -62,6 +66,11 @@ QColor withAlpha(const char *code, double alpha);
 QColor withAlpha(const QColor &color, double alpha);
 // The direction light falls from, for shading solid faces.
 const Vec &light();
+// QPainter's OpenGL engine cuts a filled path into triangles on the CPU and
+// keeps them with the path. A path made afresh every frame is cut up every
+// frame; so shapes that only move are made once, in their own coordinates,
+// and filled here, moved by `offset`.
+void fillAt(QPainter &p, const QPainterPath &shape, const QPointF &offset, const QBrush &brush);
 }
 
 class View {

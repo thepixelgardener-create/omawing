@@ -9,7 +9,10 @@
 #include <QSoundEffect>
 #include <QFile>
 #include <QImage>
+#include <QLockFile>
 #include <QPainter>
+#include <QProcess>
+#include <QThread>
 #include <QTemporaryDir>
 #include <QSettings>
 #include <QtTest>
@@ -19,11 +22,17 @@
 #include <QRegularExpression>
 #include <cmath>
 #include <limits>
+#include <memory>
+#include <random>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QQuickItem>
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLPaintDevice>
 #include "flightview.h"
 
 #include "backend.h"
@@ -189,6 +198,74 @@ private slots:
         backend.setPaused(false);
         backend.tick(0.02);
         QVERIFY(backend.flight().time > time);
+    }
+
+    void aPausedGameSleepsOnceItsFadesSettle()
+    {
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
+        auto settle = [&] {
+            for (int i = 0; i < 1000 && backend.animating(); ++i)
+                backend.tick(0.02);
+            return !backend.animating();
+        };
+        QVERIFY(backend.animating());
+        backend.setPaused(true);
+        QVERIFY(backend.animating());   // The switch keys still show from startup.
+        QVERIFY(settle());
+        // Each of these changes the picture for a while, even paused.
+        const std::vector<std::pair<const char *, std::function<void()>>> wakers{
+            {"pointer moved", [&] { backend.wake(); }},
+            {"zoomed", [&] { backend.zoom(1); }},
+            {"titles switched", [&] { backend.toggleTitles(); }},
+        };
+        for (const auto &[what, wake] : wakers) {
+            QSignalSpy changes(&backend, &Backend::animatingChanged);
+            wake();
+            QVERIFY2(backend.animating() && changes.count() == 1, what);
+            QVERIFY2(settle(), what);
+        }
+        // Flying never settles, but a hidden window doesn't tick.
+        backend.setPaused(false);
+        QVERIFY(backend.animating() && !settle());
+        backend.setHidden(true);
+        QVERIFY(!backend.animating());
+        backend.setHidden(false);
+        QVERIFY(backend.animating());
+    }
+
+    void pausingIsNotAHitch()
+    {
+        qputenv("OMAWING_STATS", "1");
+        FlightView view;
+        qunsetenv("OMAWING_STATS");
+        QTemporaryDir settings;
+        Backend backend(nullptr, settings.filePath("game.ini"));
+        view.setSource(&backend);
+        view.setSize({320, 180});
+        QImage image(320, 180, QImage::Format_ARGB32_Premultiplied);
+        auto paint = [&] {
+            QPainter painter(&image);
+            view.paint(&painter);
+        };
+        // A frame that comes four refreshes late while flying is a hitch...
+        paint();
+        QTest::qWait(70);
+        paint();
+        QCOMPARE(view.frameStats().hitches, 1);
+        // ...but not the first after a pause, or after the window was hidden.
+        backend.setPaused(true);
+        for (int i = 0; i < 1000 && backend.animating(); ++i)
+            backend.tick(0.02);
+        QTest::qWait(70);
+        backend.setPaused(false);
+        paint();
+        backend.setHidden(true);
+        QTest::qWait(70);
+        backend.setHidden(false);
+        paint();
+        QCOMPARE(view.frameStats().hitches, 1);
+        QVERIFY(view.frameStats().longestGap < 140);
     }
 
     void nextSceneAndRestart()
@@ -505,6 +582,141 @@ private slots:
         QVERIFY(soft > 0);
     }
 
+    void cachesNeverShowInThePicture()
+    {
+        // The overlay keeps sprites and laid-out text from frame to frame,
+        // and the sky its hills. After other acts and accents, window shapes,
+        // display scales, Arabic, and more strings than the text cache holds,
+        // a scene paints a frame exactly as a new one does.
+        Flight flight;
+        flight.scene(1);
+        flight.demo = false;
+        flight.game.multiplier = 3;
+        flight.advance(3);
+        flight.game.popups.clear();   // Their letters, like the scroller's, may differ a little: see changed().
+        Scene::Look look;
+        look.switches = 1;
+        const Scene::Hud hud = hudIn(false);
+        // The frame as a new scene paints it, before any other; the scene
+        // that paints all the others starts at another scale.
+        Scene fresh, scene;
+        const QImage before = frame(fresh, flight, {960, 540}, 1, hud, look);
+        Flight other;
+        other.scene(4);
+        other.advance(0.5);   // Half-way through Neon Mirage's colours and valley.
+        Scene::Hud churn = hud;
+        for (int i = 0; i < 60; ++i) {
+            const QString n = QString::number(i);
+            for (QString Scene::Hud::*line : {&Scene::Hud::status, &Scene::Hud::mode, &Scene::Hud::subtitle,
+                                              &Scene::Hud::altitude, &Scene::Hud::points, &Scene::Hud::best,
+                                              &Scene::Hud::thrust, &Scene::Hud::hull, &Scene::Hud::score,
+                                              &Scene::Hud::titlesSwitch})
+                churn.*line = hud.*line + n;
+            frame(scene, other, {160, 90}, 1, churn, look);
+        }
+        QVERIFY(scene.textLayouts() > 600);
+        frame(scene, flight, {700, 900}, 1, hudIn(true), look);
+        frame(scene, other, {480, 270}, 2, hud, look);
+        // Last, the same size and scale in another accent, so only the
+        // accent can tell the radar's sprites to be drawn again.
+        frame(scene, other, {960, 540}, 1, hud, look);
+        QCOMPARE(changed(frame(scene, flight, {960, 540}, 1, hud, look), before), 0);
+    }
+
+    void theHudDrawsEachLineInItsPlace()
+    {
+        // Changing a line of the HUD changes the picture there and nowhere
+        // else, in English and in Arabic (joined, and in its own digits).
+        Flight flight;
+        flight.scene(1);
+        flight.advance(3);
+        const QSize size(960, 540);   // One pixel to a canvas unit.
+        for (const bool arabic : {false, true}) {
+            const Scene::Hud hud = hudIn(arabic);
+            Scene scene;
+            const QImage base = frame(scene, flight, size, 1, hud);
+            struct Line {
+                QString Scene::Hud::*text;
+                QString other;
+                QRect area;
+            };
+            const Line lines[] = {
+                {&Scene::Hud::points, arabic ? QString::fromUtf8("٩٨٧٦٥٤") : "987654", QRect(370, 24, 220, 34)},
+                {&Scene::Hud::status, QString::fromUtf8(arabic ? "التعزيز مفعّل" : "BOOST ENGAGED"),
+                 QRect(480, 436, 460, 24)},
+                {&Scene::Hud::altitude, arabic ? QString::fromUtf8("الارتفاع ١٧٫٩") : "ALT 17.9",
+                 QRect(20, 440, 220, 20)},
+            };
+            for (const Line &line : lines) {
+                Scene::Hud changed = hud;
+                changed.*line.text = line.other;
+                const QImage after = frame(scene, flight, size, 1, changed);
+                const QString what = (arabic ? "ar: " : "en: ") + line.other;
+                QVERIFY2(differing(after, base, 24, line.area) > 20, qPrintable(what));
+                QVERIFY2(differing(after, base) == differing(after, base, 0, line.area), qPrintable(what));
+            }
+        }
+    }
+
+    void aDisplayScaleOnlyAddsPixels()
+    {
+        // At twice the scale, a window shows the same frame as one twice its
+        // size: sprites and text are drawn for the pixels, not the window.
+        Flight flight;
+        flight.scene(1);
+        flight.advance(3);
+        flight.game.popups.clear();
+        Scene::Look look;
+        look.switches = 1;
+        Scene scene, other;
+        const QImage doubled = frame(scene, flight, {960, 540}, 2, hudIn(false), look);
+        QCOMPARE(doubled.size(), QSize(1920, 1080));
+        QCOMPARE(changed(doubled, frame(other, flight, {1920, 1080}, 1, hudIn(false), look)), 0);
+    }
+
+    void theGpuPaintsWhatTheCpuPaints()
+    {
+        // The game paints into an OpenGL framebuffer; the tests above use
+        // images. Averaged over 32-pixel blocks, the two agree.
+        QOffscreenSurface surface;
+        QOpenGLContext context;
+        QSurfaceFormat format;
+        format.setSamples(4);
+        format.setStencilBufferSize(8);
+        context.setFormat(format);
+        surface.setFormat(format);
+        surface.create();
+        if (!context.create() || !context.makeCurrent(&surface))
+            QSKIP("No OpenGL here; the CPU's painting is tested on its own.");
+        Flight flight;
+        flight.scene(4);
+        flight.demo = false;
+        flight.advance(3);
+        const QSize size(960, 544);
+        QOpenGLFramebufferObjectFormat fboFormat;
+        fboFormat.setSamples(4);
+        fboFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+        QOpenGLFramebufferObject fbo(size, fboFormat);
+        QVERIFY(fbo.bind());
+        Scene gpuScene, cpuScene;
+        {
+            QOpenGLPaintDevice device(size);
+            QPainter p(&device);
+            gpuScene.paint(p, flight, size, hudIn(false));
+        }
+        const QImage gpu = fbo.toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+        const QImage cpu = frame(cpuScene, flight, size, 1, hudIn(false));
+        int worst = 0;
+        for (int by = 0; by < size.height() / 32; ++by)
+            for (int bx = 0; bx < size.width() / 32; ++bx) {
+                const QRect block(bx * 32, by * 32, 32, 32);
+                const QColor a = average(gpu, block), b = average(cpu, block);
+                worst = std::max({worst, std::abs(a.red() - b.red()), std::abs(a.green() - b.green()),
+                                  std::abs(a.blue() - b.blue())});
+            }
+        QVERIFY2(worst <= 16, qPrintable(QString("a block differs by %1 of 255").arg(worst)));
+    }
+
     void scoresRankPersistAndBannerStaysOff() {
         QTemporaryDir settings;
         const QString path = settings.filePath("game.ini");
@@ -537,6 +749,56 @@ private slots:
         QVERIFY(!b.settingsError().isEmpty());
         QCOMPARE(b.scoreBoard().pendingScore(), 100);
         QVERIFY((b.scoreBoard().count() == 0));
+    }
+
+    void stepsKeepToTheScreensRefreshWithoutDrifting()
+    {
+        // The timer measuring frames wobbles by a couple of milliseconds,
+        // and now and then the machine stalls. At the refresh rates of
+        // common screens, each step is whole refreshes give or take a small
+        // payback, and over a minute the flight's clock keeps to the wall
+        // clock, less what stalls longer than a step (0.05 s) don't count.
+        for (const double hertz : {60.0, 90.0, 144.0}) {
+            QTemporaryDir settings;
+            Backend b(nullptr, settings.filePath("game.ini"));
+            b.setRefreshRate(hertz);
+            const double period = 1 / hertz;
+            std::mt19937 random(static_cast<unsigned>(hertz));
+            std::uniform_real_distribution<double> jitter(-0.002, 0.002);
+            double counted = 0;
+            const double start = b.flight().time;
+            for (int frame = 0; frame < int(60 * hertz); ++frame) {
+                // Most frames come on the beat; one in every few hundred is
+                // late, and one in a thousand is a stall.
+                const double seconds = frame % 1000 == 500 ? 0.2 : frame % 300 == 150 ? 2.5 * period
+                                                                                       : period + jitter(random);
+                b.tick(seconds);
+                counted += std::min(seconds, 0.05);
+                const double refreshes = b.lastStep() / period;
+                QVERIFY2(std::round(refreshes) >= 1 && std::abs(refreshes - std::round(refreshes)) <= 0.03 + 1e-9,
+                         qPrintable(QString("%1 Hz, frame %2: a step of %3 refreshes").arg(hertz).arg(frame).arg(refreshes)));
+            }
+            const double behind = counted - (b.flight().time - start);
+            QVERIFY2(std::abs(behind) < 0.02, qPrintable(QString("%1 Hz: %2 s off the clock").arg(hertz).arg(behind)));
+        }
+        // A machine that only keeps up with every other refresh steps by two.
+        QTemporaryDir settings;
+        Backend b(nullptr, settings.filePath("game.ini"));
+        b.setRefreshRate(60);
+        for (int i = 0; i < 120; ++i) {
+            b.tick(2 / 60.0 + (i % 2 ? 0.0015 : -0.0015));
+            QCOMPARE(std::round(b.lastStep() * 60), 2.0);
+        }
+        // Moved to a faster screen, the steps follow it at once.
+        b.setRefreshRate(144);
+        b.tick(1 / 144.0 + 0.001);
+        QVERIFY(std::abs(b.lastStep() * 144 - 1) <= 0.03 + 1e-9);
+        // An unknown rate (or none) steps by the time measured.
+        for (const double unknown : {0.0, 1000.0}) {
+            b.setRefreshRate(unknown);
+            b.tick(0.0123);
+            QCOMPARE(b.lastStep(), 0.0123);
+        }
     }
 
     void hiddenWindowAndInvalidTicksDoNotAdvance() {
@@ -618,10 +880,18 @@ private slots:
         QTest::keyClick(window, Qt::Key_Return);
         QCOMPARE(backend.scoreBoard().pendingScore(), 0);
         QCOMPARE(backend.scoreBoard().best(), 1200);
-        auto capture = [&](const QString &name) {
+        // Something was painted: a blank window, or panels over a flight view
+        // that drew nothing, shows only a few colours. The flight itself
+        // shows hundreds.
+        auto capture = [&](const QString &name, int colours = 24) {
             QTest::qWait(250);
             const QImage shot = window->grabWindow();
             QVERIFY(!shot.isNull());
+            QSet<QRgb> seen;
+            for (int y = 0; y < 32; ++y)
+                for (int x = 0; x < 32; ++x)
+                    seen.insert(shot.pixel(x * (shot.width() - 1) / 31, y * (shot.height() - 1) / 31));
+            QVERIFY2(seen.size() > colours, qPrintable(name + ": " + QString::number(seen.size()) + " colours"));
             const QString out = qEnvironmentVariable("OMAWING_SCREENSHOT_DIR");
             if (!out.isEmpty()) { QDir().mkpath(out); QVERIFY(shot.save(out + "/" + name + ".png")); }
         };
@@ -640,7 +910,7 @@ private slots:
         backend.setPaused(true);
         backend.flight().advance(5);
         backend.nextScene();
-        capture("flight");
+        capture("flight", 150);
         backend.setDemo(false);
         backend.flight().ship.x = 0;
         backend.flight().ship.y = 4;
@@ -653,7 +923,7 @@ private slots:
         window->setProperty("pointerAwake", false);
         // The toolbar takes a moment to fade away.
         QTRY_VERIFY(!window->findChild<QObject *>("toolbar")->property("visible").toBool());
-        capture("gameplay");
+        capture("gameplay", 150);
         backend.setPaused(true);
         // V opens the volume panel with the music slider focused; the arrow
         // keys move it and Esc closes the panel.
@@ -697,6 +967,14 @@ private slots:
         QVERIFY(backend.toolbarShown() && backend.titlesShown());
         QTRY_COMPARE(bar->property("opacity").toDouble(), 1.0);
         QTRY_COMPARE(backend.look().titles, 1.0);
+        // Paused, once the switch keys have faded too, the window stops
+        // ticking; moving the pointer starts it again.
+        auto ticker = window->findChild<QObject *>("ticker");
+        QVERIFY(ticker);
+        QTRY_VERIFY_WITH_TIMEOUT(!ticker->property("running").toBool(), 8000);
+        QVERIFY(backend.paused());
+        QMetaObject::invokeMethod(window, "wake");
+        QVERIFY(ticker->property("running").toBool());
         window->setProperty("pointerAwake", false);
         window->resize(640, 400);
         for (const QString &language : {QString("de"), QString("ar")}) {
@@ -1080,6 +1358,64 @@ private slots:
         QCOMPARE(reread.entries()[1].name, QString("Two"));
     }
 
+    void heldScoreLockKeepsTheRunAndSavesSoonAfter()
+    {
+        QTemporaryDir settings;
+        const QString path = settings.filePath("game.ini");
+        ScoreBoard board(path);
+        board.offer(1200, 6);
+        // Another copy of the game is in the middle of saving.
+        QLockFile other(path + ".scores.lock");
+        QVERIFY(other.tryLock(0));
+        QElapsedTimer timer;
+        timer.start();
+        QVERIFY(!board.save("Pilot"));
+        QVERIFY2(timer.elapsed() < 50, qPrintable(QString::number(timer.elapsed()) + " ms"));
+        QCOMPARE(board.pendingScore(), 1200);
+        QVERIFY(board.error().isEmpty());   // Waiting isn't a failure.
+        QVERIFY(!QFile::exists(path));      // Nothing written without the lock.
+        other.unlock();
+        QTRY_COMPARE(board.pendingScore(), 0);
+        QCOMPARE(board.best(), 1200);
+        QCOMPARE(ScoreBoard(path).entries().first().name, QString("Pilot"));
+    }
+
+    void copiesSavingAtOnceKeepEveryQualifyingScore()
+    {
+        // Separate processes, each saving a dozen rising scores as fast as
+        // it can. However their saves interleave, the board ends as the ten
+        // best of them all.
+        QTemporaryDir settings;
+        const QString path = settings.filePath("game.ini");
+        const int copies = 4;
+        const qint64 start = QDateTime::currentMSecsSinceEpoch() + 300;   // Together, once all have started.
+        std::vector<std::unique_ptr<QProcess>> writers;
+        for (int copy = 0; copy < copies; ++copy) {
+            auto &writer = writers.emplace_back(std::make_unique<QProcess>());
+            auto env = QProcessEnvironment::systemEnvironment();
+            env.insert(ScoreWriter, QString("%1|%2|%3|%4").arg(path).arg(copy).arg(copies).arg(start));
+            writer->setProcessEnvironment(env);
+            writer->setProcessChannelMode(QProcess::ForwardedErrorChannel);
+            writer->start(QCoreApplication::applicationFilePath(), {});
+        }
+        for (auto &writer : writers) {
+            QVERIFY(writer->waitForFinished(20000));
+            QCOMPARE(writer->exitStatus(), QProcess::NormalExit);
+            QCOMPARE(writer->exitCode(), 0);
+        }
+        QList<int> all;
+        for (int copy = 0; copy < copies; ++copy)
+            for (int i = 0; i < WriterScores; ++i)
+                all.append(writerScore(copy, i, copies));
+        std::sort(all.begin(), all.end(), std::greater<>());
+        ScoreBoard board(path);
+        QCOMPARE(board.count(), ScoreBoard::Size);
+        for (int i = 0; i < ScoreBoard::Size; ++i) {
+            QCOMPARE(board.entries()[i].score, all[i]);
+            QCOMPARE(board.entries()[i].name, QString("Copy %1").arg(all[i] % copies));
+        }
+    }
+
     void translatorFollowsALanguageFolderCreatedLater()
     {
         QTemporaryDir dir;
@@ -1224,7 +1560,100 @@ private slots:
         QCOMPARE(count, 50);
     }
 
+public:
+    // copiesSavingAtOnceKeepEveryQualifyingScore runs this program again as
+    // the copies of the game, with this variable set to "file|copy|copies|start".
+    static constexpr const char *ScoreWriter = "OMAWING_TEST_SCORE_WRITER";
+    static constexpr int WriterScores = 12;
+    static int writerScore(int copy, int i, int copies) { return 1000 + i * copies + copy; }
+    static int writeScores()
+    {
+        const QStringList args = qEnvironmentVariable(ScoreWriter).split('|');
+        if (args.size() != 4)
+            return 2;
+        const int copy = args[1].toInt(), copies = args[2].toInt();
+        while (QDateTime::currentMSecsSinceEpoch() < args[3].toLongLong())
+            QThread::usleep(200);
+        ScoreBoard board(args[0]);
+        for (int i = 0; i < WriterScores; ++i) {
+            board.offer(writerScore(copy, i, copies), 1);
+            while (board.pendingScore() > 0 && !board.save(QString("Copy %1").arg(copy))) {
+                if (!board.error().isEmpty())
+                    return 1;
+                QThread::usleep(50);   // Another copy is saving.
+            }
+        }
+        return 0;
+    }
+
 private:
+    // A HUD as the game words it, in English or Arabic.
+    static Scene::Hud hudIn(bool arabic)
+    {
+        if (!arabic)
+            return {"YOU HAVE THE CONTROLS", QString::fromUtf8("FREE FLIGHT · 03 / 24"), "THRUST", "ALT 04.2",
+                    "Flying into the future", "HULL", "SCORE", "001350", "BEST 001350", {}, "TITLES", "MENU",
+                    "BANNER"};
+        return {QString::fromUtf8("التحكم بين يديك"), QString::fromUtf8("طيران حر · ٠٣ / ٢٤"),
+                QString::fromUtf8("الدفع"), QString::fromUtf8("الارتفاع ٠٤٫٢"),
+                QString::fromUtf8("نحلّق نحو المستقبل"), QString::fromUtf8("الهيكل"), QString::fromUtf8("النقاط"),
+                QString::fromUtf8("٠٠١٣٥٠"), QString::fromUtf8("الأفضل ٠٠١٣٥٠"), {},
+                QString::fromUtf8("العناوين"), QString::fromUtf8("القائمة"), QString::fromUtf8("الشريط")};
+    }
+    // A frame of `scene` as a window `logical` in size shows it, at `ratio`
+    // pixels to each of the window's.
+    static QImage frame(Scene &scene, const Flight &flight, const QSize &logical, double ratio, const Scene::Hud &hud,
+                        const Scene::Look &look = {})
+    {
+        QImage image(logical * ratio, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::black);
+        QPainter p(&image);
+        p.scale(ratio, ratio);
+        scene.paint(p, flight, QSizeF(logical), hud, look);
+        return image;
+    }
+    // Pixels in `area` (all of the image if empty) whose colours differ by
+    // more than `tolerance` in a channel.
+    static int differing(const QImage &a, const QImage &b, int tolerance = 0, QRect area = {})
+    {
+        if (a.size() != b.size())
+            return -1;
+        area = area.isEmpty() ? a.rect() : area & a.rect();
+        int count = 0;
+        for (int y = area.top(); y <= area.bottom(); ++y) {
+            const QRgb *ra = reinterpret_cast<const QRgb *>(a.constScanLine(y));
+            const QRgb *rb = reinterpret_cast<const QRgb *>(b.constScanLine(y));
+            for (int x = area.left(); x <= area.right(); ++x)
+                count += std::abs(qRed(ra[x]) - qRed(rb[x])) > tolerance ||
+                         std::abs(qGreen(ra[x]) - qGreen(rb[x])) > tolerance ||
+                         std::abs(qBlue(ra[x]) - qBlue(rb[x])) > tolerance;
+        }
+        return count;
+    }
+    // Pixels that differ between two frames, 16:9, that should be the same.
+    // Qt outlines the letters of the scroller (and of the points that float
+    // up from rings) a 32nd of a pixel differently depending on what text it
+    // has drawn before, so their edges may differ a little; anything else
+    // must match exactly.
+    static int changed(const QImage &a, const QImage &b)
+    {
+        const int scroller = a.height() * 480 / 540;
+        return differing(a, b, 0, QRect(0, 0, a.width(), scroller)) +
+               differing(a, b, 48, QRect(0, scroller, a.width(), a.height() - scroller));
+    }
+    static QColor average(const QImage &image, const QRect &area)
+    {
+        long r = 0, g = 0, b = 0;
+        for (int y = area.top(); y <= area.bottom(); ++y)
+            for (int x = area.left(); x <= area.right(); ++x) {
+                const QRgb c = image.pixel(x, y);
+                r += qRed(c);
+                g += qGreen(c);
+                b += qBlue(c);
+            }
+        const long n = long(area.width()) * area.height();
+        return QColor(int(r / n), int(g / n), int(b / n));
+    }
     static void write(const QString &path, const QByteArray &contents)
     {
         QFile file(path);
@@ -1233,5 +1662,18 @@ private:
     }
 };
 
-QTEST_MAIN(OmawingTests)
+// QTEST_MAIN, except when started as one of the copies of the game for
+// copiesSavingAtOnceKeepEveryQualifyingScore.
+int main(int argc, char *argv[])
+{
+    if (qEnvironmentVariableIsSet(OmawingTests::ScoreWriter)) {
+        QCoreApplication app(argc, argv);
+        return OmawingTests::writeScores();
+    }
+    QGuiApplication app(argc, argv);
+    app.setAttribute(Qt::AA_Use96Dpi, true);
+    OmawingTests tests;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&tests, argc, argv);
+}
 #include "omawing_tests.moc"

@@ -1,5 +1,7 @@
 #include "backend.h"
 
+#include <QElapsedTimer>
+
 #include <QDateTime>
 #include <QLocale>
 #include <QSettings>
@@ -84,12 +86,14 @@ void Backend::zoom(double steps) {
     const double before = m_flight.cameraDistance();
     m_flight.zoom(steps);
     if (before != m_flight.cameraDistance()) m_zoomFor = 3;
+    updateAnimating();
 }
 
 void Backend::resetZoom() {
     const double before = m_flight.cameraDistance();
     m_flight.resetZoom();
     if (before != m_flight.cameraDistance()) m_zoomFor = 3;
+    updateAnimating();
 }
 
 void Backend::endRun() {
@@ -150,6 +154,8 @@ void Backend::tick(double seconds) {
     const double refreshRate = m_refreshRate;
     if (!std::isfinite(seconds) || seconds <= 0 || m_hidden)
         return;
+    QElapsedTimer timer;
+    timer.start();
     double dt = std::clamp(seconds, 0.0, 0.05);
     if (refreshRate >= 20 && refreshRate <= 500) {
         // Frames reach the screen on its beat, but the timer measuring them
@@ -157,7 +163,10 @@ void Backend::tick(double seconds) {
         // world evenly; what the timer measured beyond that is paid back a
         // little each frame, so the clock never drifts.
         const double period = 1 / refreshRate;
-        const double snapped = std::min(0.05, std::max(1.0, std::round(dt / period)) * period);
+        // A step is at most 0.05 s, in whole refreshes too: at 90 Hz that's
+        // four, not four and a half.
+        const double most = std::max(1.0, std::floor(0.05 / period + 1e-9));
+        const double snapped = std::clamp(std::round(dt / period), 1.0, most) * period;
         m_drift = std::clamp(m_drift + dt - snapped, -0.25, 0.25);
         const double payback = std::clamp(m_drift * 0.05, -0.03 * period, 0.03 * period);
         m_drift -= payback;
@@ -202,6 +211,8 @@ void Backend::tick(double seconds) {
         emit frameChanged();
     }
     m_zoomFor = std::max(0.0, m_zoomFor - dt);
+    updateAnimating();
+    m_tickMs = timer.nsecsElapsed() / 1e6;
     ++m_frames;
     m_elapsed += seconds;
     if (m_elapsed > 0.75) {
@@ -235,8 +246,18 @@ void Backend::setPaused(bool paused, bool keepMusic) {
     m_musicThroughPause = paused && keepMusic;
     clearInput();
     syncSound();
+    updateAnimating();
     emit changed();
     emit frameChanged();
+}
+
+void Backend::updateAnimating() {
+    const bool animating = !m_hidden && (!m_paused || m_zoomFor > 0 || m_switchesFor > 0 || m_switches != 0 ||
+                                         m_titles != (m_titlesOn ? 1 : 0));
+    if (animating == m_animating)
+        return;
+    m_animating = animating;
+    emit animatingChanged();
 }
 
 void Backend::setDemo(bool demo) {
@@ -331,6 +352,7 @@ void Backend::toggleToolbar() {
 void Backend::showSwitches(double seconds) {
     m_switchesFor = std::max(m_switchesFor, seconds);
     updateLook();
+    updateAnimating();
 }
 
 void Backend::updateLook() {
@@ -358,6 +380,7 @@ void Backend::setHidden(bool hidden) {
     m_hidden = hidden;
     clearInput();
     syncSound();
+    updateAnimating();
 }
 
 int Backend::flightKey(int key) {

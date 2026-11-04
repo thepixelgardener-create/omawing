@@ -20,6 +20,8 @@ public:
     // window scale into images and reused every frame.
     void prepare(const View &view, double pixelsPerUnit);
     void paint(QPainter &p, const View &view, const SceneHud &hud);
+    // How many strings have been laid out, rather than found laid out.
+    long textLayouts() const { return m_textLayouts; }
 
 private:
     struct Sprite {
@@ -61,8 +63,7 @@ private:
     double m_glyphAdvance = 16;
     Sprite m_title;
     QImage m_scanlines;   // One period of the scanlines, a pixel wide, tiled over the view.
-    Sprite m_radarFace, m_radarRim;
     QHash<QString, Text> m_texts;
     quint64 m_textUse = 0;
-    QRgb m_radarAccent = 0;
+    long m_textLayouts = 0;
 };

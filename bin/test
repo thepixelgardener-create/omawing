@@ -1,10 +1,14 @@
 #!/bin/sh
+# Builds and runs the tests, offscreen, in build/tests or $OMAWING_TEST_BUILD_DIR.
+# Extra arguments go to qmake, such as CONFIG+=sanitizer CONFIG+=sanitize_address
+# for a build of its own.
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-mkdir -p "$ROOT/build/tests"
-cd "$ROOT/build/tests"
+BUILD="${OMAWING_TEST_BUILD_DIR:-$ROOT/build/tests}"
+mkdir -p "$BUILD"
+cd "$BUILD"
 
-qmake6 "$ROOT/tests/omawing_tests.pro"
+qmake6 "$ROOT/tests/omawing_tests.pro" "$@"
 make -j"$(nproc)"
 QT_QPA_PLATFORM=offscreen ./omawing_tests

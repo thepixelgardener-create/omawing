@@ -46,6 +46,9 @@ public:
     // The projected world faces of the last frame, in canvas units; tests use
     // them to check that geometry stays finite and inside the view.
     const std::vector<Face> &faces() const { return m_world.faces(); }
+    // How many HUD strings have been laid out since the scene was made; the
+    // rest came from its cache. The benchmark checks the cache with it.
+    long textLayouts() const { return m_overlay.textLayouts(); }
     double width() const { return m_view.width; }
     double height() const { return m_view.height; }
 
